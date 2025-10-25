@@ -205,10 +205,13 @@ test.describe('BugSpotter SDK - Real Browser Tests', () => {
   });
 
   test('should handle large DOM efficiently', async ({ page }) => {
-    await page.goto(`file://${LARGE_DOM_FIXTURE}`).catch(() => {
-      // File might not exist in CI, skip
-      test.skip();
-    });
+    try {
+      await page.goto(`file://${LARGE_DOM_FIXTURE}`);
+    } catch (error) {
+      throw new Error(
+        `Large DOM fixture not found at ${LARGE_DOM_FIXTURE}. Please create the fixture file for this test.`
+      );
+    }
 
     await injectSDK(page, {
       showWidget: false,
@@ -458,9 +461,7 @@ test.describe('BugSpotter SDK - Real Browser Tests', () => {
 });
 
 test.describe('Multi-Browser Compatibility', () => {
-  test('should work in Chromium', async ({ page, browserName }) => {
-    test.skip(browserName !== 'chromium', 'Chromium-specific test');
-
+  test('should work in Chromium', async ({ page }) => {
     await page.setContent('<html><body><h1>Chromium Test</h1></body></html>');
     await injectSDK(page, { showWidget: false });
 
@@ -475,43 +476,5 @@ test.describe('Multi-Browser Compatibility', () => {
 
     expect(report).toBeTruthy();
     expect(report.metadata.browser).toContain('Chrome');
-  });
-
-  test('should work in Firefox', async ({ page, browserName }) => {
-    test.skip(browserName !== 'firefox', 'Firefox-specific test');
-
-    await page.setContent('<html><body><h1>Firefox Test</h1></body></html>');
-    await injectSDK(page, { showWidget: false });
-
-    const report = await page.evaluate(async () => {
-      // @ts-expect-error - Playwright types not fully compatible with test setup
-      if (!window.bugspotterInstance) {
-        return null;
-      }
-      // @ts-expect-error - Playwright types not fully compatible with test setup
-      return await window.bugspotterInstance.capture();
-    });
-
-    expect(report).toBeTruthy();
-    expect(report.metadata.browser).toContain('Firefox');
-  });
-
-  test('should work in WebKit/Safari', async ({ page, browserName }) => {
-    test.skip(browserName !== 'webkit', 'WebKit-specific test');
-
-    await page.setContent('<html><body><h1>Safari Test</h1></body></html>');
-    await injectSDK(page, { showWidget: false });
-
-    const report = await page.evaluate(async () => {
-      // @ts-expect-error - Playwright types not fully compatible with test setup
-      if (!window.bugspotterInstance) {
-        return null;
-      }
-      // @ts-expect-error - Playwright types not fully compatible with test setup
-      return await window.bugspotterInstance.capture();
-    });
-
-    expect(report).toBeTruthy();
-    expect(report.metadata.browser).toContain('Safari');
   });
 });

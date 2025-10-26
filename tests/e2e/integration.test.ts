@@ -84,7 +84,7 @@ describe('E2E Integration Tests', () => {
 
       // Verify capture
       expect(report).toBeDefined();
-      expect(report.screenshot).toBeTruthy();
+      expect(report._screenshotPreview).toBeTruthy();
       expect(report.console.length).toBeGreaterThan(0);
       expect(report.metadata).toBeDefined();
       expect(report.replay).toBeDefined();

@@ -89,13 +89,12 @@ describe('BugSpotter', () => {
 
       const report = await bugspotter.capture();
 
-      expect(report).toHaveProperty('screenshot');
       expect(report).toHaveProperty('console');
       expect(report).toHaveProperty('network');
       expect(report).toHaveProperty('metadata');
       expect(report).toHaveProperty('replay');
 
-      expect(typeof report.screenshot).toBe('string');
+      expect(typeof report._screenshotPreview).toBe('string');
       expect(Array.isArray(report.console)).toBe(true);
       expect(Array.isArray(report.network)).toBe(true);
       expect(typeof report.metadata).toBe('object');
@@ -121,7 +120,7 @@ describe('BugSpotter', () => {
       expect(report.replay).toBeDefined();
       expect(Array.isArray(report.replay)).toBe(true);
       // Should have at least initial snapshot events
-      expect(report.replay.length).toBeGreaterThan(0);
+      expect(report.replay?.length).toBeGreaterThan(0);
     });
 
     it('should not capture replay events when disabled', async () => {
@@ -136,7 +135,7 @@ describe('BugSpotter', () => {
 
       expect(report.replay).toBeDefined();
       expect(Array.isArray(report.replay)).toBe(true);
-      expect(report.replay.length).toBe(0);
+      expect(report.replay?.length).toBe(0);
     });
 
     it('should respect replay duration configuration', async () => {
@@ -181,7 +180,7 @@ describe('BugSpotter', () => {
       const report = await bugspotter.capture();
 
       // Validate screenshot
-      expect(typeof report.screenshot).toBe('string');
+      expect(typeof report._screenshotPreview).toBe('string');
 
       // Validate console array structure
       expect(Array.isArray(report.console)).toBe(true);
@@ -435,7 +434,7 @@ describe('BugSpotter', () => {
           title: 'Test Bug Title',
           description: 'Test Bug Description',
           report: expect.objectContaining({
-            screenshot: expect.any(String),
+            _screenshotPreview: expect.any(String),
             console: expect.any(Array),
             network: expect.any(Array),
             metadata: expect.any(Object),

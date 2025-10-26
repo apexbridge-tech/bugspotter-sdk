@@ -110,7 +110,7 @@ test.describe('BugSpotter SDK - Real Browser Tests', () => {
       }
       // @ts-expect-error - Playwright types not fully compatible with test setup
       const report = await window.bugspotterInstance.capture();
-      return report.screenshot;
+      return report._screenshotPreview;
     });
 
     expect(screenshot).toBeTruthy();

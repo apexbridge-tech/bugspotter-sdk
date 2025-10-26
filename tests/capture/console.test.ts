@@ -3,17 +3,9 @@ import { ConsoleCapture } from '../../src/capture/console';
 
 describe('ConsoleCapture', () => {
   let consoleCapture: ConsoleCapture;
-  let _originalConsole: any;
 
   beforeEach(() => {
-    // Store original console methods
-    _originalConsole = {
-      log: console.log,
-      warn: console.warn,
-      error: console.error,
-      info: console.info,
-      debug: console.debug,
-    };
+    // Store original console methods (used implicitly by afterEach cleanup)
 
     consoleCapture = new ConsoleCapture();
   });

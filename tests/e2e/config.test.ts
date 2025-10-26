@@ -443,7 +443,7 @@ describe('E2E Configuration Tests', () => {
 
       expect(report.replay).toBeDefined();
       expect(Array.isArray(report.replay)).toBe(true);
-      expect(report.replay.length).toBeGreaterThan(0);
+      expect(report.replay?.length).toBeGreaterThan(0);
     });
 
     it('should not capture replay when disabled', async () => {
@@ -462,7 +462,7 @@ describe('E2E Configuration Tests', () => {
 
       expect(report.replay).toBeDefined();
       expect(Array.isArray(report.replay)).toBe(true);
-      expect(report.replay.length).toBe(0);
+      expect(report.replay?.length).toBe(0);
     });
 
     it('should respect custom replay duration', async () => {
@@ -542,7 +542,7 @@ describe('E2E Configuration Tests', () => {
       const report = await bugspotter.capture();
 
       expect(report).toBeDefined();
-      expect(report.screenshot).toBeTruthy();
+      expect(report._screenshotPreview).toBeTruthy();
       expect(report.console).toBeDefined();
       expect(report.metadata).toBeDefined();
     });
@@ -570,7 +570,7 @@ describe('E2E Configuration Tests', () => {
       await (bugspotter as any).submitBugReport(payload);
 
       expect(fetchMock).toHaveBeenCalled();
-      expect(report.replay.length).toBeGreaterThan(0);
+      expect(report.replay?.length).toBeGreaterThan(0);
 
       const messages = report.console
         .map((log) => {

@@ -249,13 +249,6 @@ describe('Retry and Offline Queue', () => {
     );
 
     it('should process offline queue on next request', { timeout: 10000 }, async () => {
-      const _retryConfig: RetryConfig = {
-        maxRetries: 1,
-        baseDelay: 1,
-        maxDelay: 10,
-        retryOn: [502, 503, 504, 429],
-      };
-
       // First, queue a failed request
       fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
 

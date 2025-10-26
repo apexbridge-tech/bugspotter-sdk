@@ -182,7 +182,7 @@ describe('E2E Performance Benchmarks', () => {
       console.log(`  - Screenshot: included`);
       console.log(`  - Console logs: ${report.console.length}`);
       console.log(`  - Network requests: ${report.network.length}`);
-      console.log(`  - Replay events: ${report.replay.length}`);
+      console.log(`  - Replay events: ${report.replay?.length ?? 0}`);
     });
 
     it('should capture without replay faster (<300ms)', async () => {
@@ -411,7 +411,7 @@ describe('E2E Performance Benchmarks', () => {
       expect(replaySize).toBeLessThan(5 * 1024 * 1024); // <5MB
 
       console.log(`✓ Replay buffer size: ${(replaySize / 1024).toFixed(2)}KB`);
-      console.log(`  - Events captured: ${report.replay.length}`);
+      console.log(`  - Events captured: ${report.replay?.length ?? 0}`);
       console.log(`  - Console logs: ${report.console.length}`);
     }, 10000); // 10s timeout for memory test
   });

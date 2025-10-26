@@ -44,6 +44,9 @@ export class BugSpotter {
     this.network = new NetworkCapture({ sanitizer: this.sanitizer });
     this.metadata = new MetadataCapture({ sanitizer: this.sanitizer });
 
+    // Note: DirectUploader is created per-report since it needs bugId
+    // See submitBugReport() for initialization
+
     // Initialize DOM collector if replay is enabled
     if (config.replay?.enabled !== false) {
       this.domCollector = new DOMCollector({
@@ -74,18 +77,28 @@ export class BugSpotter {
     return BugSpotter.instance || null;
   }
 
+  /**
+   * Capture bug report data
+   * Note: Screenshot is captured for modal preview only (_screenshotPreview)
+   * Actual file uploads use presigned URLs (screenshotKey/replayKey set after upload)
+   */
   async capture(): Promise<BugReport> {
+    const screenshotPreview = await this.screenshot.capture();
+    const replayEvents = this.domCollector?.getEvents() ?? [];
+
     return {
-      screenshot: await this.screenshot.capture(),
       console: this.console.getLogs(),
       network: this.network.getRequests(),
       metadata: this.metadata.capture(),
-      replay: this.domCollector?.getEvents() ?? [],
+      replay: replayEvents,
+      // Internal: screenshot preview for modal (not sent to API)
+      _screenshotPreview: screenshotPreview,
     };
   }
 
   private async handleBugReport(): Promise<void> {
     const report = await this.capture();
+
     const modal = new BugReportModal({
       onSubmit: async (data) => {
         logger.log('Submitting bug:', { ...data, report });
@@ -103,7 +116,8 @@ export class BugSpotter {
         }
       },
     });
-    modal.show(report.screenshot);
+
+    modal.show(report._screenshotPreview || '');
   }
 
   private async submitBugReport(payload: BugReportPayload): Promise<void> {
@@ -250,7 +264,7 @@ export interface BugReportPayload {
 }
 
 export interface BugReport {
-  screenshot: string;
+  screenshotKey?: string; // Presigned URL flow - storage key after upload
   console: Array<{
     level: string;
     message: string;
@@ -266,7 +280,9 @@ export interface BugReport {
     error?: string;
   }>;
   metadata: BrowserMetadata;
-  replay: eventWithTime[];
+  replay?: eventWithTime[]; // Inline events for immediate preview/processing
+  replayKey?: string; // Presigned URL flow - storage key after upload
+  _screenshotPreview?: string; // Internal: screenshot preview for modal (not sent to API)
 }
 
 // Export capture module types for advanced usage
@@ -299,6 +315,16 @@ export type { AuthConfig, TransportOptions, RetryConfig } from './core/transport
 export type { OfflineConfig } from './core/offline-queue';
 export type { Logger, LogLevel, LoggerConfig } from './utils/logger';
 export { getLogger, configureLogger, createLogger } from './utils/logger';
+
+// Export upload utilities
+export { DirectUploader } from './core/uploader';
+export type { UploadResult } from './core/uploader';
+export {
+  compressReplayEvents,
+  canvasToBlob,
+  estimateCompressedReplaySize,
+  isWithinSizeLimit,
+} from './core/upload-helpers';
 
 // Export sanitization utilities
 export { createSanitizer, Sanitizer } from './utils/sanitize';

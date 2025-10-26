@@ -5,8 +5,6 @@ describe('ConsoleCapture', () => {
   let consoleCapture: ConsoleCapture;
 
   beforeEach(() => {
-    // Store original console methods (used implicitly by afterEach cleanup)
-
     consoleCapture = new ConsoleCapture();
   });
 

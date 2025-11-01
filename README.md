@@ -6,10 +6,42 @@ The BugSpotter SDK provides a comprehensive solution for capturing bug reports i
 
 ## 📦 Installation
 
+### NPM Package
+
 ```bash
-# From local build
+# npm
+npm install @bugspotter/sdk
+
+# yarn
+yarn add @bugspotter/sdk
+
+# pnpm
+pnpm add @bugspotter/sdk
+```
+
+### CDN
+
+```html
+<!-- BugSpotter CDN (versioned - recommended for production) -->
+<script src="https://cdn.bugspotter.io/sdk/bugspotter-0.1.0.min.js"></script>
+
+<!-- Latest version (for development only) -->
+<script src="https://cdn.bugspotter.io/sdk/bugspotter-latest.min.js"></script>
+
+<!-- Or unpkg -->
+<script src="https://unpkg.com/@bugspotter/sdk@latest/dist/bugspotter.min.js"></script>
+```
+
+📘 **See [CDN Usage Guide](./docs/CDN.md) for detailed CDN integration, SRI hashes, and troubleshooting.**
+
+### From Source
+
+```bash
+# Clone and build from source
+git clone https://github.com/apexbridge-tech/bugspotter.git
+cd bugspotter/packages/sdk
 pnpm install
-pnpm run build
+pnpm build
 ```
 
 The built SDK will be available at `dist/bugspotter.min.js` (~99 KB minified with session replay).
@@ -18,13 +50,40 @@ The built SDK will be available at `dist/bugspotter.min.js` (~99 KB minified wit
 
 ### Basic Usage
 
+**ES Modules (React, Vue, Angular, etc.)**
+
+```javascript
+import BugSpotter from '@bugspotter/sdk';
+
+// Initialize with auto-widget
+const bugSpotter = BugSpotter.init({
+  apiKey: 'bgs_your_api_key',
+  endpoint: 'https://api.bugspotter.com',
+  showWidget: true,
+});
+```
+
+**CommonJS (Node.js)**
+
+```javascript
+const BugSpotter = require('@bugspotter/sdk');
+
+const bugSpotter = BugSpotter.init({
+  apiKey: 'bgs_your_api_key',
+  endpoint: 'https://api.bugspotter.com',
+  showWidget: true,
+});
+```
+
+**UMD (Browser script tag)**
+
 ```html
-<script src="path/to/bugspotter.min.js"></script>
+<script src="https://cdn.bugspotter.io/sdk/bugspotter-latest.min.js"></script>
 <script>
   // Initialize with auto-widget
   const bugSpotter = BugSpotter.init({
-    apiKey: 'your-api-key',
-    endpoint: 'https://api.example.com/bugs',
+    apiKey: 'bgs_your_api_key',
+    endpoint: 'https://api.bugspotter.com',
     showWidget: true,
   });
 </script>

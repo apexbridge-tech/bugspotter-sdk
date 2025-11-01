@@ -1,12 +1,28 @@
 {
   "name": "@bugspotter/sdk",
   "version": "0.1.0",
-  "description": "BugSpotter core SDK for bug capture",
+  "description": "Professional bug reporting SDK with screenshots, session replay, and automatic error capture for web applications",
   "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "browser": "dist/bugspotter.min.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.js",
+      "browser": "./dist/bugspotter.min.js"
+    }
+  },
   "scripts": {
     "dev": "webpack --watch --mode development",
-    "build": "webpack --mode production",
+    "build": "npm run build:webpack && npm run build:esm && npm run build:cjs",
+    "build:webpack": "webpack --mode production",
+    "build:esm": "tsc --project tsconfig.build.json --module ES2020 --outDir dist/esm && shx mv dist/esm/index.js dist/index.esm.js && shx rm -rf dist/esm",
+    "build:cjs": "tsc --project tsconfig.build.json --module CommonJS --outDir dist",
+    "prepublishOnly": "npm run build && npm test",
+    "lint": "eslint \"src/**/*.{ts,js}\"",
+    "lint:fix": "eslint \"src/**/*.{ts,js}\" --fix",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
@@ -15,6 +31,38 @@
     "test:e2e:watch": "vitest --config vitest.e2e.config.ts",
     "test:playwright": "playwright test",
     "test:playwright:ui": "playwright test --ui"
+  },
+  "keywords": [
+    "bug-reporting",
+    "error-tracking",
+    "session-replay",
+    "screenshot",
+    "error-capture",
+    "debugging",
+    "monitoring",
+    "frontend",
+    "react",
+    "vue",
+    "angular",
+    "typescript"
+  ],
+  "author": "Apex Bridge Technology",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/apexbridge-tech/bugspotter.git",
+    "directory": "packages/sdk"
+  },
+  "bugs": {
+    "url": "https://github.com/apexbridge-tech/bugspotter/issues"
+  },
+  "homepage": "https://github.com/apexbridge-tech/bugspotter#readme",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
     "@bugspotter/types": "workspace:*",
@@ -32,6 +80,7 @@
     "@vitest/ui": "^3.2.4",
     "happy-dom": "^19.0.2",
     "jsdom": "^24.1.0",
+    "shx": "^0.4.0",
     "ts-loader": "^9.5.1",
     "typescript": "^5.3.3",
     "vitest": "^3.2.4",

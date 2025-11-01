@@ -1,0 +1,57 @@
+# Source files
+src/
+tests/
+*.test.ts
+*.spec.ts
+
+# Configuration files
+tsconfig.json
+tsconfig.build.json
+webpack.config.js
+vitest.config.ts
+vitest.e2e.config.ts
+playwright.config.ts
+
+# Development files
+.vscode/
+.idea/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Build artifacts (keep dist/)
+node_modules/
+*.tsbuildinfo
+
+# Git
+.git/
+.gitignore
+
+# CI/CD
+.github/
+
+# Documentation - exclude all except specific files
+docs/
+!docs/FRAMEWORK_INTEGRATION.md
+!docs/SESSION_REPLAY.md
+!docs/PUBLISHING.md
+
+# Examples
+examples/
+
+# Test results and reports
+test-results/
+playwright-report/
+html/
+
+# Misc
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~

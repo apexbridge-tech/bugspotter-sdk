@@ -1,6 +1,6 @@
 {
   "name": "@bugspotter/sdk",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "description": "Professional bug reporting SDK with screenshots, session replay, and automatic error capture for web applications",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
@@ -65,7 +65,6 @@
     "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
-    "@bugspotter/types": "workspace:*",
     "@rrweb/types": "2.0.0-alpha.18",
     "html-to-image": "^1.11.13",
     "pako": "^2.1.0",

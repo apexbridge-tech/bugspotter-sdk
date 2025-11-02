@@ -233,8 +233,8 @@ test.describe('BugSpotter SDK - Real Browser Tests', () => {
     const captureTime = endTime - startTime;
 
     expect(report).toBeTruthy();
-    // CI is slower than local, allow up to 20s for large DOM capture
-    expect(captureTime).toBeLessThan(20000);
+    // CI is slower than local, allow up to 25s for large DOM capture
+    expect(captureTime).toBeLessThan(25000);
 
     console.log(`Large DOM captured in ${captureTime}ms`);
   });

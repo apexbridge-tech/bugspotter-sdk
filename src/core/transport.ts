@@ -10,9 +10,7 @@ import { OfflineQueue, type OfflineConfig } from './offline-queue';
 // CONSTANTS
 // ============================================================================
 
-const TOKEN_REFRESH_STATUS = 401;
 const JITTER_PERCENTAGE = 0.1;
-const DEFAULT_ENABLE_RETRY = true;
 
 // ============================================================================
 // CUSTOM ERROR TYPES
@@ -29,23 +27,28 @@ export class TransportError extends Error {
   }
 }
 
-export class TokenRefreshError extends TransportError {
-  constructor(endpoint: string, cause?: Error) {
-    super('Failed to refresh authentication token', endpoint, cause);
-    this.name = 'TokenRefreshError';
+/**
+ * Authentication error - not retryable
+ */
+export class AuthenticationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'AuthenticationError';
   }
 }
 
 // ============================================================================
-// TYPE DEFINITIONS - Flexible auth config with runtime validation
+// TYPE DEFINITIONS
 // ============================================================================
 
-export type AuthConfig =
-  | { type: 'api-key'; apiKey?: string }
-  | { type: 'jwt'; token?: string; onTokenExpired?: () => Promise<string> }
-  | { type: 'bearer'; token?: string; onTokenExpired?: () => Promise<string> }
-  | { type: 'custom'; customHeader?: { name: string; value: string } }
-  | { type: 'none' };
+/**
+ * Authentication configuration - API key only
+ */
+export type AuthConfig = {
+  type: 'api-key';
+  apiKey: string;
+  projectId: string;
+};
 
 export interface RetryConfig {
   /** Maximum number of retry attempts (default: 3) */
@@ -59,12 +62,10 @@ export interface RetryConfig {
 }
 
 export interface TransportOptions {
-  /** Authentication configuration */
-  auth?: AuthConfig;
+  /** Authentication configuration (required) */
+  auth: AuthConfig;
   /** Optional logger for debugging */
   logger?: Logger;
-  /** Enable retry on token expiration (default: true) */
-  enableRetry?: boolean;
   /** Retry configuration */
   retry?: RetryConfig;
   /** Offline queue configuration */
@@ -85,40 +86,18 @@ const DEFAULT_OFFLINE_CONFIG: Required<OfflineConfig> = {
 };
 
 // ============================================================================
-// AUTHENTICATION STRATEGIES - Strategy Pattern
+// AUTHENTICATION
 // ============================================================================
 
-type AuthHeaderStrategy = (config: AuthConfig) => Record<string, string>;
-
-const authStrategies: Record<AuthConfig['type'], AuthHeaderStrategy> = {
-  'api-key': (config): Record<string, string> => {
-    const apiKey = (config as Extract<AuthConfig, { type: 'api-key' }>).apiKey;
-    return apiKey ? { 'X-API-Key': apiKey } : {};
-  },
-
-  jwt: (config): Record<string, string> => {
-    const token = (config as Extract<AuthConfig, { type: 'jwt' }>).token;
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  },
-
-  bearer: (config): Record<string, string> => {
-    const token = (config as Extract<AuthConfig, { type: 'bearer' }>).token;
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  },
-
-  custom: (config): Record<string, string> => {
-    const customHeader = (config as Extract<AuthConfig, { type: 'custom' }>).customHeader;
-    if (!customHeader) {
-      return {};
-    }
-    const { name, value } = customHeader;
-    return name && value ? { [name]: value } : {};
-  },
-
-  none: (): Record<string, string> => {
-    return {};
-  },
-};
+/**
+ * Generate authentication headers for API key
+ */
+function generateAuthHeaders(config: AuthConfig): Record<string, string> {
+  if (!config || !config.apiKey) {
+    throw new AuthenticationError('Authentication is required: API key must be provided');
+  }
+  return { 'X-API-Key': config.apiKey };
+}
 
 // ============================================================================
 // RETRY HANDLER - Exponential Backoff Logic
@@ -157,6 +136,11 @@ class RetryHandler {
         return response;
       } catch (error) {
         lastError = error as Error;
+
+        // Don't retry authentication errors - they won't succeed on retry
+        if (error instanceof AuthenticationError) {
+          throw error;
+        }
 
         // Retry on network errors
         if (attempt < this.config.maxRetries) {
@@ -202,78 +186,6 @@ class RetryHandler {
 }
 
 // ============================================================================
-// INTERNAL HELPERS - Parameter Parsing
-// ============================================================================
-
-interface ParsedTransportParams {
-  auth?: AuthConfig;
-  logger: Logger;
-  enableRetry: boolean;
-  retryConfig: Required<RetryConfig>;
-  offlineConfig: Required<OfflineConfig>;
-}
-
-/**
- * Type guard to check if parameter is TransportOptions
- *
- * Strategy: Check for properties that ONLY exist in TransportOptions, not in AuthConfig.
- * AuthConfig has: type, apiKey?, token?, onTokenExpired?, customHeader?
- * TransportOptions has: auth?, logger?, enableRetry?, retry?, offline?
- *
- * Key distinction: AuthConfig always has 'type' property, TransportOptions never does.
- */
-function isTransportOptions(obj: unknown): obj is TransportOptions {
-  if (typeof obj !== 'object' || obj === null) {
-    return false;
-  }
-
-  const record = obj as Record<string, unknown>;
-
-  // If it has 'type' property, it's an AuthConfig, not TransportOptions
-  if ('type' in record) {
-    return false;
-  }
-
-  // Key insight: If object has TransportOptions-specific keys (even if undefined),
-  // it's likely TransportOptions since AuthConfig never has these keys
-  const hasTransportOptionsKeys =
-    'auth' in record ||
-    'retry' in record ||
-    'offline' in record ||
-    'logger' in record ||
-    'enableRetry' in record;
-
-  // Return true if it has any TransportOptions-specific keys
-  return hasTransportOptionsKeys;
-}
-
-/**
- * Parse transport parameters, supporting both legacy and new API signatures
- */
-function parseTransportParams(
-  authOrOptions?: AuthConfig | TransportOptions
-): ParsedTransportParams {
-  if (isTransportOptions(authOrOptions)) {
-    // Type guard ensures authOrOptions is TransportOptions
-    return {
-      auth: authOrOptions.auth,
-      logger: authOrOptions.logger || getLogger(),
-      enableRetry: authOrOptions.enableRetry ?? DEFAULT_ENABLE_RETRY,
-      retryConfig: { ...DEFAULT_RETRY_CONFIG, ...authOrOptions.retry },
-      offlineConfig: { ...DEFAULT_OFFLINE_CONFIG, ...authOrOptions.offline },
-    };
-  }
-
-  return {
-    auth: authOrOptions as AuthConfig | undefined,
-    logger: getLogger(),
-    enableRetry: DEFAULT_ENABLE_RETRY,
-    retryConfig: DEFAULT_RETRY_CONFIG,
-    offlineConfig: DEFAULT_OFFLINE_CONFIG,
-  };
-}
-
-// ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
 
@@ -303,7 +215,7 @@ async function handleOfflineFailure(
   endpoint: string,
   body: BodyInit,
   contentHeaders: Record<string, string>,
-  auth: AuthConfig | undefined,
+  auth: AuthConfig,
   offlineConfig: Required<OfflineConfig>,
   logger: Logger
 ): Promise<void> {
@@ -313,7 +225,7 @@ async function handleOfflineFailure(
 
   logger.warn('Network error detected, queueing request for offline retry');
   const queue = new OfflineQueue(offlineConfig, logger);
-  const authHeaders = getAuthHeaders(auth);
+  const authHeaders = generateAuthHeaders(auth);
   await queue.enqueue(endpoint, body, { ...contentHeaders, ...authHeaders });
 }
 
@@ -326,15 +238,8 @@ async function handleOfflineFailure(
  * @param auth - Authentication configuration
  * @returns HTTP headers for authentication
  */
-export function getAuthHeaders(auth?: AuthConfig): Record<string, string> {
-  // No auth
-  if (!auth) {
-    return {};
-  }
-
-  // Apply strategy
-  const strategy = authStrategies[auth.type];
-  return strategy ? strategy(auth) : {};
+export function getAuthHeaders(auth: AuthConfig): Record<string, string> {
+  return generateAuthHeaders(auth);
 }
 
 /**
@@ -349,12 +254,12 @@ export function getAuthHeaders(auth?: AuthConfig): Record<string, string> {
 export async function submitWithAuth(
   endpoint: string,
   body: BodyInit,
-  contentHeaders: Record<string, string>,
-  authOrOptions?: AuthConfig | TransportOptions
+  contentHeaders: Record<string, string> = {},
+  options: TransportOptions
 ): Promise<Response> {
-  // Parse options (support both old signature and new options-based API)
-  const { auth, logger, enableRetry, retryConfig, offlineConfig } =
-    parseTransportParams(authOrOptions);
+  const logger = options.logger || getLogger();
+  const retryConfig = { ...DEFAULT_RETRY_CONFIG, ...options.retry };
+  const offlineConfig = { ...DEFAULT_OFFLINE_CONFIG, ...options.offline };
 
   // Process offline queue on each request (run in background without awaiting)
   processQueueInBackground(offlineConfig, retryConfig, logger);
@@ -365,16 +270,23 @@ export async function submitWithAuth(
       endpoint,
       body,
       contentHeaders,
-      auth,
+      options.auth,
       retryConfig,
-      logger,
-      enableRetry
+      logger
     );
 
     return response;
   } catch (error) {
     // Queue for offline retry if enabled
-    await handleOfflineFailure(error, endpoint, body, contentHeaders, auth, offlineConfig, logger);
+    await handleOfflineFailure(
+      error,
+      endpoint,
+      body,
+      contentHeaders,
+      options.auth,
+      offlineConfig,
+      logger
+    );
     throw error;
   }
 }
@@ -383,19 +295,6 @@ export async function submitWithAuth(
 // INTERNAL HELPERS
 // ============================================================================
 
-type TokenBasedAuth = Extract<AuthConfig, { type: 'jwt' | 'bearer' }>;
-
-/**
- * Check if auth config supports token refresh
- */
-function shouldRetryWithRefresh(auth?: AuthConfig): auth is TokenBasedAuth {
-  return (
-    typeof auth === 'object' &&
-    (auth.type === 'jwt' || auth.type === 'bearer') &&
-    typeof auth.onTokenExpired === 'function'
-  );
-}
-
 /**
  * Make HTTP request with auth headers
  */
@@ -403,9 +302,9 @@ async function makeRequest(
   endpoint: string,
   body: BodyInit,
   contentHeaders: Record<string, string>,
-  auth?: AuthConfig
+  auth: AuthConfig
 ): Promise<Response> {
-  const authHeaders = getAuthHeaders(auth);
+  const authHeaders = generateAuthHeaders(auth);
   const headers = { ...contentHeaders, ...authHeaders };
 
   return fetch(endpoint, {
@@ -422,42 +321,15 @@ async function sendWithRetry(
   endpoint: string,
   body: BodyInit,
   contentHeaders: Record<string, string>,
-  auth: AuthConfig | undefined,
+  auth: AuthConfig,
   retryConfig: Required<RetryConfig>,
-  logger: Logger,
-  enableTokenRetry: boolean
+  logger: Logger
 ): Promise<Response> {
   const retryHandler = new RetryHandler(retryConfig, logger);
-  let hasAttemptedRefresh = false;
 
-  // Use retry handler with token refresh support
   return retryHandler.executeWithRetry(
-    async () => {
-      const response = await makeRequest(endpoint, body, contentHeaders, auth);
-
-      // Check for 401 and retry with token refresh if applicable (only once)
-      if (
-        response.status === TOKEN_REFRESH_STATUS &&
-        enableTokenRetry &&
-        !hasAttemptedRefresh &&
-        shouldRetryWithRefresh(auth)
-      ) {
-        hasAttemptedRefresh = true;
-        const refreshedResponse = await retryWithTokenRefresh(
-          endpoint,
-          body,
-          contentHeaders,
-          auth as TokenBasedAuth,
-          logger
-        );
-        return refreshedResponse;
-      }
-
-      return response;
-    },
-    (status) => {
-      return retryConfig.retryOn.includes(status);
-    }
+    async () => makeRequest(endpoint, body, contentHeaders, auth),
+    (status) => retryConfig.retryOn.includes(status)
   );
 }
 
@@ -495,41 +367,6 @@ function isNetworkError(error: unknown): boolean {
     // TypeError only if it mentions fetch or network
     (error.name === 'TypeError' && (message.includes('fetch') || message.includes('network')))
   );
-}
-
-/**
- * Retry request with refreshed token
- */
-async function retryWithTokenRefresh(
-  endpoint: string,
-  body: BodyInit,
-  contentHeaders: Record<string, string>,
-  auth: TokenBasedAuth,
-  logger: Logger
-): Promise<Response> {
-  try {
-    logger.warn('Token expired, attempting refresh...');
-
-    // Get new token
-    const newToken = await auth.onTokenExpired!();
-
-    // Create updated auth config
-    const refreshedAuth: TokenBasedAuth = {
-      ...auth,
-      token: newToken,
-    };
-
-    // Retry request
-    const response = await makeRequest(endpoint, body, contentHeaders, refreshedAuth);
-
-    logger.log('Request retried with refreshed token');
-    return response;
-  } catch (error) {
-    logger.error('Token refresh failed:', error);
-
-    // Return original 401 - caller should handle
-    return new Response(null, { status: TOKEN_REFRESH_STATUS, statusText: 'Unauthorized' });
-  }
 }
 
 // Re-export offline queue utilities

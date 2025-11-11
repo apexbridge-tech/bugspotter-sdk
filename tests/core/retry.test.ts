@@ -2,9 +2,16 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   submitWithAuth,
   clearOfflineQueue,
+  type AuthConfig,
   type RetryConfig,
   type OfflineConfig,
 } from '../../src/core/transport';
+
+const TEST_AUTH: AuthConfig = {
+  type: 'api-key',
+  apiKey: 'test-api-key-12345',
+  projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+};
 
 describe('Retry and Offline Queue', () => {
   let fetchMock: ReturnType<typeof vi.fn>;
@@ -66,9 +73,7 @@ describe('Retry and Offline Queue', () => {
         'https://api.example.com/bugs',
         JSON.stringify({ test: 'data' }),
         { 'Content-Type': 'application/json' },
-        {
-          retry: retryConfig,
-        }
+        { auth: TEST_AUTH, retry: retryConfig }
       );
 
       expect(response.status).toBe(200);
@@ -101,7 +106,7 @@ describe('Retry and Offline Queue', () => {
         'https://api.example.com/bugs',
         JSON.stringify({ test: 'data' }),
         { 'Content-Type': 'application/json' },
-        { retry: retryConfig }
+        { auth: TEST_AUTH, retry: retryConfig }
       );
       const elapsed = Date.now() - start;
 
@@ -130,7 +135,7 @@ describe('Retry and Offline Queue', () => {
         'https://api.example.com/bugs',
         JSON.stringify({ test: 'data' }),
         { 'Content-Type': 'application/json' },
-        { retry: retryConfig }
+        { auth: TEST_AUTH, retry: retryConfig }
       );
 
       // Should return the last failed response
@@ -156,7 +161,7 @@ describe('Retry and Offline Queue', () => {
         'https://api.example.com/bugs',
         JSON.stringify({ test: 'data' }),
         { 'Content-Type': 'application/json' },
-        { retry: retryConfig }
+        { auth: TEST_AUTH, retry: retryConfig }
       );
 
       expect(response.status).toBe(400);
@@ -181,7 +186,7 @@ describe('Retry and Offline Queue', () => {
         'https://api.example.com/bugs',
         JSON.stringify({ test: 'data' }),
         { 'Content-Type': 'application/json' },
-        { retry: retryConfig }
+        { auth: TEST_AUTH, retry: retryConfig }
       );
 
       expect(response.status).toBe(200);
@@ -205,7 +210,7 @@ describe('Retry and Offline Queue', () => {
         'https://api.example.com/bugs',
         JSON.stringify({ test: 'data' }),
         { 'Content-Type': 'application/json' },
-        { retry: retryConfig }
+        { auth: TEST_AUTH, retry: retryConfig }
       );
       const elapsed = Date.now() - start;
 
@@ -238,7 +243,7 @@ describe('Retry and Offline Queue', () => {
             'https://api.example.com/bugs',
             JSON.stringify({ test: 'data' }),
             { 'Content-Type': 'application/json' },
-            { offline: offlineConfig, retry: retryConfig }
+            { auth: TEST_AUTH, offline: offlineConfig, retry: retryConfig }
           )
         ).rejects.toThrow('Failed to fetch');
 
@@ -257,10 +262,7 @@ describe('Retry and Offline Queue', () => {
           'https://api.example.com/bugs/1',
           JSON.stringify({ test: 'queued' }),
           { 'Content-Type': 'application/json' },
-          {
-            offline: { enabled: true },
-            retry: { maxRetries: 0 },
-          }
+          { auth: TEST_AUTH, offline: { enabled: true }, retry: { maxRetries: 0 } }
         )
       ).rejects.toThrow();
 
@@ -277,9 +279,7 @@ describe('Retry and Offline Queue', () => {
         'https://api.example.com/bugs/2',
         JSON.stringify({ test: 'new' }),
         { 'Content-Type': 'application/json' },
-        {
-          offline: { enabled: true },
-        }
+        { auth: TEST_AUTH, offline: { enabled: true } }
       );
 
       // Give processOfflineQueue time to run (it's async)
@@ -316,7 +316,7 @@ describe('Retry and Offline Queue', () => {
             'https://api.example.com/bugs',
             JSON.stringify({ test: `data-${i}` }),
             { 'Content-Type': 'application/json' },
-            { offline: offlineConfig, retry: retryConfig }
+            { auth: TEST_AUTH, offline: offlineConfig, retry: retryConfig }
           )
         ).rejects.toThrow('Failed to fetch');
       }
@@ -347,7 +347,7 @@ describe('Retry and Offline Queue', () => {
           'https://api.example.com/bugs',
           blob,
           { 'Content-Type': 'application/json' },
-          { offline: offlineConfig, retry: retryConfig }
+          { auth: TEST_AUTH, offline: offlineConfig, retry: retryConfig }
         )
       ).rejects.toThrow('Failed to fetch');
 
@@ -377,6 +377,7 @@ describe('Retry and Offline Queue', () => {
         JSON.stringify({ test: 'new' }),
         { 'Content-Type': 'application/json' },
         {
+          auth: TEST_AUTH,
           offline: { enabled: true },
           retry: {
             maxRetries: 1,

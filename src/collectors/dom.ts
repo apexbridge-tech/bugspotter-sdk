@@ -2,6 +2,7 @@ import { record } from 'rrweb';
 import type { eventWithTime } from '@rrweb/types';
 import { CircularBuffer } from '../core/buffer';
 import type { Sanitizer } from '../utils/sanitize';
+import { DEFAULT_REPLAY_DURATION_SECONDS } from '../constants';
 
 export interface DOMCollectorConfig {
   /** Duration in seconds to keep replay events (default: 15) */
@@ -44,7 +45,7 @@ export class DOMCollector {
   constructor(config: DOMCollectorConfig = {}) {
     this.sanitizer = config.sanitizer;
     this.config = {
-      duration: config.duration ?? 15,
+      duration: config.duration ?? DEFAULT_REPLAY_DURATION_SECONDS,
       sampling: {
         mousemove: config.sampling?.mousemove ?? 50,
         scroll: config.sampling?.scroll ?? 100,

@@ -85,21 +85,83 @@ console.log(report.replay); // Array of rrweb events
 
 ### 4. Event Transmission
 
-The replay events are included in the bug report payload:
+The replay events are compressed and uploaded via presigned URLs using an optimized 3-request flow:
+
+**Step 1: Create Bug Report with Presigned URLs**
 
 ```typescript
+// Initial bug report with flags indicating which files will be uploaded
+POST /api/v1/reports
 {
   title: "Bug title",
   description: "Bug description",
   report: {
-    screenshot: "...",
     console: [...],
     network: [...],
-    metadata: {...},
-    replay: [...] // rrweb events
+    metadata: {...}
+  },
+  hasScreenshot: true,  // SDK sets this if screenshot was captured
+  hasReplay: true       // SDK sets this if replay events were recorded
+}
+
+// Response includes bug report ID AND presigned URLs
+{
+  "success": true,
+  "data": {
+    "id": "bug-uuid-here",
+    "title": "Bug title",
+    "presignedUrls": {
+      "screenshot": {
+        "uploadUrl": "https://s3.amazonaws.com/...",
+        "storageKey": "screenshots/project/bug/screenshot.png"
+      },
+      "replay": {
+        "uploadUrl": "https://s3.amazonaws.com/...",
+        "storageKey": "replays/project/bug/replay.gz"
+      }
+    }
   }
 }
 ```
+
+**Step 2: Upload Files Directly to S3**
+
+```typescript
+// Upload screenshot to presigned URL (parallel with replay)
+PUT https://s3.amazonaws.com/presigned-screenshot-url
+Content-Type: image/png
+<binary screenshot data>
+
+// Upload compressed replay to presigned URL (parallel with screenshot)
+PUT https://s3.amazonaws.com/presigned-replay-url
+Content-Type: application/gzip
+<compressed replay events>
+```
+
+**Step 3: Confirm Uploads**
+
+```typescript
+// Confirm screenshot upload
+POST /api/v1/reports/{bugId}/confirm-upload
+{
+  "fileType": "screenshot"
+}
+
+// Confirm replay upload
+POST /api/v1/reports/{bugId}/confirm-upload
+{
+  "fileType": "replay"
+}
+```
+
+**Optimized Flow Benefits:**
+
+- **40% fewer HTTP requests** - 3 requests vs 5 in old flow
+- **Reduces server load** - Files go directly to storage (S3)
+- **Improves performance** - No API server bottleneck for large files
+- **Better scalability** - Storage handles the bandwidth
+- **Parallel uploads** - Screenshot and replay upload concurrently
+- **Automatic compression** - Replay events are gzipped before upload
 
 ## Event Types
 

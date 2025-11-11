@@ -19,7 +19,36 @@ describe('E2E Configuration Tests', () => {
 
     originalFetch = global.fetch;
     fetchMock = vi.fn();
-    global.fetch = fetchMock as any;
+
+    // Create a custom fetch that handles API calls, data URLs, and S3 uploads
+    global.fetch = (async (input: any, init?: any) => {
+      const url = typeof input === 'string' ? input : input.url;
+
+      // Handle data URLs (for screenshot blob conversion)
+      if (url.startsWith('data:')) {
+        const base64Data = url.split(',')[1];
+        const binaryString = atob(base64Data);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        const blob = new Blob([bytes], { type: 'image/png' });
+        return {
+          blob: async () => blob,
+        };
+      }
+
+      // Handle S3 presigned URL uploads (simulated success)
+      if (url.includes('s3.example.com') || url.includes('s3.amazonaws.com')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+        });
+      }
+
+      // Handle regular API calls
+      return fetchMock(input, init);
+    }) as any;
   });
 
   afterEach(() => {
@@ -42,11 +71,17 @@ describe('E2E Configuration Tests', () => {
       });
 
       const bugspotter = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         endpoint: 'https://api.bugspotter.io/bugs',
         showWidget: false,
       });
 
       const report = await bugspotter.capture();
+      report.replay = []; // Clear replay to avoid presigned URL upload
       const payload = { title: 'Test', description: 'Test', report };
 
       await (bugspotter as any).submitBugReport(payload);
@@ -68,6 +103,7 @@ describe('E2E Configuration Tests', () => {
       });
 
       const report = await bugspotter.capture();
+      report.replay = []; // Clear replay to avoid presigned URL upload
       const payload = { title: 'Test', description: 'Test', report };
 
       await (bugspotter as any).submitBugReport(payload);
@@ -85,11 +121,17 @@ describe('E2E Configuration Tests', () => {
       });
 
       const bugspotter = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         endpoint: 'https://custom-domain.com/api/v1/reports',
         showWidget: false,
       });
 
       const report = await bugspotter.capture();
+      report.replay = []; // Clear replay to avoid presigned URL upload
       const payload = { title: 'Test', description: 'Test', report };
 
       await (bugspotter as any).submitBugReport(payload);
@@ -112,12 +154,17 @@ describe('E2E Configuration Tests', () => {
       });
 
       const bugspotter = BugSpotter.init({
-        auth: { type: 'api-key', apiKey: 'test-api-key-12345' },
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
       });
 
       const report = await bugspotter.capture();
+      report.replay = []; // Clear replay to avoid presigned URL upload
       const payload = { title: 'Test', description: 'Test', report };
 
       await (bugspotter as any).submitBugReport(payload);
@@ -126,59 +173,9 @@ describe('E2E Configuration Tests', () => {
       expect(headers['X-API-Key']).toBe('test-api-key-12345');
     });
 
-    it('should work with JWT authentication', async () => {
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => {
-          return MOCK_BACKEND_RESPONSES.success.body;
-        },
-      });
+    // JWT, Bearer, and Custom auth removed - SDK now only supports API key authentication
 
-      const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.abc123';
-
-      const bugspotter = BugSpotter.init({
-        auth: { type: 'jwt', token },
-        endpoint: 'https://api.example.com/bugs',
-        showWidget: false,
-      });
-
-      const report = await bugspotter.capture();
-      const payload = { title: 'Test', description: 'Test', report };
-
-      await (bugspotter as any).submitBugReport(payload);
-
-      const headers = fetchMock.mock.calls[0][1].headers;
-      expect(headers['Authorization']).toBe(`Bearer ${token}`);
-    });
-
-    it('should work with Bearer token authentication', async () => {
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => {
-          return MOCK_BACKEND_RESPONSES.success.body;
-        },
-      });
-
-      const token = 'custom-bearer-token-xyz';
-
-      const bugspotter = BugSpotter.init({
-        auth: { type: 'bearer', token },
-        endpoint: 'https://api.example.com/bugs',
-        showWidget: false,
-      });
-
-      const report = await bugspotter.capture();
-      const payload = { title: 'Test', description: 'Test', report };
-
-      await (bugspotter as any).submitBugReport(payload);
-
-      const headers = fetchMock.mock.calls[0][1].headers;
-      expect(headers['Authorization']).toBe(`Bearer ${token}`);
-    });
-
-    it('should work with custom header authentication', async () => {
+    it('should work without custom domain (using default)', async () => {
       fetchMock.mockResolvedValueOnce({
         ok: true,
         status: 200,
@@ -189,103 +186,36 @@ describe('E2E Configuration Tests', () => {
 
       const bugspotter = BugSpotter.init({
         auth: {
-          type: 'custom',
-          customHeader: { name: 'X-Custom-Auth', value: 'secret-value-123' },
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
         },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
       });
 
       const report = await bugspotter.capture();
+      report.replay = []; // Clear replay to avoid presigned URL upload
       const payload = { title: 'Test', description: 'Test', report };
 
       await (bugspotter as any).submitBugReport(payload);
 
       const headers = fetchMock.mock.calls[0][1].headers;
-      expect(headers['X-Custom-Auth']).toBe('secret-value-123');
+      // Auth is now required - API key should be present
+      expect(headers['X-API-Key']).toBe('test-api-key-12345');
     });
 
-    it('should work without authentication', async () => {
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => {
-          return MOCK_BACKEND_RESPONSES.success.body;
-        },
-      });
-
-      const bugspotter = BugSpotter.init({
-        endpoint: 'https://api.example.com/bugs',
-        showWidget: false,
-      });
-
-      const report = await bugspotter.capture();
-      const payload = { title: 'Test', description: 'Test', report };
-
-      await (bugspotter as any).submitBugReport(payload);
-
-      const headers = fetchMock.mock.calls[0][1].headers;
-      expect(headers['Authorization']).toBeUndefined();
-      expect(headers['X-API-Key']).toBeUndefined();
-    });
-
-    it('should handle token refresh on 401 error', async () => {
-      let callCount = 0;
-      const refreshedToken = 'refreshed-token-xyz';
-
-      fetchMock.mockImplementation(async () => {
-        callCount++;
-        if (callCount === 1) {
-          // First call returns 401
-          return {
-            ok: false,
-            status: 401,
-            statusText: 'Unauthorized',
-            text: async () => {
-              return 'Token expired';
-            },
-          };
-        }
-        // Second call (after refresh) succeeds
-        return {
-          ok: true,
-          status: 200,
-          json: async () => {
-            return MOCK_BACKEND_RESPONSES.success.body;
-          },
-        };
-      });
-
-      const onTokenExpired = vi.fn().mockResolvedValue(refreshedToken);
-
-      const bugspotter = BugSpotter.init({
-        auth: {
-          type: 'jwt',
-          token: 'expired-token',
-          onTokenExpired,
-        },
-        endpoint: 'https://api.example.com/bugs',
-        showWidget: false,
-      });
-
-      const report = await bugspotter.capture();
-      const payload = { title: 'Test', description: 'Test', report };
-
-      await (bugspotter as any).submitBugReport(payload);
-
-      // Should have called token refresh
-      expect(onTokenExpired).toHaveBeenCalled();
-      expect(fetchMock).toHaveBeenCalledTimes(2);
-
-      // Second call should have new token
-      const secondCallHeaders = fetchMock.mock.calls[1][1].headers;
-      expect(secondCallHeaders['Authorization']).toBe(`Bearer ${refreshedToken}`);
-    });
+    // Token refresh test removed - API keys don't expire
   });
 
   describe('PII Sanitization Configuration', () => {
     it('should work with PII detection enabled', async () => {
       const bugspotter = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         showWidget: false,
         sanitize: { enabled: true, patterns: 'all' },
       });
@@ -311,6 +241,11 @@ describe('E2E Configuration Tests', () => {
 
     it('should work with PII detection disabled', async () => {
       const bugspotter = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         showWidget: false,
         sanitize: { enabled: false },
       });
@@ -335,6 +270,11 @@ describe('E2E Configuration Tests', () => {
 
     it('should work with selective PII patterns', async () => {
       const bugspotter = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         showWidget: false,
         sanitize: { enabled: true, patterns: ['email'] },
       });
@@ -362,6 +302,11 @@ describe('E2E Configuration Tests', () => {
 
     it('should work with minimal PII preset', async () => {
       const bugspotter = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         showWidget: false,
         sanitize: { enabled: true, patterns: 'minimal' },
       });
@@ -397,6 +342,11 @@ describe('E2E Configuration Tests', () => {
       });
 
       const bugspotter = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
       });
@@ -410,6 +360,7 @@ describe('E2E Configuration Tests', () => {
       });
 
       const report = await bugspotter.capture();
+      report.replay = []; // Clear replay to avoid presigned URL upload
       const payload = { title: 'Test', description: largeDescription, report };
 
       await (bugspotter as any).submitBugReport(payload);
@@ -428,6 +379,11 @@ describe('E2E Configuration Tests', () => {
   describe('Replay Configuration', () => {
     it('should capture replay when enabled', async () => {
       const bugspotter = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         showWidget: false,
         replay: { enabled: true, duration: 15 },
       });
@@ -448,6 +404,11 @@ describe('E2E Configuration Tests', () => {
 
     it('should not capture replay when disabled', async () => {
       const bugspotter = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         showWidget: false,
         replay: { enabled: false },
       });
@@ -467,6 +428,11 @@ describe('E2E Configuration Tests', () => {
 
     it('should respect custom replay duration', async () => {
       const bugspotter = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         showWidget: false,
         replay: { enabled: true, duration: 30 },
       });
@@ -477,6 +443,11 @@ describe('E2E Configuration Tests', () => {
 
     it('should respect replay sampling configuration', async () => {
       const bugspotter = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         showWidget: false,
         replay: {
           enabled: true,
@@ -494,6 +465,11 @@ describe('E2E Configuration Tests', () => {
   describe('Widget Configuration', () => {
     it('should create widget when showWidget is true', () => {
       const bugspotter = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         showWidget: true,
       });
 
@@ -505,6 +481,11 @@ describe('E2E Configuration Tests', () => {
 
     it('should not create widget when showWidget is false', () => {
       const bugspotter = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         showWidget: false,
       });
 
@@ -516,6 +497,11 @@ describe('E2E Configuration Tests', () => {
 
     it('should apply custom widget options', () => {
       const bugspotter = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         showWidget: true,
         widgetOptions: {
           position: 'top-left',
@@ -548,13 +534,29 @@ describe('E2E Configuration Tests', () => {
     });
 
     it('should work with full configuration', async () => {
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => {
-          return MOCK_BACKEND_RESPONSES.success.body;
-        },
-      });
+      // Optimized flow: Create (with presigned URL) + Confirm upload
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            success: true,
+            data: {
+              id: 'bug-123',
+              presignedUrls: {
+                replay: {
+                  uploadUrl: 'https://s3.example.com/replay.gz',
+                  storageKey: 'replays/bug-123/replay.gz',
+                },
+              },
+            },
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ success: true }), // Replay confirmation
+        });
 
       const bugspotter = BugSpotter.init(CONFIG_PRESETS.full);
 
@@ -580,7 +582,7 @@ describe('E2E Configuration Tests', () => {
       expect(messages).not.toContain('test@example.com');
     });
 
-    it('should work with no authentication configuration', async () => {
+    it('should work with API key authentication (auth is now required)', async () => {
       fetchMock.mockResolvedValueOnce({
         ok: true,
         status: 200,
@@ -592,13 +594,13 @@ describe('E2E Configuration Tests', () => {
       const bugspotter = BugSpotter.init(CONFIG_PRESETS.noAuth);
 
       const report = await bugspotter.capture();
+      report.replay = []; // Clear replay to avoid presigned URL upload
       const payload = { title: 'Test', description: 'Test', report };
 
       await (bugspotter as any).submitBugReport(payload);
 
       const headers = fetchMock.mock.calls[0][1].headers;
-      expect(headers['Authorization']).toBeUndefined();
-      expect(headers['X-API-Key']).toBeUndefined();
+      expect(headers['X-API-Key']).toBe('test-api-key-12345');
     });
   });
 });

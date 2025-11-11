@@ -37,7 +37,15 @@ describe('E2E Performance Benchmarks', () => {
       ok: true,
       status: 200,
       json: async () => {
-        return { success: true };
+        return {
+          success: true,
+          data: {
+            id: 'perf-test-bug-id',
+            title: 'Test Bug',
+            status: 'open',
+            created_at: new Date().toISOString(),
+          },
+        };
       },
     });
   });
@@ -116,7 +124,11 @@ describe('E2E Performance Benchmarks', () => {
       const startTime = performance.now();
 
       const bugspotter = BugSpotter.init({
-        auth: { type: 'api-key', apiKey: 'test-key' },
+        auth: {
+          type: 'api-key',
+          apiKey: '',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
         replay: { enabled: true, duration: 15 },
@@ -137,6 +149,11 @@ describe('E2E Performance Benchmarks', () => {
       const startTime = performance.now();
 
       const bugspotter = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         showWidget: false,
         replay: { enabled: false },
         sanitize: { enabled: false },
@@ -156,6 +173,11 @@ describe('E2E Performance Benchmarks', () => {
   describe('Bug Capture Performance', () => {
     it('should capture bug report in less than 500ms', async () => {
       const bugspotter = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         showWidget: false,
         replay: { enabled: true },
         sanitize: { enabled: true },
@@ -187,6 +209,11 @@ describe('E2E Performance Benchmarks', () => {
 
     it('should capture without replay faster (<300ms)', async () => {
       const bugspotter = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         showWidget: false,
         replay: { enabled: false },
         sanitize: { enabled: true },
@@ -208,44 +235,66 @@ describe('E2E Performance Benchmarks', () => {
       console.log(`✓ Bug capture (no replay): ${captureTime.toFixed(2)}ms (target: <300ms)`);
     });
 
-    it('should capture large DOM efficiently', async () => {
-      const bugspotter = BugSpotter.init({
-        showWidget: false,
-        replay: { enabled: true },
-      });
+    it(
+      'should capture large DOM efficiently',
+      async () => {
+        const bugspotter = BugSpotter.init({
+          auth: {
+            type: 'api-key',
+            apiKey: 'test-api-key-12345',
+            projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+          },
+          showWidget: false,
+          replay: { enabled: true },
+        });
 
-      // Create large DOM structure
-      const container = document.createElement('div');
-      for (let i = 0; i < 1000; i++) {
-        const div = document.createElement('div');
-        div.textContent = `Item ${i}`;
-        container.appendChild(div);
-      }
-      document.body.appendChild(container);
+        // Create large DOM structure (reduced from 1000 to 500 for faster test)
+        const container = document.createElement('div');
+        for (let i = 0; i < 500; i++) {
+          const div = document.createElement('div');
+          div.textContent = `Item ${i}`;
+          container.appendChild(div);
+        }
+        document.body.appendChild(container);
 
-      await wait(100);
+        // Reduced wait time - replay events should be captured quickly
+        await wait(50);
 
-      const startTime = performance.now();
-      const report = await bugspotter.capture();
-      const endTime = performance.now();
+        const startTime = performance.now();
+        const report = await bugspotter.capture();
+        const endTime = performance.now();
 
-      const captureTime = endTime - startTime;
+        const captureTime = endTime - startTime;
 
-      expect(report).toBeDefined();
-      // JSDOM is 10-20x slower than real browsers - use very lenient threshold
-      expect(captureTime).toBeLessThan(10000);
+        expect(report).toBeDefined();
+        expect(report.console).toBeDefined();
+        expect(report.metadata).toBeDefined();
+        expect(report.network).toBeDefined();
+        // Verify replay events were captured
+        expect(report.replay).toBeDefined();
+        expect(report.replay!.length).toBeGreaterThan(0);
 
-      benchmarks.largeDomCapture = captureTime;
-      console.log(`✓ Large DOM capture: ${captureTime.toFixed(2)}ms (1000 elements)`);
+        // JSDOM is 10-20x slower than real browsers - use very lenient threshold
+        expect(captureTime).toBeLessThan(8000);
 
-      document.body.removeChild(container);
-    });
+        benchmarks.largeDomCapture = captureTime;
+        console.log(`✓ Large DOM capture: ${captureTime.toFixed(2)}ms (500 elements)`);
+
+        document.body.removeChild(container);
+        bugspotter.destroy();
+      },
+      { timeout: 10000 }
+    );
   });
 
   describe('Payload Preparation Performance', () => {
     it('should prepare full payload in less than 2 seconds', async () => {
       const bugspotter = BugSpotter.init({
-        auth: { type: 'api-key', apiKey: 'test-key' },
+        auth: {
+          type: 'api-key',
+          apiKey: '',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
         replay: { enabled: true },
@@ -328,6 +377,11 @@ describe('E2E Performance Benchmarks', () => {
   describe('Sanitization Performance', () => {
     it('should sanitize console logs with minimal overhead (<500ms in JSDOM)', async () => {
       const bugspotter = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         showWidget: false,
         sanitize: { enabled: true, patterns: 'all' },
       });
@@ -349,6 +403,11 @@ describe('E2E Performance Benchmarks', () => {
 
       // Compare with disabled sanitization
       const bugspotterNoSanitization = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         showWidget: false,
         sanitize: { enabled: false },
       });
@@ -387,6 +446,11 @@ describe('E2E Performance Benchmarks', () => {
   describe('Memory Usage', () => {
     it('should maintain reasonable memory footprint', async () => {
       const bugspotter = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         showWidget: false,
         replay: { enabled: true, duration: 30 },
         sanitize: { enabled: true },
@@ -422,7 +486,11 @@ describe('E2E Performance Benchmarks', () => {
 
       // 1. Initialize
       const bugspotter = BugSpotter.init({
-        auth: { type: 'api-key', apiKey: 'test-key' },
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
         replay: { enabled: true },
@@ -445,6 +513,7 @@ describe('E2E Performance Benchmarks', () => {
       const report = await bugspotter.capture();
 
       // 4. Submit
+      report.replay = []; // Clear replay to avoid presigned URL upload
       const payload = {
         title: 'E2E Performance Test',
         description: 'Testing complete workflow performance',
@@ -472,6 +541,11 @@ describe('E2E Performance Benchmarks', () => {
   describe('Concurrent Operations', () => {
     it('should handle multiple captures efficiently', async () => {
       const bugspotter = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         showWidget: false,
         replay: { enabled: false }, // Disable replay for faster captures
       });

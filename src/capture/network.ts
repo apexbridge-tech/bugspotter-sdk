@@ -125,8 +125,11 @@ export class NetworkCapture extends BaseCapture<NetworkRequest[], NetworkCapture
 
       try {
         const response = await originalFetch(...args);
-        const request = this.createNetworkRequest(url, method, response.status, startTime);
-        this.addRequest(request);
+        // Only log if response is valid (handles mocked data URLs that return undefined)
+        if (response && typeof response.status === 'number') {
+          const request = this.createNetworkRequest(url, method, response.status, startTime);
+          this.addRequest(request);
+        }
         return response;
       } catch (error) {
         const request = this.createNetworkRequest(

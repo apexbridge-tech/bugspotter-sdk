@@ -2,20 +2,42 @@ type ButtonPosition = 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
 
 export interface FloatingButtonOptions {
   position?: ButtonPosition;
+  /** Icon to display - can be text/emoji or 'svg' for default bug icon */
   icon?: string;
+  /** Custom SVG icon (overrides icon if provided) */
+  customSvg?: string;
   backgroundColor?: string;
   size?: number;
   offset?: { x: number; y: number };
   zIndex?: number;
+  /** Custom tooltip text */
+  tooltip?: string;
 }
+
+// Professional bug report icon SVG
+const DEFAULT_SVG_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M8 2v4"/>
+<path d="M16 2v4"/>
+<path d="M12 12v5"/>
+<circle cx="12" cy="10" r="4"/>
+<path d="M9 16c-1.5 1-3 2-3 4h12c0-2-1.5-3-3-4"/>
+<path d="M3 8h4"/>
+<path d="M17 8h4"/>
+<path d="M5 12h2"/>
+<path d="M17 12h2"/>
+<path d="M6 16h2"/>
+<path d="M16 16h2"/>
+</svg>`;
 
 const DEFAULT_BUTTON_OPTIONS = {
   position: 'bottom-right' as const,
-  icon: '🐛',
-  backgroundColor: '#ef4444',
-  size: 60,
+  icon: 'svg', // Use SVG icon by default
+  customSvg: undefined,
+  backgroundColor: '#2563eb', // Professional blue color
+  size: 56,
   offset: { x: 20, y: 20 },
   zIndex: 999999,
+  tooltip: 'Report an Issue',
 } as const;
 
 const BUTTON_STYLES = {
@@ -33,17 +55,21 @@ const BUTTON_STYLES = {
 
 export class FloatingButton {
   private button: HTMLButtonElement;
-  private options: Required<FloatingButtonOptions>;
+  private options: Required<Omit<FloatingButtonOptions, 'customSvg'>> & {
+    customSvg?: string;
+  };
   private eventHandlers = new Map<string, EventListener>();
 
   constructor(options: FloatingButtonOptions = {}) {
     this.options = {
       position: options.position ?? DEFAULT_BUTTON_OPTIONS.position,
       icon: options.icon ?? DEFAULT_BUTTON_OPTIONS.icon,
+      customSvg: options.customSvg ?? DEFAULT_BUTTON_OPTIONS.customSvg,
       backgroundColor: options.backgroundColor ?? DEFAULT_BUTTON_OPTIONS.backgroundColor,
       size: options.size ?? DEFAULT_BUTTON_OPTIONS.size,
       offset: options.offset ?? DEFAULT_BUTTON_OPTIONS.offset,
       zIndex: options.zIndex ?? DEFAULT_BUTTON_OPTIONS.zIndex,
+      tooltip: options.tooltip ?? DEFAULT_BUTTON_OPTIONS.tooltip,
     };
 
     this.button = this.createButton();
@@ -60,8 +86,18 @@ export class FloatingButton {
 
   private createButton(): HTMLButtonElement {
     const btn = document.createElement('button');
-    btn.textContent = this.options.icon;
-    btn.setAttribute('aria-label', 'Report Bug');
+
+    // Set button content (SVG or text)
+    if (this.options.customSvg) {
+      btn.innerHTML = this.options.customSvg;
+    } else if (this.options.icon === 'svg') {
+      btn.innerHTML = DEFAULT_SVG_ICON;
+    } else {
+      btn.textContent = this.options.icon;
+    }
+
+    btn.setAttribute('aria-label', this.options.tooltip);
+    btn.setAttribute('title', this.options.tooltip);
     btn.setAttribute('data-bugspotter-exclude', 'true');
     btn.style.cssText = this.getButtonStyles();
 
@@ -74,6 +110,10 @@ export class FloatingButton {
     const { position, size, offset, backgroundColor, zIndex } = this.options;
     const positionStyles = this.getPositionStyles(position, offset);
 
+    // SVG icons need slightly different sizing
+    const isSvgIcon = this.options.customSvg || this.options.icon === 'svg';
+    const iconSize = size * 0.5;
+
     return `
       position: fixed;
       ${positionStyles}
@@ -84,10 +124,11 @@ export class FloatingButton {
       color: white;
       border: none;
       cursor: pointer;
-      font-size: ${size * 0.5}px;
+      font-size: ${iconSize}px;
       display: flex;
       align-items: center;
       justify-content: center;
+      padding: ${isSvgIcon ? size * 0.25 : 0}px;
       box-shadow: ${BUTTON_STYLES.boxShadow.default};
       transition: ${BUTTON_STYLES.transition};
       z-index: ${zIndex};
@@ -154,7 +195,12 @@ export class FloatingButton {
   }
 
   setIcon(icon: string): void {
-    this.button.textContent = icon;
+    this.options.icon = icon;
+    if (icon === 'svg') {
+      this.button.innerHTML = DEFAULT_SVG_ICON;
+    } else {
+      this.button.textContent = icon;
+    }
   }
 
   setBackgroundColor(color: string): void {

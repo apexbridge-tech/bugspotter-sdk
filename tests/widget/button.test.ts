@@ -16,10 +16,10 @@ describe('FloatingButton', () => {
       expect(buttons.length).toBeGreaterThan(0);
 
       const button = Array.from(buttons).find((btn) => {
-        return btn.textContent === '🐛';
+        return btn.innerHTML.includes('<svg') || btn.textContent === '🐛';
       });
       expect(button).toBeDefined();
-      expect(button?.getAttribute('aria-label')).toBe('Report Bug');
+      expect(button?.getAttribute('aria-label')).toBe('Report an Issue');
       expect(button?.getAttribute('data-bugspotter-exclude')).toBe('true');
     });
 

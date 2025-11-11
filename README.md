@@ -57,8 +57,12 @@ import BugSpotter from '@bugspotter/sdk';
 
 // Initialize with auto-widget
 const bugSpotter = BugSpotter.init({
-  apiKey: 'bgs_your_api_key',
-  endpoint: 'https://api.bugspotter.com',
+  endpoint: 'https://api.bugspotter.com/api/v1/reports',
+  auth: {
+    type: 'api-key',
+    apiKey: 'bgs_your_api_key',
+    projectId: 'your-project-uuid',
+  },
   showWidget: true,
 });
 ```
@@ -69,8 +73,12 @@ const bugSpotter = BugSpotter.init({
 const BugSpotter = require('@bugspotter/sdk');
 
 const bugSpotter = BugSpotter.init({
-  apiKey: 'bgs_your_api_key',
-  endpoint: 'https://api.bugspotter.com',
+  endpoint: 'https://api.bugspotter.com/api/v1/reports',
+  auth: {
+    type: 'api-key',
+    apiKey: 'bgs_your_api_key',
+    projectId: 'your-project-uuid',
+  },
   showWidget: true,
 });
 ```
@@ -82,70 +90,62 @@ const bugSpotter = BugSpotter.init({
 <script>
   // Initialize with auto-widget
   const bugSpotter = BugSpotter.init({
-    apiKey: 'bgs_your_api_key',
-    endpoint: 'https://api.bugspotter.com',
+    endpoint: 'https://api.bugspotter.com/api/v1/reports',
+    auth: {
+      type: 'api-key',
+      apiKey: 'bgs_your_api_key',
+      projectId: 'your-project-uuid',
+    },
     showWidget: true,
   });
 </script>
 ```
 
-### Direct File Uploads (Presigned URLs)
+### How It Works
 
-For better performance with large files, use `DirectUploader` to upload files directly to storage:
+The SDK automatically uses an **optimized presigned URL upload flow** (40% fewer HTTP requests):
 
 ```javascript
-import { DirectUploader, compressReplayEvents } from '@bugspotter/sdk';
+import BugSpotter from '@bugspotter/sdk';
 
-// 1. Create bug report (metadata only)
-const response = await fetch('https://api.example.com/api/v1/reports', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'x-api-key': 'bgs_your_api_key',
+// 1. Initialize SDK with required auth
+const bugSpotter = BugSpotter.init({
+  endpoint: 'https://api.bugspotter.com/api/v1/reports',
+  auth: {
+    type: 'api-key',
+    apiKey: 'bgs_your_api_key',
+    projectId: 'your-project-uuid', // Required for file uploads
   },
-  body: JSON.stringify({
-    project_id: 'project-uuid',
-    title: 'Bug title',
-    description: 'Bug description',
-  }),
-});
-const { id: bugId } = await response.json();
-
-// 2. Initialize DirectUploader
-const uploader = new DirectUploader({
-  apiEndpoint: 'https://api.example.com',
-  apiKey: 'bgs_your_api_key',
-  projectId: 'project-uuid',
-  bugId,
+  showWidget: true,
 });
 
-// 3. Upload screenshot with progress tracking
-const screenshotBlob = await fetch(screenshotDataUrl).then((r) => r.blob());
-await uploader.uploadScreenshot(screenshotBlob, (progress) => {
-  console.log(`Upload: ${progress.percentage}%`);
-});
-
-// 4. Compress and upload replay
-const compressedReplay = await compressReplayEvents(replayEvents);
-await uploader.uploadReplay(compressedReplay);
-
-console.log('All uploads complete!');
+// 2. Submit a bug report (SDK handles everything automatically)
+// Optimized flow (3 HTTP requests instead of 5):
+// - Step 1: POST /api/v1/reports with hasScreenshot/hasReplay flags
+//           → Returns bug ID + presigned URLs for screenshot & replay
+// - Step 2: PUT to S3 presigned URLs (parallel uploads)
+// - Step 3: POST /api/v1/reports/{id}/confirm-upload (confirm each file)
 ```
 
 **Benefits:**
 
-- 97% memory reduction (3.33MB → 100KB API payload)
-- 3x faster uploads (direct to storage)
-- Progress tracking for large files
-- Automatic compression for replays
+- **40% fewer HTTP requests** - 3 requests vs 5 in legacy flow
+- Files upload directly to S3 (faster, no API bottleneck)
+- Automatic compression for replay events
+- Concurrent uploads (screenshot + replay in parallel)
+- Reduced server load
 
 ### Manual Capture
 
 ```javascript
 // Initialize without widget
 const bugSpotter = BugSpotter.init({
-  apiKey: 'your-api-key',
-  endpoint: 'https://api.example.com/bugs',
+  endpoint: 'https://api.bugspotter.com/api/v1/reports',
+  auth: {
+    type: 'api-key',
+    apiKey: 'bgs_your_api_key',
+    projectId: 'your-project-uuid',
+  },
   showWidget: false,
 });
 
@@ -164,8 +164,12 @@ async function reportBug() {
 ```javascript
 // Widget appears automatically with showWidget: true
 const bugSpotter = BugSpotter.init({
-  apiKey: 'demo-key',
-  endpoint: 'http://localhost:4000/api/bugs',
+  endpoint: 'https://api.bugspotter.com/api/v1/reports',
+  auth: {
+    type: 'api-key',
+    apiKey: 'bgs_your_api_key',
+    projectId: 'your-project-uuid',
+  },
   showWidget: true,
   widgetOptions: {
     position: 'bottom-right',
@@ -179,17 +183,35 @@ const bugSpotter = BugSpotter.init({
 ### Custom Widget
 
 ```javascript
-// Create custom floating button
+// Default professional SVG icon (recommended)
 const button = new BugSpotter.FloatingButton({
+  position: 'bottom-right',
+  // icon: 'svg' is default - professional bug icon
+  backgroundColor: '#2563eb', // Professional blue (default)
+  tooltip: 'Report an Issue',
+});
+
+// Custom emoji/text icon
+const button2 = new BugSpotter.FloatingButton({
   position: 'bottom-right',
   icon: '🐛',
   backgroundColor: '#ff4444',
   size: 56,
   offset: { x: 24, y: 24 },
-  style: {
-    boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-    border: '2px solid white',
-  },
+});
+
+// Custom SVG icon
+const button3 = new BugSpotter.FloatingButton({
+  position: 'bottom-left',
+  customSvg: `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+      <path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>
+    </svg>
+  `,
+  tooltip: 'Custom Report Button',
+  backgroundColor: '#1a365d',
+  size: 48,
 });
 
 // Handle click
@@ -217,7 +239,7 @@ button.onClick(async () => {
     },
   });
 
-  modal.show(report.screenshot);
+  modal.show(report._screenshotPreview || '');
 });
 
 // Control button
@@ -258,8 +280,13 @@ Initialize the SDK.
 
 ```typescript
 interface BugSpotterConfig {
-  apiKey?: string; // API key for authentication
-  endpoint?: string; // Backend API URL
+  endpoint: string; // Required: Backend API URL
+  auth: {
+    // Required: Authentication configuration
+    type: 'api-key';
+    apiKey: string; // API key (bgs_...)
+    projectId: string; // Project UUID (required for file uploads)
+  };
   showWidget?: boolean; // Auto-show widget (default: true)
   widgetOptions?: FloatingButtonOptions;
   replay?: {
@@ -298,11 +325,13 @@ Capture current bug report data.
 
 ```typescript
 interface BugReport {
-  screenshot: string; // Base64 PNG data URL
+  screenshotKey?: string; // Storage key after presigned URL upload
   console: ConsoleLog[]; // Array of console entries
   network: NetworkRequest[]; // Array of network requests
   metadata: BrowserMetadata; // Browser/system info
-  replay: eventWithTime[]; // Session replay events (rrweb format)
+  replay?: eventWithTime[]; // Session replay events (rrweb format)
+  replayKey?: string; // Storage key after presigned URL upload
+  _screenshotPreview?: string; // Internal: screenshot preview for modal (not sent to API)
 }
 
 interface ConsoleLog {
@@ -350,10 +379,12 @@ new FloatingButton(options?: FloatingButtonOptions)
 
 interface FloatingButtonOptions {
   position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
-  icon?: string;            // Emoji or text
-  backgroundColor?: string; // CSS color
-  size?: number;           // Size in pixels
+  icon?: string;            // 'svg' for default bug icon, or custom emoji/text
+  customSvg?: string;       // Custom SVG icon (overrides icon if provided)
+  backgroundColor?: string; // CSS color (default: '#2563eb' professional blue)
+  size?: number;            // Size in pixels (default: 56)
   offset?: { x: number; y: number };
+  tooltip?: string;         // Custom tooltip text (default: 'Report an Issue')
   style?: Record<string, string>; // Additional CSS
 }
 ```

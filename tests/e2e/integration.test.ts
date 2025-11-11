@@ -59,7 +59,11 @@ describe('E2E Integration Tests', () => {
 
       // 1. INIT - Initialize SDK with full configuration
       const config: BugSpotterConfig = {
-        auth: { type: 'api-key', apiKey: 'test-api-key' },
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
         replay: { enabled: true, duration: 15 },
@@ -120,6 +124,7 @@ describe('E2E Integration Tests', () => {
       expect(ratio).toBeGreaterThan(0);
 
       // 5. SEND - Submit to backend
+      report.replay = []; // Clear replay to avoid presigned URL upload
       await (bugspotter as any).submitBugReport(payload);
 
       // Verify fetch was called
@@ -142,6 +147,11 @@ describe('E2E Integration Tests', () => {
       });
 
       const bugspotter = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
       });
@@ -171,6 +181,7 @@ describe('E2E Integration Tests', () => {
       expect(originalSize).toBeGreaterThan(500 * 1024); // >500KB
       expect(compressedSize).toBeLessThan(originalSize * 0.3); // <30% of original
 
+      report.replay = []; // Clear replay to avoid presigned URL upload
       await (bugspotter as any).submitBugReport(payload);
       expect(fetchMock).toHaveBeenCalledTimes(1);
     });
@@ -187,15 +198,22 @@ describe('E2E Integration Tests', () => {
       });
 
       const bugspotter = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
       });
 
       const report = await bugspotter.capture();
+      report.replay = []; // Clear replay to avoid presigned URL upload
+      report._screenshotPreview = undefined; // Clear screenshot too
       const payload = { title: 'Test', description: 'Test', report };
 
-      const result = await (bugspotter as any).submitBugReport(payload);
-      expect(result).toEqual(MOCK_BACKEND_RESPONSES.success.body);
+      await expect((bugspotter as any).submitBugReport(payload)).resolves.not.toThrow();
+      expect(fetchMock).toHaveBeenCalledTimes(1); // Only the creation call
     });
 
     it('should handle 201 Created response', async () => {
@@ -208,16 +226,22 @@ describe('E2E Integration Tests', () => {
       });
 
       const bugspotter = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
       });
 
       const report = await bugspotter.capture();
+      report.replay = []; // Clear replay to avoid presigned URL upload
+      report._screenshotPreview = undefined; // Clear screenshot too
       const payload = { title: 'Test', description: 'Test', report };
 
-      const result = await (bugspotter as any).submitBugReport(payload);
-      expect(result.success).toBe(true);
-      expect(result.data.id).toBeDefined();
+      await expect((bugspotter as any).submitBugReport(payload)).resolves.not.toThrow();
+      expect(fetchMock).toHaveBeenCalledTimes(1); // Only the creation call
     });
 
     it('should handle 401 Unauthorized response', async () => {
@@ -231,13 +255,18 @@ describe('E2E Integration Tests', () => {
       });
 
       const bugspotter = BugSpotter.init({
-        auth: { type: 'api-key', apiKey: 'invalid-key' },
+        auth: {
+          type: 'api-key',
+          apiKey: 'invalid-key',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
         retry: { maxRetries: 0 }, // Disable retries
       });
 
       const report = await bugspotter.capture();
+      report.replay = []; // Clear replay to avoid presigned URL upload
       const payload = { title: 'Test', description: 'Test', report };
 
       await expect((bugspotter as any).submitBugReport(payload)).rejects.toThrow(/401/);
@@ -254,6 +283,11 @@ describe('E2E Integration Tests', () => {
       });
 
       const bugspotter = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
       });
@@ -275,6 +309,11 @@ describe('E2E Integration Tests', () => {
       });
 
       const bugspotter = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
         retry: { maxRetries: 0 }, // Disable retries
@@ -307,6 +346,11 @@ describe('E2E Integration Tests', () => {
       });
 
       const bugspotter = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
         retry: {
@@ -317,13 +361,14 @@ describe('E2E Integration Tests', () => {
       });
 
       const report = await bugspotter.capture();
+      report.replay = []; // Clear replay to avoid presigned URL upload
+      report._screenshotPreview = undefined; // Clear screenshot too
       const payload = { title: 'Test', description: 'Test', report };
 
-      const result = await (bugspotter as any).submitBugReport(payload);
+      await expect((bugspotter as any).submitBugReport(payload)).resolves.not.toThrow();
 
       // Should have retried and succeeded
       expect(fetchMock).toHaveBeenCalledTimes(2);
-      expect(result).toEqual(MOCK_BACKEND_RESPONSES.success.body);
     });
 
     it('should handle network errors with retry', async () => {
@@ -340,6 +385,11 @@ describe('E2E Integration Tests', () => {
         });
 
       const bugspotter = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
         retry: {
@@ -349,18 +399,24 @@ describe('E2E Integration Tests', () => {
       });
 
       const report = await bugspotter.capture();
+      report.replay = []; // Clear replay to avoid presigned URL upload
+      report._screenshotPreview = undefined; // Clear screenshot too
       const payload = { title: 'Test', description: 'Test', report };
 
-      const result = await (bugspotter as any).submitBugReport(payload);
+      await expect((bugspotter as any).submitBugReport(payload)).resolves.not.toThrow();
 
       expect(fetchMock).toHaveBeenCalledTimes(3);
-      expect(result).toEqual(MOCK_BACKEND_RESPONSES.success.body);
     });
   });
 
   describe('PII Sanitization Verification', () => {
     it('should properly redact emails in console logs', async () => {
       const bugspotter = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         showWidget: false,
         sanitize: { enabled: true, patterns: ['email'] },
       });
@@ -391,6 +447,11 @@ describe('E2E Integration Tests', () => {
 
     it('should properly redact credit cards', async () => {
       const bugspotter = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         showWidget: false,
         sanitize: { enabled: true, patterns: ['creditcard'] },
       });
@@ -417,6 +478,11 @@ describe('E2E Integration Tests', () => {
 
     it('should properly redact SSNs and IINs', async () => {
       const bugspotter = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         showWidget: false,
         sanitize: { enabled: true, patterns: ['ssn', 'iin'] },
       });
@@ -443,6 +509,11 @@ describe('E2E Integration Tests', () => {
 
     it('should properly redact IP addresses', async () => {
       const bugspotter = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         showWidget: false,
         sanitize: { enabled: true, patterns: ['ip'] },
       });
@@ -469,6 +540,11 @@ describe('E2E Integration Tests', () => {
 
     it('should handle multiple PII types simultaneously', async () => {
       const bugspotter = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         showWidget: false,
         sanitize: { enabled: true, patterns: 'all' },
       });
@@ -500,6 +576,11 @@ describe('E2E Integration Tests', () => {
 
     it('should allow disabling sanitization', async () => {
       const bugspotter = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         showWidget: false,
         sanitize: { enabled: false },
       });
@@ -598,6 +679,11 @@ describe('E2E Integration Tests', () => {
         });
 
       const bugspotter = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
         retry: {
@@ -609,6 +695,7 @@ describe('E2E Integration Tests', () => {
       });
 
       const report = await bugspotter.capture();
+      report.replay = []; // Clear replay to avoid presigned URL upload
       const payload = { title: 'Test', description: 'Test', report };
 
       // Capture time just before the request
@@ -636,6 +723,11 @@ describe('E2E Integration Tests', () => {
       });
 
       const bugspotter = BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'test-api-key-12345',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+        },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
         retry: {

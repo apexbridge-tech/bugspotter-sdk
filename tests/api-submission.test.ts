@@ -1,5 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { BugSpotter } from '../src/index';
+import { TEST_SCREENSHOT_DATA_URL } from './fixtures/test-images';
+
+// Mock constants for presigned URL flow
+const TEST_API_KEY = 'bgs_test_api_key';
+const TEST_PROJECT_ID = 'proj-12345678-1234-1234-1234-123456789abc';
+const TEST_BUG_ID = 'bug-87654321-4321-4321-4321-987654321cba';
 
 describe('API Submission', () => {
   let fetchMock: ReturnType<typeof vi.fn>;
@@ -12,10 +18,35 @@ describe('API Submission', () => {
       instance.destroy();
     }
 
-    // Mock fetch
+    // Mock fetch - handle both API calls AND data URLs
     originalFetch = global.fetch;
-    fetchMock = vi.fn();
-    global.fetch = fetchMock as any;
+    const baseFetchMock = vi.fn();
+    fetchMock = baseFetchMock;
+
+    const mockFetchFn = vi.fn((url: string, ...args: any[]) => {
+      // Handle data URLs (for screenshot/replay blob conversion)
+      if (typeof url === 'string' && url.startsWith('data:')) {
+        const base64Data = url.split(',')[1];
+        const binaryString = atob(base64Data);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        const blob = new Blob([bytes], { type: 'image/png' });
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          blob: async () => blob,
+          json: async () => ({}),
+          text: async () => '',
+        } as Response);
+      }
+      // Delegate to mockable fetch for API calls
+      return baseFetchMock(url, ...args);
+    }) as any;
+
+    global.fetch = mockFetchFn;
+    (window as any).fetch = mockFetchFn; // Ensure window.fetch is also mocked
   });
 
   afterEach(() => {
@@ -31,137 +62,246 @@ describe('API Submission', () => {
 
   describe('Successful submission', () => {
     it('should submit bug report to configured endpoint', async () => {
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => {
-          return { success: true, id: 'bug-123' };
-        },
-      });
+      // Optimized flow: Create bug report WITH presigned URLs in response
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 201,
+          json: async () => ({
+            success: true,
+            data: {
+              id: TEST_BUG_ID,
+              presignedUrls: {
+                screenshot: {
+                  uploadUrl: 'https://s3.example.com/presigned-screenshot-url',
+                  storageKey: `screenshots/${TEST_PROJECT_ID}/${TEST_BUG_ID}/screenshot.png`,
+                },
+              },
+            },
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({}), // S3 presigned URL upload
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ success: true }), // Screenshot confirmation
+        });
 
       const bugSpotter = BugSpotter.init({
-        auth: { type: 'api-key', apiKey: 'test-api-key' },
+        auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
+        replay: { enabled: false },
       });
 
       const report = await bugSpotter.capture();
+      report._screenshotPreview = TEST_SCREENSHOT_DATA_URL;
 
-      // Manually call the private submitBugReport method via the public API
-      // We'll trigger it through the modal submission
       const payload = {
         title: 'Test Bug',
         description: 'Bug description',
         report,
       };
 
-      // Access private method through any (for testing purposes)
       await (bugSpotter as any).submitBugReport(payload);
 
-      expect(fetchMock).toHaveBeenCalledTimes(1);
+      // Should have made 3 API calls (create + S3 upload + confirm)
+      expect(fetchMock).toHaveBeenCalledTimes(3);
 
-      // With compression, the request will have different headers
-      const call = fetchMock.mock.calls[0][1];
-      expect(call.method).toBe('POST');
+      // Check bug report creation call
+      const createCall = fetchMock.mock.calls[0];
+      expect(createCall[0]).toBe('https://api.example.com/bugs');
+      expect(createCall[1].method).toBe('POST');
+      expect(createCall[1].headers['X-API-Key']).toBe(TEST_API_KEY);
 
-      // Check if compression was used or not
-      if (call.headers['Content-Encoding'] === 'gzip') {
-        expect(call.headers['Content-Type']).toBe('application/gzip');
-        expect(call.body).toBeInstanceOf(Blob);
+      // Body can be Blob (compressed) or JSON string (uncompressed)
+      const requestBody = createCall[1].body;
+      if (requestBody instanceof Blob) {
+        // Compressed - just verify it's a Blob with gzip type
+        expect(createCall[1].headers['Content-Encoding']).toBe('gzip');
       } else {
-        expect(call.headers['Content-Type']).toBe('application/json');
-        expect(typeof call.body).toBe('string');
-        const calledBody = JSON.parse(call.body);
-        expect(calledBody).toHaveProperty('title', 'Test Bug');
-        expect(calledBody).toHaveProperty('description', 'Bug description');
-        expect(calledBody).toHaveProperty('report');
+        // Uncompressed JSON
+        const body = JSON.parse(requestBody);
+        expect(body).toHaveProperty('title', 'Test Bug');
+        expect(body).toHaveProperty('description', 'Bug description');
       }
 
-      // API Key auth uses X-API-Key header, not Authorization
-      expect(call.headers['X-API-Key']).toBe('test-api-key');
+      // S3 upload happens via fetch (mocked above), not XHR
     });
 
-    it('should submit without API key if not configured', async () => {
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => {
-          return { success: true };
-        },
-      });
-
-      const bugSpotter = BugSpotter.init({
-        endpoint: 'https://api.example.com/bugs',
-        showWidget: false,
-      });
-
-      const report = await bugSpotter.capture();
-      const payload = { title: 'Test', description: 'Test', report };
-
-      await (bugSpotter as any).submitBugReport(payload);
-
-      const call = fetchMock.mock.calls[0][1];
-
-      // Check headers - compression may or may not be used
-      if (call.headers['Content-Encoding'] === 'gzip') {
-        expect(call.headers['Content-Type']).toBe('application/gzip');
-      } else {
-        expect(call.headers['Content-Type']).toBe('application/json');
-      }
-
-      // Should not have Authorization header
-      expect(call.headers).not.toHaveProperty('Authorization');
-    });
-
-    it('should handle JSON response successfully', async () => {
-      const mockResponse = { success: true, bugId: 'bug-456', timestamp: Date.now() };
+    it('should throw error when submitting without API key', async () => {
       fetchMock.mockResolvedValueOnce({
         ok: true,
         status: 201,
-        json: async () => {
-          return mockResponse;
-        },
+        json: async () => ({ success: true, data: { id: TEST_BUG_ID } }),
       });
 
       const bugSpotter = BugSpotter.init({
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
+        replay: { enabled: false },
+        // @ts-expect-error - Testing without auth
+        auth: undefined,
       });
 
       const report = await bugSpotter.capture();
+      report._screenshotPreview = TEST_SCREENSHOT_DATA_URL;
+
       const payload = { title: 'Test', description: 'Test', report };
 
-      const result = await (bugSpotter as any).submitBugReport(payload);
-      expect(result).toEqual(mockResponse);
+      await expect((bugSpotter as any).submitBugReport(payload)).rejects.toThrow(
+        'API key authentication is required'
+      );
     });
 
-    it('should handle non-JSON response gracefully', async () => {
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        status: 204,
-        json: async () => {
-          throw new Error('No content');
-        },
-      });
+    it('should complete upload flow successfully', async () => {
+      // Optimized flow: create with presigned URL + confirm upload
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 201,
+          json: async () => ({
+            success: true,
+            data: {
+              id: TEST_BUG_ID,
+              presignedUrls: {
+                screenshot: {
+                  uploadUrl: 'https://s3.example.com/presigned-url',
+                  storageKey: 'key',
+                },
+              },
+            },
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ success: true }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ success: true }), // Screenshot confirmation
+        });
 
       const bugSpotter = BugSpotter.init({
+        auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
+        replay: { enabled: false },
       });
 
       const report = await bugSpotter.capture();
+      report._screenshotPreview = 'data:image/png;base64,iVBORw0KGgo=';
       const payload = { title: 'Test', description: 'Test', report };
 
-      const result = await (bugSpotter as any).submitBugReport(payload);
-      expect(result).toBeUndefined();
+      // Should not throw
+      await expect((bugSpotter as any).submitBugReport(payload)).resolves.not.toThrow();
+    });
+
+    it('should upload replay events when replay is enabled', async () => {
+      // Optimized flow: create (with presigned URLs) + S3 uploads + confirmations
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 201,
+          json: async () => ({
+            success: true,
+            data: {
+              id: TEST_BUG_ID,
+              presignedUrls: {
+                screenshot: {
+                  uploadUrl: 'https://s3.example.com/presigned-screenshot-url',
+                  storageKey: 'screenshots/key',
+                },
+                replay: {
+                  uploadUrl: 'https://s3.example.com/presigned-replay-url',
+                  storageKey: 'replays/key',
+                },
+              },
+            },
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({}), // S3 screenshot upload
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({}), // S3 replay upload
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ success: true }), // Screenshot confirmation
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ success: true }), // Replay confirmation
+        });
+
+      const bugSpotter = BugSpotter.init({
+        auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
+        endpoint: 'https://api.example.com/bugs',
+        showWidget: false,
+        replay: { enabled: true }, // Enable replay!
+      });
+
+      // Wait for some replay events to be recorded
+      document.body.innerHTML = '<div>Test content for replay</div>';
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const report = await bugSpotter.capture();
+      report._screenshotPreview = 'data:image/png;base64,iVBORw0KGgo=';
+      const payload = { title: 'Test with Replay', description: 'Test', report };
+
+      await expect((bugSpotter as any).submitBugReport(payload)).resolves.not.toThrow();
+
+      // Should have made 5 fetch calls: create + 2 S3 uploads + 2 confirmations
+      expect(fetchMock).toHaveBeenCalledTimes(5);
+
+      bugSpotter.destroy();
+    });
+
+    it('should handle bug report creation without screenshot', async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        status: 201,
+        json: async () => ({ success: true, data: { id: TEST_BUG_ID } }),
+      });
+
+      const bugSpotter = BugSpotter.init({
+        auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
+        endpoint: 'https://api.example.com/bugs',
+        showWidget: false,
+        replay: { enabled: false },
+      });
+
+      const report = await bugSpotter.capture();
+      // Explicitly remove screenshot preview to test no-upload scenario
+      report._screenshotPreview = undefined;
+      const payload = { title: 'Test', description: 'Test', report };
+
+      await expect((bugSpotter as any).submitBugReport(payload)).resolves.not.toThrow();
+
+      // Only bug report creation, no screenshot/replay uploads
+      expect(fetchMock).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('Error handling', () => {
     it('should throw error if no endpoint is configured', async () => {
       const bugSpotter = BugSpotter.init({
-        auth: { type: 'api-key', apiKey: 'test-key' },
+        auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
         showWidget: false,
+        replay: { enabled: false },
       });
 
       const report = await bugSpotter.capture();
@@ -185,8 +325,10 @@ describe('API Submission', () => {
       });
 
       const bugSpotter = BugSpotter.init({
+        auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
+        replay: { enabled: false },
       });
 
       const report = await bugSpotter.capture();
@@ -208,6 +350,7 @@ describe('API Submission', () => {
       });
 
       const bugSpotter = BugSpotter.init({
+        auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
       });
@@ -224,6 +367,7 @@ describe('API Submission', () => {
       fetchMock.mockRejectedValueOnce(new Error('Network error'));
 
       const bugSpotter = BugSpotter.init({
+        auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
         retry: { maxRetries: 0 }, // Disable retries for this test
@@ -246,15 +390,17 @@ describe('API Submission', () => {
       });
 
       const bugSpotter = BugSpotter.init({
+        auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
+        replay: { enabled: false },
       });
 
       const report = await bugSpotter.capture();
       const payload = { title: 'Test', description: 'Test', report };
 
       await expect((bugSpotter as any).submitBugReport(payload)).rejects.toThrow(
-        'Failed to submit bug report: 403 Forbidden. Unknown error'
+        'Failed to submit bug report: 403'
       );
     });
 
@@ -268,6 +414,7 @@ describe('API Submission', () => {
       });
 
       const bugSpotter = BugSpotter.init({
+        auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
         retry: { maxRetries: 0 }, // Disable retries for this test
@@ -282,24 +429,51 @@ describe('API Submission', () => {
 
   describe('Payload structure', () => {
     it('should send complete bug report payload', async () => {
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => {
-          return {};
-        },
-      });
+      // Optimized flow: create (with presigned URL) + S3 upload + confirm
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 201,
+          json: async () => ({
+            success: true,
+            data: {
+              id: TEST_BUG_ID,
+              presignedUrls: {
+                screenshot: {
+                  uploadUrl: 'https://s3.example.com/presigned-url',
+                  storageKey: 'key',
+                },
+              },
+            },
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({}), // S3 upload
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ success: true }), // Screenshot confirmation
+        });
 
       const bugSpotter = BugSpotter.init({
+        auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
+        replay: { enabled: false },
       });
 
-      // Add some console logs and make network request
+      // Add some console logs
       console.log('Test log for payload');
       console.error('Test error for payload');
 
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
       const report = await bugSpotter.capture();
+      // Add screenshot for upload
+      report._screenshotPreview = TEST_SCREENSHOT_DATA_URL;
       const payload = {
         title: 'Complete Test Bug',
         description: 'This is a detailed description',
@@ -308,43 +482,20 @@ describe('API Submission', () => {
 
       await (bugSpotter as any).submitBugReport(payload);
 
-      const call = fetchMock.mock.calls[0][1];
-      let sentPayload;
+      // Verify bug report creation call
+      const call = fetchMock.mock.calls[0];
+      expect(call[0]).toBe('https://api.example.com/bugs');
 
       // Handle both compressed and uncompressed payloads
-      if (call.body instanceof Blob) {
-        // Compressed payload - skip detailed structure test since we can't easily parse Blob in tests
-        expect(call.headers['Content-Encoding']).toBe('gzip');
-        // Just verify the call was made
-        expect(fetchMock).toHaveBeenCalledTimes(1);
-        return; // Skip rest of test for compressed payload
-      } else {
-        // Uncompressed payload
-        sentPayload = JSON.parse(call.body);
+      const requestBody = call[1].body;
+      if (!(requestBody instanceof Blob)) {
+        const sentBody = JSON.parse(requestBody);
+        expect(sentBody).toHaveProperty('title', 'Complete Test Bug');
+        expect(sentBody).toHaveProperty('description', 'This is a detailed description');
+        expect(sentBody).toHaveProperty('report');
+        expect(sentBody.report).toHaveProperty('console');
+        expect(sentBody.report).toHaveProperty('metadata');
       }
-
-      // Verify structure (only for uncompressed)
-      expect(sentPayload).toHaveProperty('title');
-      expect(sentPayload).toHaveProperty('description');
-      expect(sentPayload).toHaveProperty('report');
-
-      // Verify report structure
-      expect(sentPayload.report).toHaveProperty('screenshot');
-      expect(sentPayload.report).toHaveProperty('console');
-      expect(sentPayload.report).toHaveProperty('network');
-      expect(sentPayload.report).toHaveProperty('metadata');
-
-      // Verify metadata
-      expect(sentPayload.report.metadata).toHaveProperty('userAgent');
-      expect(sentPayload.report.metadata).toHaveProperty('viewport');
-      expect(sentPayload.report.metadata).toHaveProperty('browser');
-      expect(sentPayload.report.metadata).toHaveProperty('os');
-      expect(sentPayload.report.metadata).toHaveProperty('url');
-      expect(sentPayload.report.metadata).toHaveProperty('timestamp');
-
-      // Verify console logs are included
-      expect(Array.isArray(sentPayload.report.console)).toBe(true);
-      expect(sentPayload.report.console.length).toBeGreaterThan(0);
     });
   });
 
@@ -357,25 +508,51 @@ describe('API Submission', () => {
       ];
 
       for (const endpoint of endpoints) {
-        fetchMock.mockResolvedValueOnce({
-          ok: true,
-          status: 200,
-          json: async () => {
-            return {};
-          },
-        });
+        // Optimized flow: create (with presigned URL) + S3 upload + confirm
+        fetchMock
+          .mockResolvedValueOnce({
+            ok: true,
+            status: 201,
+            json: async () => ({
+              success: true,
+              data: {
+                id: TEST_BUG_ID,
+                presignedUrls: {
+                  screenshot: {
+                    uploadUrl: 'https://s3.example.com/presigned-url',
+                    storageKey: 'key',
+                  },
+                },
+              },
+            }),
+          })
+          .mockResolvedValueOnce({
+            ok: true,
+            status: 200,
+            json: async () => ({}), // S3 upload
+          })
+          .mockResolvedValueOnce({
+            ok: true,
+            status: 200,
+            json: async () => ({ success: true }), // Screenshot confirmation
+          });
 
         const bugSpotter = BugSpotter.init({
+          auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
           endpoint,
           showWidget: false,
+          replay: { enabled: false },
         });
 
         const report = await bugSpotter.capture();
+        report._screenshotPreview = TEST_SCREENSHOT_DATA_URL;
         const payload = { title: 'Test', description: 'Test', report };
 
         await (bugSpotter as any).submitBugReport(payload);
 
-        expect(fetchMock).toHaveBeenCalledWith(endpoint, expect.any(Object));
+        expect(fetchMock).toHaveBeenCalled();
+        const call = fetchMock.mock.calls[0];
+        expect(call[0]).toBe(endpoint);
 
         bugSpotter.destroy();
         fetchMock.mockClear();

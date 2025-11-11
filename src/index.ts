@@ -2,7 +2,6 @@ import { ScreenshotCapture } from './capture/screenshot';
 import { ConsoleCapture } from './capture/console';
 import { NetworkCapture } from './capture/network';
 import { MetadataCapture } from './capture/metadata';
-import { compressData, estimateSize, getCompressionRatio } from './core/compress';
 import type { BrowserMetadata } from './capture/metadata';
 import { FloatingButton, type FloatingButtonOptions } from './widget/button';
 import { BugReportModal } from './widget/modal';
@@ -12,11 +11,14 @@ import { createSanitizer, type Sanitizer } from './utils/sanitize';
 import { getLogger } from './utils/logger';
 import { submitWithAuth, type AuthConfig, type RetryConfig } from './core/transport';
 import type { OfflineConfig } from './core/offline-queue';
+import { FileUploadHandler } from './core/file-upload-handler';
+import { DEFAULT_REPLAY_DURATION_SECONDS } from './constants';
 
 const logger = getLogger();
 
 export class BugSpotter {
   private static instance: BugSpotter | undefined;
+
   private config: BugSpotterConfig;
   private screenshot: ScreenshotCapture;
   private console: ConsoleCapture;
@@ -50,7 +52,7 @@ export class BugSpotter {
     // Initialize DOM collector if replay is enabled
     if (config.replay?.enabled !== false) {
       this.domCollector = new DOMCollector({
-        duration: config.replay?.duration ?? 15,
+        duration: config.replay?.duration ?? DEFAULT_REPLAY_DURATION_SECONDS,
         sampling: config.replay?.sampling,
         sanitizer: this.sanitizer,
       });
@@ -120,70 +122,132 @@ export class BugSpotter {
     modal.show(report._screenshotPreview || '');
   }
 
-  private async submitBugReport(payload: BugReportPayload): Promise<void> {
+  /**
+   * Validate authentication configuration
+   * @throws Error if configuration is invalid
+   */
+  private validateAuthConfig(): void {
     if (!this.config.endpoint) {
       throw new Error('No endpoint configured for bug report submission');
     }
+    if (!this.config.auth) {
+      throw new Error('API key authentication is required');
+    }
+    if (this.config.auth.type !== 'api-key') {
+      throw new Error('API key authentication is required');
+    }
+    if (!this.config.auth.apiKey) {
+      throw new Error('API key is required in auth configuration');
+    }
+    if (!this.config.auth.projectId) {
+      throw new Error('Project ID is required in auth configuration');
+    }
+  }
+
+  /**
+   * Strip endpoint suffix from path
+   */
+  private stripEndpointSuffix(path: string): string {
+    if (path.endsWith('/bugs')) {
+      return path.slice(0, -5);
+    } else if (path.includes('/api/v1/reports')) {
+      return path.substring(0, path.indexOf('/api/v1/reports'));
+    }
+    return path.replace(/\/$/, '') || '';
+  }
+
+  /**
+   * Get the base API URL for confirm-upload calls
+   * Extracts scheme, host, and base path from the configured endpoint
+   */
+  private getApiBaseUrl(): string {
+    if (!this.config.endpoint) {
+      throw new Error('No endpoint configured');
+    }
+
+    try {
+      const url = new URL(this.config.endpoint);
+      const basePath = this.stripEndpointSuffix(url.pathname);
+      return url.origin + basePath;
+    } catch (error) {
+      // Fallback for invalid URLs
+      logger.warn('Failed to parse endpoint URL, using fallback', {
+        endpoint: this.config.endpoint,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return this.stripEndpointSuffix(this.config.endpoint);
+    }
+  }
+
+  private async submitBugReport(payload: BugReportPayload): Promise<void> {
+    this.validateAuthConfig();
+
+    logger.warn(`Submitting bug report to ${this.config.endpoint}`);
+
+    // Step 1: Create bug report and request presigned URLs
+    const { report, ...metadata } = payload;
+
+    // Check what files we need to upload
+    const hasScreenshot = !!(
+      report._screenshotPreview && report._screenshotPreview.startsWith('data:image/')
+    );
+    const hasReplay = !!(report.replay && report.replay.length > 0);
+
+    const createPayload = {
+      ...metadata,
+      report: {
+        console: report.console,
+        network: report.network,
+        metadata: report.metadata,
+        // Don't send replay events or screenshot in initial request
+      },
+      // Tell backend we have files so it can generate presigned URLs
+      hasScreenshot,
+      hasReplay,
+    };
 
     const contentHeaders: Record<string, string> = {
       'Content-Type': 'application/json',
     };
 
-    logger.warn(`Submitting bug report to ${this.config.endpoint}`);
-
-    let body: BodyInit;
-
-    try {
-      // Try to compress the payload
-      const originalSize = estimateSize(payload);
-      const compressed = await compressData(payload);
-      const compressedSize = compressed.byteLength;
-      const ratio = getCompressionRatio(originalSize, compressedSize);
-
-      logger.log(
-        `Payload compression: ${(originalSize / 1024).toFixed(1)}KB → ${(compressedSize / 1024).toFixed(1)}KB (${ratio}% reduction)`
-      );
-
-      // Use compression if it actually reduces size
-      if (compressedSize < originalSize) {
-        // Create a Blob from the compressed Uint8Array for proper binary upload
-        // Use Uint8Array constructor to ensure clean ArrayBuffer (no extra padding bytes)
-        body = new Blob([new Uint8Array(compressed)], { type: 'application/gzip' });
-        contentHeaders['Content-Encoding'] = 'gzip';
-        contentHeaders['Content-Type'] = 'application/gzip';
-      } else {
-        body = JSON.stringify(payload);
+    const response = await submitWithAuth(
+      this.config.endpoint!, // Validated in validateAuthConfig
+      JSON.stringify(createPayload),
+      contentHeaders,
+      {
+        auth: this.config.auth,
+        retry: this.config.retry,
+        offline: this.config.offline,
       }
-    } catch (error) {
-      // Fallback to uncompressed if compression fails
-      logger.warn('Compression failed, sending uncompressed payload:', error);
-      body = JSON.stringify(payload);
-    }
-
-    // Determine auth configuration
-    const auth = this.config.auth;
-
-    // Submit with authentication, retry logic, and offline queue
-    const response = await submitWithAuth(this.config.endpoint, body, contentHeaders, {
-      auth,
-      retry: this.config.retry,
-      offline: this.config.offline,
-    });
+    );
 
     logger.warn(`${JSON.stringify(response)}`);
 
     if (!response.ok) {
-      const errorText = await response.text().catch(() => {
-        return 'Unknown error';
-      });
+      const errorText = await response.text().catch(() => 'Unknown error');
       throw new Error(
         `Failed to submit bug report: ${response.status} ${response.statusText}. ${errorText}`
       );
     }
 
-    return response.json().catch(() => {
-      return undefined;
-    });
+    const result = await response.json().catch(() => ({ success: false }));
+
+    if (!result.success || !result.data?.id) {
+      throw new Error('Bug report ID not returned from server');
+    }
+
+    const bugId = result.data.id;
+
+    // Step 2: Upload screenshot and replay using presigned URLs from response
+    if (!hasScreenshot && !hasReplay) {
+      return; // No files to upload, nothing more to do
+    }
+
+    // Use FileUploadHandler to handle all file upload operations
+    const apiEndpoint = this.getApiBaseUrl();
+    const uploadHandler = new FileUploadHandler(apiEndpoint, this.config.auth.apiKey);
+
+    await uploadHandler.uploadFiles(bugId, report, result.data.presignedUrls);
   }
 
   getConfig(): Readonly<BugSpotterConfig> {
@@ -204,8 +268,11 @@ export interface BugSpotterConfig {
   showWidget?: boolean;
   widgetOptions?: FloatingButtonOptions;
 
-  /** Authentication configuration */
-  auth?: AuthConfig;
+  /**
+   * Authentication configuration (required)
+   * API key authentication with project ID
+   */
+  auth: AuthConfig;
 
   /** Retry configuration for failed requests */
   retry?: RetryConfig;
@@ -351,6 +418,12 @@ export type { BugReportData, BugReportModalOptions, PIIDetection } from './widge
 
 // Re-export rrweb types for convenience
 export type { eventWithTime } from '@rrweb/types';
+
+// Export constants
+export {
+  DEFAULT_REPLAY_DURATION_SECONDS,
+  MAX_RECOMMENDED_REPLAY_DURATION_SECONDS,
+} from './constants';
 
 /**
  * Convenience function to sanitize text with default PII patterns

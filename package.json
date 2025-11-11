@@ -19,7 +19,7 @@
     "build": "npm run build:webpack && npm run build:esm && npm run build:cjs",
     "build:webpack": "webpack --mode production",
     "build:esm": "tsc --project tsconfig.build.json --module ES2020 --outDir dist/esm && shx mv dist/esm/index.js dist/index.esm.js && shx rm -rf dist/esm",
-    "build:cjs": "tsc --project tsconfig.build.json --module CommonJS --outDir dist",
+    "build:cjs": "tsc --project tsconfig.cjs.json",
     "prepublishOnly": "npm run build && npm test",
     "lint": "eslint \"src/**/*.{ts,js}\"",
     "lint:fix": "eslint \"src/**/*.{ts,js}\" --fix",

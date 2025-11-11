@@ -189,7 +189,12 @@ export const MOCK_BACKEND_RESPONSES = {
     status: 200,
     body: {
       success: true,
-      id: 'bug-123',
+      data: {
+        id: 'bug-123',
+        title: 'Test Bug',
+        status: 'open',
+        created_at: new Date().toISOString(),
+      },
       message: 'Bug report submitted successfully',
       timestamp: Date.now(),
     },
@@ -258,12 +263,21 @@ export const MOCK_BACKEND_RESPONSES = {
  */
 export const CONFIG_PRESETS = {
   minimal: {
+    auth: {
+      type: 'api-key' as const,
+      apiKey: 'test-api-key-12345',
+      projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+    },
     showWidget: false,
     replay: { enabled: false },
     sanitize: { enabled: false },
   },
   full: {
-    auth: { type: 'api-key' as const, apiKey: 'test-key-123' },
+    auth: {
+      type: 'api-key' as const,
+      apiKey: 'test-api-key-12345',
+      projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+    },
     endpoint: 'https://api.example.com/bugs',
     showWidget: true,
     replay: {
@@ -286,7 +300,11 @@ export const CONFIG_PRESETS = {
     },
   },
   selfHosted: {
-    auth: { type: 'bearer' as const, token: 'custom-bearer-token' },
+    auth: {
+      type: 'api-key' as const,
+      apiKey: 'test-api-key-12345',
+      projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+    },
     endpoint: 'http://localhost:4000/api/bugs',
     showWidget: false,
     sanitize: {
@@ -295,6 +313,11 @@ export const CONFIG_PRESETS = {
     },
   },
   noAuth: {
+    auth: {
+      type: 'api-key' as const,
+      apiKey: 'test-api-key-12345',
+      projectId: 'proj-12345678-1234-1234-1234-123456789abc',
+    },
     endpoint: 'https://api.example.com/bugs',
     showWidget: false,
     replay: { enabled: true },

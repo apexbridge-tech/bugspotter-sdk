@@ -5,6 +5,13 @@ All notable changes to the BugSpotter SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2-alpha.5](https://github.com/apexbridge-tech/bugspotter/compare/sdk-v0.1.1-alpha.5...sdk-v0.1.2-alpha.5) (2025-11-12)
+
+
+### Bug Fixes
+
+* **ci:** update SDK publish workflow to support prerelease tags ([#221](https://github.com/apexbridge-tech/bugspotter/issues/221)) ([dc4d7f2](https://github.com/apexbridge-tech/bugspotter/commit/dc4d7f2ef519afcf232704f05295729c6402008c))
+
 ## [0.1.1-alpha.5](https://github.com/apexbridge-tech/bugspotter/compare/sdk-v0.1.0-alpha.5...sdk-v0.1.1-alpha.5) (2025-11-12)
 
 ### Features

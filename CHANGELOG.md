@@ -7,47 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.1-alpha.5](https://github.com/apexbridge-tech/bugspotter/compare/sdk-v0.1.0-alpha.5...sdk-v0.1.1-alpha.5) (2025-11-12)
 
-
 ### Features
 
-* add exponential backoff retry and offline queue support ([c3c2106](https://github.com/apexbridge-tech/bugspotter/commit/c3c21063b777da37011449b89431a63f987ea777))
-* add FloatingButton widget and fix UMD exports ([b7e170e](https://github.com/apexbridge-tech/bugspotter/commit/b7e170eea47c7883722e59038a0d16b911c59588))
-* add FloatingButton widget with refactored architecture ([87a3d0e](https://github.com/apexbridge-tech/bugspotter/commit/87a3d0e69cea86db01e2847323440f296f045b16))
-* add gzip compression reducing payloads by 70-90% ([489e182](https://github.com/apexbridge-tech/bugspotter/commit/489e182ea072e3ffc43b58700b60288f6a255c22))
-* add gzip compression reducing payloads by 70-90% ([c545acf](https://github.com/apexbridge-tech/bugspotter/commit/c545acf6fe9a973c74a54f63a560b4fd96465e83))
-* add screenshot capture with html-to-image ([fae3eb7](https://github.com/apexbridge-tech/bugspotter/commit/fae3eb70fbf52d5b7c217f4d6d001735b661159d))
-* add session replay with rrweb ([175bd74](https://github.com/apexbridge-tech/bugspotter/commit/175bd74765d7f49b4be681c02eae0d7bbe8b1bc4))
-* add type safety system with shared types, Zod validation, and contract tests ([a3e436a](https://github.com/apexbridge-tech/bugspotter/commit/a3e436a931abda2cf30c85b32e5af2e011b7b3d9))
-* complete BugSpotter v0.1.0 with full documentation ([651153b](https://github.com/apexbridge-tech/bugspotter/commit/651153b2d4c86b9653df6164539991ea92c41942))
-* complete core SDK with all capture modules ([54fe97a](https://github.com/apexbridge-tech/bugspotter/commit/54fe97af32b2ee1aa09f5657b28b89e40454cb0a))
-* fixed bug in NetworkCapture + eslint + prettier ([75e2d92](https://github.com/apexbridge-tech/bugspotter/commit/75e2d9290d82ea3f9b377e3b189ce933f7e3e336))
-* initial project structure ([7109dc2](https://github.com/apexbridge-tech/bugspotter/commit/7109dc2e284ea8692081965e4b5a9cce4dc1b1e0))
-* **sdk:** bump to 0.1.0-alpha.5 with improved release workflow ([#219](https://github.com/apexbridge-tech/bugspotter/issues/219)) ([a191b7b](https://github.com/apexbridge-tech/bugspotter/commit/a191b7b998863f00df4bd24f529057e4c4160a73))
-* vitest configured + unit tests for capture ([381d11e](https://github.com/apexbridge-tech/bugspotter/commit/381d11e8ea45376c56ded0d62c2c37a726002acf))
-
+- add exponential backoff retry and offline queue support ([c3c2106](https://github.com/apexbridge-tech/bugspotter/commit/c3c21063b777da37011449b89431a63f987ea777))
+- add FloatingButton widget and fix UMD exports ([b7e170e](https://github.com/apexbridge-tech/bugspotter/commit/b7e170eea47c7883722e59038a0d16b911c59588))
+- add FloatingButton widget with refactored architecture ([87a3d0e](https://github.com/apexbridge-tech/bugspotter/commit/87a3d0e69cea86db01e2847323440f296f045b16))
+- add gzip compression reducing payloads by 70-90% ([489e182](https://github.com/apexbridge-tech/bugspotter/commit/489e182ea072e3ffc43b58700b60288f6a255c22))
+- add gzip compression reducing payloads by 70-90% ([c545acf](https://github.com/apexbridge-tech/bugspotter/commit/c545acf6fe9a973c74a54f63a560b4fd96465e83))
+- add screenshot capture with html-to-image ([fae3eb7](https://github.com/apexbridge-tech/bugspotter/commit/fae3eb70fbf52d5b7c217f4d6d001735b661159d))
+- add session replay with rrweb ([175bd74](https://github.com/apexbridge-tech/bugspotter/commit/175bd74765d7f49b4be681c02eae0d7bbe8b1bc4))
+- add type safety system with shared types, Zod validation, and contract tests ([a3e436a](https://github.com/apexbridge-tech/bugspotter/commit/a3e436a931abda2cf30c85b32e5af2e011b7b3d9))
+- complete BugSpotter v0.1.0 with full documentation ([651153b](https://github.com/apexbridge-tech/bugspotter/commit/651153b2d4c86b9653df6164539991ea92c41942))
+- complete core SDK with all capture modules ([54fe97a](https://github.com/apexbridge-tech/bugspotter/commit/54fe97af32b2ee1aa09f5657b28b89e40454cb0a))
+- fixed bug in NetworkCapture + eslint + prettier ([75e2d92](https://github.com/apexbridge-tech/bugspotter/commit/75e2d9290d82ea3f9b377e3b189ce933f7e3e336))
+- initial project structure ([7109dc2](https://github.com/apexbridge-tech/bugspotter/commit/7109dc2e284ea8692081965e4b5a9cce4dc1b1e0))
+- **sdk:** bump to 0.1.0-alpha.5 with improved release workflow ([#219](https://github.com/apexbridge-tech/bugspotter/issues/219)) ([a191b7b](https://github.com/apexbridge-tech/bugspotter/commit/a191b7b998863f00df4bd24f529057e4c4160a73))
+- vitest configured + unit tests for capture ([381d11e](https://github.com/apexbridge-tech/bugspotter/commit/381d11e8ea45376c56ded0d62c2c37a726002acf))
 
 ### Bug Fixes
 
-* increase browser test timeout and add GitHub release permissions ([#142](https://github.com/apexbridge-tech/bugspotter/issues/142)) ([301600e](https://github.com/apexbridge-tech/bugspotter/commit/301600e5fa6c01e0a6ef0e3281a0c27206cc00e2))
-* remove await from background queue processing ([174889d](https://github.com/apexbridge-tech/bugspotter/commit/174889d9df5541d0494b736d9b8c44bbcbdfbb7e))
-* **sdk:** remove unused @bugspotter/types workspace dependency ([#146](https://github.com/apexbridge-tech/bugspotter/issues/146)) ([7fed00b](https://github.com/apexbridge-tech/bugspotter/commit/7fed00bafab22f1854b78f861a90069b96a665c1))
-
+- increase browser test timeout and add GitHub release permissions ([#142](https://github.com/apexbridge-tech/bugspotter/issues/142)) ([301600e](https://github.com/apexbridge-tech/bugspotter/commit/301600e5fa6c01e0a6ef0e3281a0c27206cc00e2))
+- remove await from background queue processing ([174889d](https://github.com/apexbridge-tech/bugspotter/commit/174889d9df5541d0494b736d9b8c44bbcbdfbb7e))
+- **sdk:** remove unused @bugspotter/types workspace dependency ([#146](https://github.com/apexbridge-tech/bugspotter/issues/146)) ([7fed00b](https://github.com/apexbridge-tech/bugspotter/commit/7fed00bafab22f1854b78f861a90069b96a665c1))
 
 ### Code Refactoring
 
-* Addressed comments on PR; ([fcb4888](https://github.com/apexbridge-tech/bugspotter/commit/fcb488813cd36147f6292c36f4540b23b7759e20))
-* improve capture classes with options, types, and performance ([616bd35](https://github.com/apexbridge-tech/bugspotter/commit/616bd3502c7620f65494ae813ea39e87781b5a2f))
-* improve transport and offline queue architecture ([01a27f3](https://github.com/apexbridge-tech/bugspotter/commit/01a27f3cc24d1211c65e4f0992fc969f40294e70))
-* optimize demo & documentation structure ([22c2171](https://github.com/apexbridge-tech/bugspotter/commit/22c21712229f19b1280d1406c2fac60655d41c4a))
-* Phase 2 - Extract shared capture architecture ([48d007c](https://github.com/apexbridge-tech/bugspotter/commit/48d007cecfc4651ded10a8c7fd4651fcec499fbd))
-* Phase 2 - Extract shared capture architecture ([ea88dda](https://github.com/apexbridge-tech/bugspotter/commit/ea88dda3cdbb07d72f96d707a3ebb97edf93379c))
-* Phase 2 - Extract shared capture architecture ([72f2425](https://github.com/apexbridge-tech/bugspotter/commit/72f242575c46c3c813bf15234ca95d5624b7d7d4))
-* remove deprecated code and unused variables ([392bbb9](https://github.com/apexbridge-tech/bugspotter/commit/392bbb9c91e3d57a49b9650782b778aea9607d50))
-
+- Addressed comments on PR; ([fcb4888](https://github.com/apexbridge-tech/bugspotter/commit/fcb488813cd36147f6292c36f4540b23b7759e20))
+- improve capture classes with options, types, and performance ([616bd35](https://github.com/apexbridge-tech/bugspotter/commit/616bd3502c7620f65494ae813ea39e87781b5a2f))
+- improve transport and offline queue architecture ([01a27f3](https://github.com/apexbridge-tech/bugspotter/commit/01a27f3cc24d1211c65e4f0992fc969f40294e70))
+- optimize demo & documentation structure ([22c2171](https://github.com/apexbridge-tech/bugspotter/commit/22c21712229f19b1280d1406c2fac60655d41c4a))
+- Phase 2 - Extract shared capture architecture ([48d007c](https://github.com/apexbridge-tech/bugspotter/commit/48d007cecfc4651ded10a8c7fd4651fcec499fbd))
+- Phase 2 - Extract shared capture architecture ([ea88dda](https://github.com/apexbridge-tech/bugspotter/commit/ea88dda3cdbb07d72f96d707a3ebb97edf93379c))
+- Phase 2 - Extract shared capture architecture ([72f2425](https://github.com/apexbridge-tech/bugspotter/commit/72f242575c46c3c813bf15234ca95d5624b7d7d4))
+- remove deprecated code and unused variables ([392bbb9](https://github.com/apexbridge-tech/bugspotter/commit/392bbb9c91e3d57a49b9650782b778aea9607d50))
 
 ### Tests
 
-* Add comprehensive edge case tests for DOM collector ([24b56b3](https://github.com/apexbridge-tech/bugspotter/commit/24b56b3317edd6df656f551c7d22db3cc03df7ac))
+- Add comprehensive edge case tests for DOM collector ([24b56b3](https://github.com/apexbridge-tech/bugspotter/commit/24b56b3317edd6df656f551c7d22db3cc03df7ac))
 
 ## [0.1.0] - 2025-11-01
 

@@ -125,7 +125,7 @@ describe('E2E Integration Tests', () => {
 
       // 5. SEND - Submit to backend
       report.replay = []; // Clear replay to avoid presigned URL upload
-      await (bugspotter as any).submitBugReport(payload);
+      await bugspotter.submit(payload);
 
       // Verify fetch was called
       expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -182,7 +182,7 @@ describe('E2E Integration Tests', () => {
       expect(compressedSize).toBeLessThan(originalSize * 0.3); // <30% of original
 
       report.replay = []; // Clear replay to avoid presigned URL upload
-      await (bugspotter as any).submitBugReport(payload);
+      await bugspotter.submit(payload);
       expect(fetchMock).toHaveBeenCalledTimes(1);
     });
   });
@@ -212,7 +212,7 @@ describe('E2E Integration Tests', () => {
       report._screenshotPreview = undefined; // Clear screenshot too
       const payload = { title: 'Test', description: 'Test', report };
 
-      await expect((bugspotter as any).submitBugReport(payload)).resolves.not.toThrow();
+      await expect(bugspotter.submit(payload)).resolves.not.toThrow();
       expect(fetchMock).toHaveBeenCalledTimes(1); // Only the creation call
     });
 
@@ -240,7 +240,7 @@ describe('E2E Integration Tests', () => {
       report._screenshotPreview = undefined; // Clear screenshot too
       const payload = { title: 'Test', description: 'Test', report };
 
-      await expect((bugspotter as any).submitBugReport(payload)).resolves.not.toThrow();
+      await expect(bugspotter.submit(payload)).resolves.not.toThrow();
       expect(fetchMock).toHaveBeenCalledTimes(1); // Only the creation call
     });
 
@@ -269,7 +269,7 @@ describe('E2E Integration Tests', () => {
       report.replay = []; // Clear replay to avoid presigned URL upload
       const payload = { title: 'Test', description: 'Test', report };
 
-      await expect((bugspotter as any).submitBugReport(payload)).rejects.toThrow(/401/);
+      await expect(bugspotter.submit(payload)).rejects.toThrow(/401/);
     });
 
     it('should handle 400 Bad Request response', async () => {
@@ -295,7 +295,7 @@ describe('E2E Integration Tests', () => {
       const report = await bugspotter.capture();
       const payload = { title: '', description: '', report }; // Invalid payload
 
-      await expect((bugspotter as any).submitBugReport(payload)).rejects.toThrow(/400/);
+      await expect(bugspotter.submit(payload)).rejects.toThrow(/400/);
     });
 
     it('should handle 500 Internal Server Error response', async () => {
@@ -322,7 +322,7 @@ describe('E2E Integration Tests', () => {
       const report = await bugspotter.capture();
       const payload = { title: 'Test', description: 'Test', report };
 
-      await expect((bugspotter as any).submitBugReport(payload)).rejects.toThrow(/500/);
+      await expect(bugspotter.submit(payload)).rejects.toThrow(/500/);
     });
 
     it('should handle 503 Service Unavailable with retry', async () => {
@@ -365,7 +365,7 @@ describe('E2E Integration Tests', () => {
       report._screenshotPreview = undefined; // Clear screenshot too
       const payload = { title: 'Test', description: 'Test', report };
 
-      await expect((bugspotter as any).submitBugReport(payload)).resolves.not.toThrow();
+      await expect(bugspotter.submit(payload)).resolves.not.toThrow();
 
       // Should have retried and succeeded
       expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -403,7 +403,7 @@ describe('E2E Integration Tests', () => {
       report._screenshotPreview = undefined; // Clear screenshot too
       const payload = { title: 'Test', description: 'Test', report };
 
-      await expect((bugspotter as any).submitBugReport(payload)).resolves.not.toThrow();
+      await expect(bugspotter.submit(payload)).resolves.not.toThrow();
 
       expect(fetchMock).toHaveBeenCalledTimes(3);
     });
@@ -700,7 +700,7 @@ describe('E2E Integration Tests', () => {
 
       // Capture time just before the request
       const startTime = Date.now();
-      await (bugspotter as any).submitBugReport(payload);
+      await bugspotter.submit(payload);
       const elapsed = Date.now() - startTime;
 
       // Should have made 3 requests (2 failures + 1 success)
@@ -740,7 +740,7 @@ describe('E2E Integration Tests', () => {
       const report = await bugspotter.capture();
       const payload = { title: 'Test', description: 'Test', report };
 
-      await expect((bugspotter as any).submitBugReport(payload)).rejects.toThrow();
+      await expect(bugspotter.submit(payload)).rejects.toThrow();
 
       // Should have attempted 3 times (initial + 2 retries)
       expect(fetchMock).toHaveBeenCalledTimes(3);

@@ -204,7 +204,7 @@ describe('SDK Presigned URL Upload Flow', () => {
     report._screenshotPreview = TEST_SCREENSHOT_DATA_URL;
 
     // Submit bug report
-    await sdk['submitBugReport']({
+    await sdk['submit']({
       title: 'Test Bug Report',
       description: 'Testing presigned URL flow',
       report,
@@ -248,7 +248,7 @@ describe('SDK Presigned URL Upload Flow', () => {
     const report = await sdk.capture();
     // No screenshot preview
 
-    await sdk['submitBugReport']({
+    await sdk['submit']({
       title: 'Test Bug Without Screenshot',
       description: 'Testing without screenshot',
       report,
@@ -288,7 +288,7 @@ describe('SDK Presigned URL Upload Flow', () => {
 
     // Should throw when presigned URL request fails
     await expect(
-      sdk['submitBugReport']({
+      sdk['submit']({
         title: 'Test Bug',
         description: 'Testing upload failure',
         report,
@@ -345,7 +345,7 @@ describe('SDK Presigned URL Upload Flow', () => {
       },
     ];
 
-    await sdk['submitBugReport']({
+    await sdk['submit']({
       title: 'Test Bug',
       description: 'Testing replay upload',
       report,
@@ -412,7 +412,7 @@ describe('SDK Presigned URL Upload Flow', () => {
       },
     ];
 
-    await sdk['submitBugReport']({
+    await sdk['submit']({
       title: 'Test Bug',
       description: 'Testing both uploads',
       report,
@@ -442,7 +442,7 @@ describe('SDK Presigned URL Upload Flow', () => {
     const report = await sdk.capture();
 
     await expect(
-      sdk['submitBugReport']({
+      sdk['submit']({
         title: 'Test Bug',
         description: 'Testing creation failure',
         report,
@@ -481,7 +481,7 @@ describe('SDK Presigned URL Upload Flow', () => {
     report._screenshotPreview = 'data:image/png;base64,test';
 
     await expect(
-      sdk['submitBugReport']({
+      sdk['submit']({
         title: 'Test Bug',
         description: 'Testing missing ID',
         report,
@@ -514,7 +514,7 @@ describe('SDK Presigned URL Upload Flow', () => {
 
       // Should throw when trying to submit
       await expect(
-        sdk['submitBugReport']({
+        sdk['submit']({
           title: 'Test Bug',
           description: 'Testing missing auth',
           report,
@@ -544,7 +544,7 @@ describe('SDK Presigned URL Upload Flow', () => {
       report._screenshotPreview = 'data:image/png;base64,iVBORw0KGgo=';
 
       await expect(
-        sdk['submitBugReport']({
+        sdk['submit']({
           title: 'Test Bug',
           description: 'Testing invalid auth',
           report,
@@ -576,7 +576,7 @@ describe('SDK Presigned URL Upload Flow', () => {
       report._screenshotPreview = 'data:image/png;base64,iVBORw0KGgo=';
 
       await expect(
-        sdk['submitBugReport']({
+        sdk['submit']({
           title: 'Test Bug',
           description: 'Testing missing apiKey',
           report,
@@ -608,7 +608,7 @@ describe('SDK Presigned URL Upload Flow', () => {
       report._screenshotPreview = 'data:image/png;base64,iVBORw0KGgo=';
 
       await expect(
-        sdk['submitBugReport']({
+        sdk['submit']({
           title: 'Test Bug',
           description: 'Testing missing projectId',
           report,
@@ -669,7 +669,7 @@ describe('SDK Presigned URL Upload Flow', () => {
       report.replay = []; // Disable replay upload to test screenshot failure only
 
       await expect(
-        sdk['submitBugReport']({
+        sdk['submit']({
           title: 'Test Bug',
           description: 'Testing upload failure',
           report,

@@ -165,7 +165,7 @@ describe('BugReportModal', () => {
       expect(titleError.textContent).toBe('Title is required');
     });
 
-    it('should not submit with empty description', () => {
+    it('should submit with empty description (description is optional)', () => {
       const container = document.body.lastElementChild as HTMLElement;
       const shadow = container.shadowRoot;
       const titleInput = shadow?.querySelector('#title') as HTMLInputElement;
@@ -174,12 +174,11 @@ describe('BugReportModal', () => {
       titleInput.value = 'Test title';
       submitButton.click();
 
-      expect(onSubmit).not.toHaveBeenCalled();
-
-      // Check error message is displayed
-      const descriptionError = shadow?.querySelector('#description-error') as HTMLElement;
-      expect(descriptionError.style.display).not.toBe('none');
-      expect(descriptionError.textContent).toBe('Description is required');
+      // Description is optional, so form should submit
+      expect(onSubmit).toHaveBeenCalledWith({
+        title: 'Test title',
+        description: '',
+      });
     });
 
     it('should not submit with whitespace-only title', () => {

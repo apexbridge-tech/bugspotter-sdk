@@ -135,7 +135,7 @@ const bugSpotter = BugSpotter.init({
 - Concurrent uploads (screenshot + replay in parallel)
 - Reduced server load
 
-### Manual Capture
+### Manual Capture & Programmatic Submission
 
 ```javascript
 // Initialize without widget
@@ -149,12 +149,23 @@ const bugSpotter = BugSpotter.init({
   showWidget: false,
 });
 
-// Capture bug report manually
-async function reportBug() {
-  const report = await bugSpotter.capture();
-  console.log('Captured:', report);
-  // report contains: screenshot, console, network, metadata
-}
+// Capture bug report data
+const report = await bugSpotter.capture();
+console.log('Captured:', report);
+// report contains: screenshot, console, network, metadata, replay
+
+// Submit programmatically (SDK handles presigned URL uploads)
+await bugSpotter.submit({
+  title: 'Application crashed',
+  description: 'Error occurred during form submission',
+  priority: 'high',
+  report,
+});
+// ✅ SDK automatically:
+// 1. Detects hasScreenshot/hasReplay from report data
+// 2. Gets presigned URLs from backend
+// 3. Uploads screenshot + replay to S3 (parallel)
+// 4. Confirms uploads with backend
 ```
 
 ## 🎨 Using the Widget
@@ -220,22 +231,12 @@ button.onClick(async () => {
 
   const modal = new BugSpotter.BugReportModal({
     onSubmit: async (data) => {
-      // data.title, data.description
-      const response = await fetch('https://api.example.com/bugs', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          ...data,
-          report,
-        }),
+      // Use SDK's submit() method for automatic presigned URL uploads
+      await bugSpotter.submit({
+        ...data, // title, description, priority
+        report,
       });
-
-      if (!response.ok) {
-        throw new Error('Submission failed');
-      }
+      // ✅ SDK handles presigned URLs and S3 uploads automatically
     },
   });
 
@@ -316,6 +317,46 @@ interface BugSpotterConfig {
 ```
 
 **Returns:** `BugSpotter` instance
+
+#### `bugSpotter.submit(payload)`
+
+Submit a bug report with automatic file uploads via presigned URLs.
+
+**Parameters:**
+
+```typescript
+interface BugReportPayload {
+  title: string; // Bug title (required)
+  description?: string; // Bug description (optional)
+  priority?: 'low' | 'medium' | 'high' | 'critical';
+  report: BugReport; // Report data from capture()
+}
+```
+
+**Returns:** `Promise<void>`
+
+**Throws:** Error if submission fails
+
+**Example:**
+
+```typescript
+const report = await bugSpotter.capture();
+
+await bugSpotter.submit({
+  title: 'Button not responding',
+  description: 'Submit button does not work on checkout page',
+  priority: 'high',
+  report,
+});
+```
+
+**What it does:**
+
+1. Detects screenshot and replay from report data
+2. Requests presigned URLs from backend
+3. Uploads files directly to S3 (parallel)
+4. Confirms uploads with backend
+5. Handles errors and retries automatically
 
 #### `bugSpotter.capture()`
 

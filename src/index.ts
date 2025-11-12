@@ -13,6 +13,8 @@ import { submitWithAuth, type AuthConfig, type RetryConfig } from './core/transp
 import type { OfflineConfig } from './core/offline-queue';
 import { FileUploadHandler } from './core/file-upload-handler';
 import { DEFAULT_REPLAY_DURATION_SECONDS } from './constants';
+import { getApiBaseUrl } from './utils/url-helpers';
+import { validateAuthConfig } from './utils/config-validator';
 
 const logger = getLogger();
 
@@ -46,8 +48,8 @@ export class BugSpotter {
     this.network = new NetworkCapture({ sanitizer: this.sanitizer });
     this.metadata = new MetadataCapture({ sanitizer: this.sanitizer });
 
-    // Note: DirectUploader is created per-report since it needs bugId
-    // See submitBugReport() for initialization
+    // Note: FileUploadHandler is created per-report since it needs bugId
+    // See submit() method for initialization
 
     // Initialize DOM collector if replay is enabled
     if (config.replay?.enabled !== false) {
@@ -82,7 +84,7 @@ export class BugSpotter {
   /**
    * Capture bug report data
    * Note: Screenshot is captured for modal preview only (_screenshotPreview)
-   * Actual file uploads use presigned URLs (screenshotKey/replayKey set after upload)
+   * File uploads use presigned URLs returned from the backend
    */
   async capture(): Promise<BugReport> {
     const screenshotPreview = await this.screenshot.capture();
@@ -108,7 +110,7 @@ export class BugSpotter {
         // Send to endpoint if configured
         if (this.config.endpoint) {
           try {
-            await this.submitBugReport({ ...data, report });
+            await this.submit({ ...data, report });
             logger.log('Bug report submitted successfully');
           } catch (error) {
             logger.error('Failed to submit bug report:', error);
@@ -123,66 +125,17 @@ export class BugSpotter {
   }
 
   /**
-   * Validate authentication configuration
-   * @throws Error if configuration is invalid
+   * Submit a bug report with file uploads via presigned URLs
+   * @param payload - Bug report payload with title, description, and report data
+   * @public - Exposed for programmatic submission (bypassing modal)
    */
-  private validateAuthConfig(): void {
-    if (!this.config.endpoint) {
-      throw new Error('No endpoint configured for bug report submission');
-    }
-    if (!this.config.auth) {
-      throw new Error('API key authentication is required');
-    }
-    if (this.config.auth.type !== 'api-key') {
-      throw new Error('API key authentication is required');
-    }
-    if (!this.config.auth.apiKey) {
-      throw new Error('API key is required in auth configuration');
-    }
-    if (!this.config.auth.projectId) {
-      throw new Error('Project ID is required in auth configuration');
-    }
-  }
+  async submit(payload: BugReportPayload): Promise<void> {
+    validateAuthConfig({
+      endpoint: this.config.endpoint,
+      auth: this.config.auth,
+    });
 
-  /**
-   * Strip endpoint suffix from path
-   */
-  private stripEndpointSuffix(path: string): string {
-    if (path.endsWith('/bugs')) {
-      return path.slice(0, -5);
-    } else if (path.includes('/api/v1/reports')) {
-      return path.substring(0, path.indexOf('/api/v1/reports'));
-    }
-    return path.replace(/\/$/, '') || '';
-  }
-
-  /**
-   * Get the base API URL for confirm-upload calls
-   * Extracts scheme, host, and base path from the configured endpoint
-   */
-  private getApiBaseUrl(): string {
-    if (!this.config.endpoint) {
-      throw new Error('No endpoint configured');
-    }
-
-    try {
-      const url = new URL(this.config.endpoint);
-      const basePath = this.stripEndpointSuffix(url.pathname);
-      return url.origin + basePath;
-    } catch (error) {
-      // Fallback for invalid URLs
-      logger.warn('Failed to parse endpoint URL, using fallback', {
-        endpoint: this.config.endpoint,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      return this.stripEndpointSuffix(this.config.endpoint);
-    }
-  }
-
-  private async submitBugReport(payload: BugReportPayload): Promise<void> {
-    this.validateAuthConfig();
-
-    logger.warn(`Submitting bug report to ${this.config.endpoint}`);
+    logger.debug(`Submitting bug report to ${this.config.endpoint}`);
 
     // Step 1: Create bug report and request presigned URLs
     const { report, ...metadata } = payload;
@@ -192,6 +145,13 @@ export class BugSpotter {
       report._screenshotPreview && report._screenshotPreview.startsWith('data:image/')
     );
     const hasReplay = !!(report.replay && report.replay.length > 0);
+
+    logger.debug('File upload detection', {
+      hasScreenshot,
+      screenshotSize: report._screenshotPreview?.length || 0,
+      hasReplay,
+      replayEventCount: report.replay?.length || 0,
+    });
 
     const createPayload = {
       ...metadata,
@@ -221,8 +181,6 @@ export class BugSpotter {
       }
     );
 
-    logger.warn(`${JSON.stringify(response)}`);
-
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'Unknown error');
       throw new Error(
@@ -232,6 +190,13 @@ export class BugSpotter {
 
     const result = await response.json().catch(() => ({ success: false }));
 
+    logger.debug('Bug report creation response', {
+      success: result.success,
+      bugId: result.data?.id,
+      hasPresignedUrls: !!result.data?.presignedUrls,
+      presignedUrlKeys: result.data?.presignedUrls ? Object.keys(result.data.presignedUrls) : [],
+    });
+
     if (!result.success || !result.data?.id) {
       throw new Error('Bug report ID not returned from server');
     }
@@ -240,14 +205,38 @@ export class BugSpotter {
 
     // Step 2: Upload screenshot and replay using presigned URLs from response
     if (!hasScreenshot && !hasReplay) {
+      logger.debug('No files to upload, bug report created successfully', { bugId });
       return; // No files to upload, nothing more to do
     }
 
+    // Validate presigned URLs were returned
+    if (!result.data.presignedUrls) {
+      logger.error('Presigned URLs not returned despite requesting file uploads', {
+        bugId,
+        hasScreenshot,
+        hasReplay,
+      });
+      throw new Error(
+        'Server did not provide presigned URLs for file uploads. Check backend configuration.'
+      );
+    }
+
     // Use FileUploadHandler to handle all file upload operations
-    const apiEndpoint = this.getApiBaseUrl();
+    const apiEndpoint = getApiBaseUrl(this.config.endpoint!);
     const uploadHandler = new FileUploadHandler(apiEndpoint, this.config.auth.apiKey);
 
-    await uploadHandler.uploadFiles(bugId, report, result.data.presignedUrls);
+    try {
+      await uploadHandler.uploadFiles(bugId, report, result.data.presignedUrls);
+      logger.debug('File uploads completed successfully', { bugId });
+    } catch (error) {
+      logger.error('File upload failed', {
+        bugId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw new Error(
+        `Bug report created (ID: ${bugId}) but file upload failed: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
   }
 
   getConfig(): Readonly<BugSpotterConfig> {
@@ -326,12 +315,11 @@ export interface BugSpotterConfig {
 
 export interface BugReportPayload {
   title: string;
-  description: string;
+  description?: string;
   report: BugReport;
 }
 
 export interface BugReport {
-  screenshotKey?: string; // Presigned URL flow - storage key after upload
   console: Array<{
     level: string;
     message: string;
@@ -348,7 +336,6 @@ export interface BugReport {
   }>;
   metadata: BrowserMetadata;
   replay?: eventWithTime[]; // Inline events for immediate preview/processing
-  replayKey?: string; // Presigned URL flow - storage key after upload
   _screenshotPreview?: string; // Internal: screenshot preview for modal (not sent to API)
 }
 
@@ -396,6 +383,13 @@ export {
 // Export sanitization utilities
 export { createSanitizer, Sanitizer } from './utils/sanitize';
 export type { PIIPattern, CustomPattern, SanitizeConfig } from './utils/sanitize';
+
+// Export URL helpers
+export { getApiBaseUrl, stripEndpointSuffix, InvalidEndpointError } from './utils/url-helpers';
+
+// Export config validation
+export { validateAuthConfig } from './utils/config-validator';
+export type { ValidationContext } from './utils/config-validator';
 
 // Export pattern configuration utilities
 export {

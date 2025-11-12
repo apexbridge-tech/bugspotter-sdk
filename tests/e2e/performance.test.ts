@@ -520,7 +520,7 @@ describe('E2E Performance Benchmarks', () => {
         report,
       };
 
-      await (bugspotter as any).submitBugReport(payload);
+      await bugspotter.submit(payload);
 
       const workflowEnd = performance.now();
       const totalWorkflowTime = workflowEnd - workflowStart;

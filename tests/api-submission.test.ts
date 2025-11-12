@@ -107,7 +107,7 @@ describe('API Submission', () => {
         report,
       };
 
-      await (bugSpotter as any).submitBugReport(payload);
+      await bugSpotter.submit(payload);
 
       // Should have made 3 API calls (create + S3 upload + confirm)
       expect(fetchMock).toHaveBeenCalledTimes(3);
@@ -153,7 +153,7 @@ describe('API Submission', () => {
 
       const payload = { title: 'Test', description: 'Test', report };
 
-      await expect((bugSpotter as any).submitBugReport(payload)).rejects.toThrow(
+      await expect(bugSpotter.submit(payload)).rejects.toThrow(
         'API key authentication is required'
       );
     });
@@ -200,7 +200,7 @@ describe('API Submission', () => {
       const payload = { title: 'Test', description: 'Test', report };
 
       // Should not throw
-      await expect((bugSpotter as any).submitBugReport(payload)).resolves.not.toThrow();
+      await expect(bugSpotter.submit(payload)).resolves.not.toThrow();
     });
 
     it('should upload replay events when replay is enabled', async () => {
@@ -262,7 +262,7 @@ describe('API Submission', () => {
       report._screenshotPreview = 'data:image/png;base64,iVBORw0KGgo=';
       const payload = { title: 'Test with Replay', description: 'Test', report };
 
-      await expect((bugSpotter as any).submitBugReport(payload)).resolves.not.toThrow();
+      await expect(bugSpotter.submit(payload)).resolves.not.toThrow();
 
       // Should have made 5 fetch calls: create + 2 S3 uploads + 2 confirmations
       expect(fetchMock).toHaveBeenCalledTimes(5);
@@ -289,7 +289,7 @@ describe('API Submission', () => {
       report._screenshotPreview = undefined;
       const payload = { title: 'Test', description: 'Test', report };
 
-      await expect((bugSpotter as any).submitBugReport(payload)).resolves.not.toThrow();
+      await expect(bugSpotter.submit(payload)).resolves.not.toThrow();
 
       // Only bug report creation, no screenshot/replay uploads
       expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -307,7 +307,7 @@ describe('API Submission', () => {
       const report = await bugSpotter.capture();
       const payload = { title: 'Test', description: 'Test', report };
 
-      await expect((bugSpotter as any).submitBugReport(payload)).rejects.toThrow(
+      await expect(bugSpotter.submit(payload)).rejects.toThrow(
         'No endpoint configured for bug report submission'
       );
 
@@ -334,7 +334,7 @@ describe('API Submission', () => {
       const report = await bugSpotter.capture();
       const payload = { title: 'Test', description: 'Test', report };
 
-      await expect((bugSpotter as any).submitBugReport(payload)).rejects.toThrow(
+      await expect(bugSpotter.submit(payload)).rejects.toThrow(
         'Failed to submit bug report: 400 Bad Request. Invalid payload'
       );
     });
@@ -358,7 +358,7 @@ describe('API Submission', () => {
       const report = await bugSpotter.capture();
       const payload = { title: 'Test', description: 'Test', report };
 
-      await expect((bugSpotter as any).submitBugReport(payload)).rejects.toThrow(
+      await expect(bugSpotter.submit(payload)).rejects.toThrow(
         'Failed to submit bug report: 500 Internal Server Error. Server error occurred'
       );
     });
@@ -376,7 +376,7 @@ describe('API Submission', () => {
       const report = await bugSpotter.capture();
       const payload = { title: 'Test', description: 'Test', report };
 
-      await expect((bugSpotter as any).submitBugReport(payload)).rejects.toThrow('Network error');
+      await expect(bugSpotter.submit(payload)).rejects.toThrow('Network error');
     });
 
     it('should handle error response with no text body', async () => {
@@ -399,9 +399,7 @@ describe('API Submission', () => {
       const report = await bugSpotter.capture();
       const payload = { title: 'Test', description: 'Test', report };
 
-      await expect((bugSpotter as any).submitBugReport(payload)).rejects.toThrow(
-        'Failed to submit bug report: 403'
-      );
+      await expect(bugSpotter.submit(payload)).rejects.toThrow('Failed to submit bug report: 403');
     });
 
     it('should handle timeout errors', async () => {
@@ -423,7 +421,7 @@ describe('API Submission', () => {
       const report = await bugSpotter.capture();
       const payload = { title: 'Test', description: 'Test', report };
 
-      await expect((bugSpotter as any).submitBugReport(payload)).rejects.toThrow('Request timeout');
+      await expect(bugSpotter.submit(payload)).rejects.toThrow('Request timeout');
     });
   });
 
@@ -480,7 +478,7 @@ describe('API Submission', () => {
         report,
       };
 
-      await (bugSpotter as any).submitBugReport(payload);
+      await bugSpotter.submit(payload);
 
       // Verify bug report creation call
       const call = fetchMock.mock.calls[0];
@@ -548,7 +546,7 @@ describe('API Submission', () => {
         report._screenshotPreview = TEST_SCREENSHOT_DATA_URL;
         const payload = { title: 'Test', description: 'Test', report };
 
-        await (bugSpotter as any).submitBugReport(payload);
+        await bugSpotter.submit(payload);
 
         expect(fetchMock).toHaveBeenCalled();
         const call = fetchMock.mock.calls[0];

@@ -84,7 +84,7 @@ describe('E2E Configuration Tests', () => {
       report.replay = []; // Clear replay to avoid presigned URL upload
       const payload = { title: 'Test', description: 'Test', report };
 
-      await (bugspotter as any).submitBugReport(payload);
+      await bugspotter.submit(payload);
 
       expect(fetchMock).toHaveBeenCalledWith('https://api.bugspotter.io/bugs', expect.any(Object));
     });
@@ -106,7 +106,7 @@ describe('E2E Configuration Tests', () => {
       report.replay = []; // Clear replay to avoid presigned URL upload
       const payload = { title: 'Test', description: 'Test', report };
 
-      await (bugspotter as any).submitBugReport(payload);
+      await bugspotter.submit(payload);
 
       expect(fetchMock).toHaveBeenCalledWith('http://localhost:4000/api/bugs', expect.any(Object));
     });
@@ -134,7 +134,7 @@ describe('E2E Configuration Tests', () => {
       report.replay = []; // Clear replay to avoid presigned URL upload
       const payload = { title: 'Test', description: 'Test', report };
 
-      await (bugspotter as any).submitBugReport(payload);
+      await bugspotter.submit(payload);
 
       expect(fetchMock).toHaveBeenCalledWith(
         'https://custom-domain.com/api/v1/reports',
@@ -167,7 +167,7 @@ describe('E2E Configuration Tests', () => {
       report.replay = []; // Clear replay to avoid presigned URL upload
       const payload = { title: 'Test', description: 'Test', report };
 
-      await (bugspotter as any).submitBugReport(payload);
+      await bugspotter.submit(payload);
 
       const headers = fetchMock.mock.calls[0][1].headers;
       expect(headers['X-API-Key']).toBe('test-api-key-12345');
@@ -198,7 +198,7 @@ describe('E2E Configuration Tests', () => {
       report.replay = []; // Clear replay to avoid presigned URL upload
       const payload = { title: 'Test', description: 'Test', report };
 
-      await (bugspotter as any).submitBugReport(payload);
+      await bugspotter.submit(payload);
 
       const headers = fetchMock.mock.calls[0][1].headers;
       // Auth is now required - API key should be present
@@ -363,7 +363,7 @@ describe('E2E Configuration Tests', () => {
       report.replay = []; // Clear replay to avoid presigned URL upload
       const payload = { title: 'Test', description: largeDescription, report };
 
-      await (bugspotter as any).submitBugReport(payload);
+      await bugspotter.submit(payload);
 
       const call = fetchMock.mock.calls[0];
       const headers = call[1].headers;
@@ -569,7 +569,7 @@ describe('E2E Configuration Tests', () => {
       const report = await bugspotter.capture();
       const payload = { title: 'Test', description: 'Test', report };
 
-      await (bugspotter as any).submitBugReport(payload);
+      await bugspotter.submit(payload);
 
       expect(fetchMock).toHaveBeenCalled();
       expect(report.replay?.length).toBeGreaterThan(0);
@@ -597,7 +597,7 @@ describe('E2E Configuration Tests', () => {
       report.replay = []; // Clear replay to avoid presigned URL upload
       const payload = { title: 'Test', description: 'Test', report };
 
-      await (bugspotter as any).submitBugReport(payload);
+      await bugspotter.submit(payload);
 
       const headers = fetchMock.mock.calls[0][1].headers;
       expect(headers['X-API-Key']).toBe('test-api-key-12345');

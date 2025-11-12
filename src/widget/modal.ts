@@ -12,7 +12,7 @@ const logger = getLogger();
 
 export interface BugReportData {
   title: string;
-  description: string;
+  description?: string;
 }
 
 export interface PIIDetection {
@@ -355,7 +355,7 @@ export class BugReportModal {
     // Submit
     const bugReportData: BugReportData = {
       title: formData.title.trim(),
-      description: formData.description.trim(),
+      description: formData.description?.trim(),
     };
 
     try {

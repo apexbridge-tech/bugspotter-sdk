@@ -18,7 +18,7 @@ export interface ValidationErrors {
 
 export interface FormData {
   title: string;
-  description: string;
+  description?: string;
   piiDetected: boolean;
   piiConfirmed: boolean;
 }
@@ -96,11 +96,17 @@ export class FormValidator {
   /**
    * Validate description field
    */
-  validateDescription(description: string): string | null {
+  validateDescription(description?: string): string | null {
+    // Description is optional
+    if (!description) {
+      return null;
+    }
+
     const trimmed = description.trim();
 
-    if (!trimmed) {
-      return 'Description is required';
+    // Whitespace-only is invalid (user attempted to provide content but it's meaningless)
+    if (trimmed.length === 0) {
+      return 'Description cannot be only whitespace';
     }
 
     if (trimmed.length < this.minDescriptionLength) {
@@ -127,7 +133,7 @@ export class FormValidator {
         return this.validateTitle(value as string);
 
       case 'description':
-        return this.validateDescription(value as string);
+        return this.validateDescription(value as string | undefined);
 
       case 'piiConfirmed':
         if (formData?.piiDetected && !value) {

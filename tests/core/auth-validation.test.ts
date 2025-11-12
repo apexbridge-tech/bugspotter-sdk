@@ -24,7 +24,7 @@ describe('BugSpotter - Authentication Validation', () => {
       const report = await bugSpotter.capture();
 
       await expect(
-        (bugSpotter as any).submitBugReport({
+        bugSpotter.submit({
           title: 'Test',
           description: 'Test',
           report,
@@ -38,7 +38,7 @@ describe('BugSpotter - Authentication Validation', () => {
       const report = await bugSpotter.capture();
 
       await expect(
-        (bugSpotter as any).submitBugReport({
+        bugSpotter.submit({
           title: 'Test',
           description: 'Test',
           report,
@@ -52,7 +52,7 @@ describe('BugSpotter - Authentication Validation', () => {
       const report = await bugSpotter.capture();
 
       await expect(
-        (bugSpotter as any).submitBugReport({
+        bugSpotter.submit({
           title: 'Test',
           description: 'Test',
           report,
@@ -69,7 +69,7 @@ describe('BugSpotter - Authentication Validation', () => {
       const report = await bugSpotter.capture();
 
       await expect(
-        (bugSpotter as any).submitBugReport({
+        bugSpotter.submit({
           title: 'Test',
           description: 'Test',
           report,
@@ -86,7 +86,7 @@ describe('BugSpotter - Authentication Validation', () => {
       const report = await bugSpotter.capture();
 
       await expect(
-        (bugSpotter as any).submitBugReport({
+        bugSpotter.submit({
           title: 'Test',
           description: 'Test',
           report,
@@ -103,7 +103,7 @@ describe('BugSpotter - Authentication Validation', () => {
       const report = await bugSpotter.capture();
 
       await expect(
-        (bugSpotter as any).submitBugReport({
+        bugSpotter.submit({
           title: 'Test',
           description: 'Test',
           report,
@@ -120,7 +120,7 @@ describe('BugSpotter - Authentication Validation', () => {
       const report = await bugSpotter.capture();
 
       await expect(
-        (bugSpotter as any).submitBugReport({
+        bugSpotter.submit({
           title: 'Test',
           description: 'Test',
           report,
@@ -137,7 +137,7 @@ describe('BugSpotter - Authentication Validation', () => {
       const report = await bugSpotter.capture();
 
       await expect(
-        (bugSpotter as any).submitBugReport({
+        bugSpotter.submit({
           title: 'Test',
           description: 'Test',
           report,

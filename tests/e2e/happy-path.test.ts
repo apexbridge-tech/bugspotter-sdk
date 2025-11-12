@@ -215,7 +215,7 @@ describe('Happy Path: Complete Bug Reporting Flow', () => {
       report,
     };
 
-    await (bugspotter as any).submitBugReport(payload);
+    await bugspotter.submit(payload);
 
     // ============================================================================
     // STEP 5: Verify Optimized Upload Flow

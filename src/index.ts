@@ -15,8 +15,12 @@ import { FileUploadHandler } from './core/file-upload-handler';
 import { DEFAULT_REPLAY_DURATION_SECONDS } from './constants';
 import { getApiBaseUrl } from './utils/url-helpers';
 import { validateAuthConfig } from './utils/config-validator';
+import { VERSION } from './version';
 
 const logger = getLogger();
+
+// Re-export VERSION for public API
+export { VERSION };
 
 export class BugSpotter {
   private static instance: BugSpotter | undefined;

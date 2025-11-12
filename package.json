@@ -1,6 +1,6 @@
 {
   "name": "@bugspotter/sdk",
-  "version": "0.1.0-alpha.2",
+  "version": "0.1.0-alpha.4",
   "description": "Professional bug reporting SDK with screenshots, session replay, and automatic error capture for web applications",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
@@ -16,6 +16,8 @@
   },
   "scripts": {
     "dev": "webpack --watch --mode development",
+    "generate-version": "node scripts/generate-version.js",
+    "prebuild": "npm run generate-version",
     "build": "npm run build:webpack && npm run build:esm && npm run build:cjs",
     "build:webpack": "webpack --mode production",
     "build:esm": "tsc --project tsconfig.build.json --module ES2020 --outDir dist/esm && shx mv dist/esm/index.js dist/index.esm.js && shx rm -rf dist/esm",
@@ -23,6 +25,7 @@
     "prepublishOnly": "npm run build && npm test",
     "lint": "eslint \"src/**/*.{ts,js}\"",
     "lint:fix": "eslint \"src/**/*.{ts,js}\" --fix",
+    "pretest": "npm run generate-version",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",

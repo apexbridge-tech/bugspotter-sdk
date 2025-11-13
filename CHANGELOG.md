@@ -7,10 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.3-alpha.5](https://github.com/apexbridge-tech/bugspotter/compare/sdk-v0.1.2-alpha.5...sdk-v0.1.3-alpha.5) (2025-11-13)
 
-
 ### Tests
 
-* **e2e:** migrate E2E tests from local storage to MinIO ([#229](https://github.com/apexbridge-tech/bugspotter/issues/229)) ([df5247d](https://github.com/apexbridge-tech/bugspotter/commit/df5247dee3a58d49dafe0c60f7f0bf6962c3cfb3))
+- **e2e:** migrate E2E tests from local storage to MinIO ([#229](https://github.com/apexbridge-tech/bugspotter/issues/229)) ([df5247d](https://github.com/apexbridge-tech/bugspotter/commit/df5247dee3a58d49dafe0c60f7f0bf6962c3cfb3))
 
 ## [0.1.2-alpha.6](https://github.com/apexbridge-tech/bugspotter/compare/sdk-v0.1.2-alpha.5...sdk-v0.1.2-alpha.6) (2025-11-13)
 

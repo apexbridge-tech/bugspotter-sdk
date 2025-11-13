@@ -168,7 +168,7 @@ describe('Presigned URL Upload Flow', () => {
     expect(mockXHR).toHaveBeenCalledTimes(1);
     const xhr = xhrInstances[0];
     expect(xhr.open).toHaveBeenCalledWith('PUT', MOCK_PRESIGNED_URL);
-    expect(xhr.send).toHaveBeenCalledWith(screenshotBlob);
+    expect(xhr.send).toHaveBeenCalledWith(expect.any(ArrayBuffer));
 
     // Verify confirm upload request
     const confirmCall = fetchMock.mock.calls[1];

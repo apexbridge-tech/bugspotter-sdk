@@ -139,7 +139,7 @@ describe('DirectUploader', () => {
         'PUT',
         'https://s3.example.com/presigned-upload-url'
       );
-      expect(mockXHR.send).toHaveBeenCalledWith(mockFile);
+      expect(mockXHR.send).toHaveBeenCalledWith(expect.any(ArrayBuffer));
     });
 
     it('should track upload progress', async () => {
@@ -374,7 +374,7 @@ describe('DirectUploader', () => {
       await uploader.uploadReplay(mockCompressedData);
 
       // Verify XHR was called without Content-Type header (it's in presigned URL signature)
-      expect(mockXHR.send).toHaveBeenCalledWith(mockCompressedData);
+      expect(mockXHR.send).toHaveBeenCalledWith(expect.any(ArrayBuffer));
     });
 
     it('should track replay upload progress', async () => {
@@ -487,7 +487,7 @@ describe('DirectUploader', () => {
       await uploader.uploadAttachment(mockFile);
 
       // Verify XHR was called without Content-Type header (it's in presigned URL signature)
-      expect(mockXHR.send).toHaveBeenCalledWith(mockFile);
+      expect(mockXHR.send).toHaveBeenCalledWith(expect.any(ArrayBuffer));
     });
 
     it('should handle files without extension', async () => {
@@ -785,7 +785,7 @@ describe('DirectUploader', () => {
       await uploader.uploadScreenshot(mockBlob);
 
       // Verify XHR was called without Content-Type header (it's in presigned URL signature)
-      expect(mockXHR.send).toHaveBeenCalledWith(mockBlob);
+      expect(mockXHR.send).toHaveBeenCalledWith(expect.any(ArrayBuffer));
     });
 
     it('should upload various image types without Content-Type header', async () => {
@@ -816,7 +816,7 @@ describe('DirectUploader', () => {
         await uploader.uploadScreenshot(mockFile);
 
         // Verify XHR was called without Content-Type header (it's in presigned URL signature)
-        expect(mockXHR.send).toHaveBeenCalledWith(mockFile);
+        expect(mockXHR.send).toHaveBeenCalledWith(expect.any(ArrayBuffer));
       }
     });
   });

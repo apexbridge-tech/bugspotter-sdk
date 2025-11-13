@@ -134,7 +134,11 @@ export class DirectUploader {
   private async requestPresignedUrl(
     fileType: 'screenshot' | 'replay' | 'attachment',
     filename: string
-  ): Promise<{ success: boolean; data?: any; error?: string }> {
+  ): Promise<{
+    success: boolean;
+    data?: { uploadUrl: string; storageKey: string };
+    error?: string;
+  }> {
     try {
       const response = await fetch(`${this.config.apiEndpoint}/api/v1/uploads/presigned-url`, {
         method: 'POST',
@@ -176,11 +180,15 @@ export class DirectUploader {
    * Upload file to storage using presigned URL
    * Uses XMLHttpRequest for progress tracking
    */
-  private uploadToStorage(
+  private async uploadToStorage(
     uploadUrl: string,
     file: File | Blob,
     onProgress?: UploadProgressCallback
   ): Promise<boolean> {
+    // Convert File/Blob to ArrayBuffer to prevent browser from auto-setting Content-Type header
+    // This is critical for CORS compatibility with B2/S3 presigned URLs
+    const arrayBuffer = await this.fileToArrayBuffer(file);
+
     return new Promise((resolve) => {
       const xhr = new XMLHttpRequest();
 
@@ -211,11 +219,26 @@ export class DirectUploader {
         resolve(false);
       });
 
-      // Send file
-      // IMPORTANT: Do NOT set Content-Type header - it's already in the presigned URL signature
-      // Setting it here will cause signature mismatch and 403 Forbidden errors with S3/B2
+      // Send file as ArrayBuffer (no Content-Type header)
+      // The presigned URL signature does NOT include Content-Type
       xhr.open('PUT', uploadUrl);
-      xhr.send(file);
+      xhr.send(arrayBuffer);
+    });
+  }
+
+  /**
+   * Convert File/Blob to ArrayBuffer
+   */
+  private fileToArrayBuffer(file: File | Blob): Promise<ArrayBuffer> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        resolve(reader.result as ArrayBuffer);
+      };
+      reader.onerror = () => {
+        reject(new Error('Failed to read file'));
+      };
+      reader.readAsArrayBuffer(file);
     });
   }
 

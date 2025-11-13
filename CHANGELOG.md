@@ -5,6 +5,12 @@ All notable changes to the BugSpotter SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2-alpha.6](https://github.com/apexbridge-tech/bugspotter/compare/sdk-v0.1.2-alpha.5...sdk-v0.1.2-alpha.6) (2025-11-13)
+
+### Bug Fixes
+
+- **sdk:** remove Content-Type header from presigned URL uploads to fix 403 errors - Presigned URLs from S3/B2 are signed with specific headers, and adding additional headers causes signature mismatch and 403 Forbidden errors. This critical fix removes the Content-Type header from both fetch() and XMLHttpRequest uploads to storage.
+
 ## [0.1.2-alpha.5](https://github.com/apexbridge-tech/bugspotter/compare/sdk-v0.1.1-alpha.5...sdk-v0.1.2-alpha.5) (2025-11-12)
 
 ### Bug Fixes

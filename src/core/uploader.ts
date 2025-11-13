@@ -212,8 +212,9 @@ export class DirectUploader {
       });
 
       // Send file
+      // IMPORTANT: Do NOT set Content-Type header - it's already in the presigned URL signature
+      // Setting it here will cause signature mismatch and 403 Forbidden errors with S3/B2
       xhr.open('PUT', uploadUrl);
-      xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
       xhr.send(file);
     });
   }

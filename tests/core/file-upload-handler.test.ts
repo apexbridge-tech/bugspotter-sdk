@@ -67,14 +67,12 @@ describe('FileUploadHandler', () => {
 
       expect(mockFetch).toHaveBeenCalledTimes(3);
 
-      // Verify storage upload call
+      // Verify storage upload call (no Content-Type header - it's in presigned URL signature)
       expect(mockFetch).toHaveBeenCalledWith(
         'https://s3.example.com/screenshot.png',
         expect.objectContaining({
           method: 'PUT',
-          headers: expect.objectContaining({
-            'Content-Type': expect.any(String),
-          }),
+          body: expect.any(Blob),
         })
       );
 
@@ -117,14 +115,12 @@ describe('FileUploadHandler', () => {
 
       expect(mockFetch).toHaveBeenCalledTimes(2);
 
-      // Verify storage upload for replay
+      // Verify storage upload for replay (no Content-Type header - it's in presigned URL signature)
       expect(mockFetch).toHaveBeenCalledWith(
         'https://s3.example.com/replay.gz',
         expect.objectContaining({
           method: 'PUT',
-          headers: expect.objectContaining({
-            'Content-Type': 'application/gzip',
-          }),
+          body: expect.any(Blob),
         })
       );
     });

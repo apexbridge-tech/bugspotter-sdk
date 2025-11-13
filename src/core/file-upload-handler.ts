@@ -97,6 +97,8 @@ export class FileUploadHandler {
 
   /**
    * Upload files to storage using presigned URLs (parallel execution)
+   * Note: No custom headers should be added - presigned URLs are pre-signed with specific headers.
+   * Adding headers like Content-Type that weren't included in the signature will cause 403 errors.
    */
   private async uploadToStorage(files: FileToUpload[]): Promise<void> {
     const uploadPromises = files.map(async (file) => {
@@ -104,11 +106,10 @@ export class FileUploadHandler {
       const timeoutId = setTimeout(() => controller.abort(), FileUploadHandler.UPLOAD_TIMEOUT_MS);
 
       try {
+        // Do NOT add Content-Type header - it's already included in the presigned URL signature
+        // Adding it here will cause a signature mismatch and 403 Forbidden error
         const response = await fetch(file.url, {
           method: 'PUT',
-          headers: {
-            'Content-Type': file.blob.type || 'application/octet-stream',
-          },
           body: file.blob,
           signal: controller.signal,
         });

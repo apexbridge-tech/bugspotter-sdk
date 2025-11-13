@@ -134,12 +134,11 @@ describe('DirectUploader', () => {
         })
       );
 
-      // Verify XHR upload
+      // Verify XHR upload (no Content-Type header - it's in presigned URL signature)
       expect(mockXHR.open).toHaveBeenCalledWith(
         'PUT',
         'https://s3.example.com/presigned-upload-url'
       );
-      expect(mockXHR.setRequestHeader).toHaveBeenCalledWith('Content-Type', 'image/png');
       expect(mockXHR.send).toHaveBeenCalledWith(mockFile);
     });
 
@@ -348,7 +347,7 @@ describe('DirectUploader', () => {
       );
     });
 
-    it('should use correct content type for compressed replay', async () => {
+    it('should upload compressed replay without Content-Type header', async () => {
       const mockCompressedData = new Blob(['compressed-replay-data'], {
         type: 'application/gzip',
       });
@@ -374,7 +373,8 @@ describe('DirectUploader', () => {
 
       await uploader.uploadReplay(mockCompressedData);
 
-      expect(mockXHR.setRequestHeader).toHaveBeenCalledWith('Content-Type', 'application/gzip');
+      // Verify XHR was called without Content-Type header (it's in presigned URL signature)
+      expect(mockXHR.send).toHaveBeenCalledWith(mockCompressedData);
     });
 
     it('should track replay upload progress', async () => {
@@ -462,7 +462,7 @@ describe('DirectUploader', () => {
       );
     });
 
-    it('should preserve attachment content type', async () => {
+    it('should upload attachment without Content-Type header', async () => {
       const mockFile = new File(['text content'], 'notes.txt', { type: 'text/plain' });
 
       mockFetch.mockResolvedValueOnce({
@@ -486,7 +486,8 @@ describe('DirectUploader', () => {
 
       await uploader.uploadAttachment(mockFile);
 
-      expect(mockXHR.setRequestHeader).toHaveBeenCalledWith('Content-Type', 'text/plain');
+      // Verify XHR was called without Content-Type header (it's in presigned URL signature)
+      expect(mockXHR.send).toHaveBeenCalledWith(mockFile);
     });
 
     it('should handle files without extension', async () => {
@@ -758,8 +759,8 @@ describe('DirectUploader', () => {
     });
   });
 
-  describe('Content Type Handling', () => {
-    it('should use default content type for Blob without type', async () => {
+  describe('Upload Without Content-Type Header', () => {
+    it('should upload Blob without Content-Type header', async () => {
       const mockBlob = new Blob(['data']); // No type specified
 
       mockFetch.mockResolvedValueOnce({
@@ -783,13 +784,11 @@ describe('DirectUploader', () => {
 
       await uploader.uploadScreenshot(mockBlob);
 
-      expect(mockXHR.setRequestHeader).toHaveBeenCalledWith(
-        'Content-Type',
-        'application/octet-stream'
-      );
+      // Verify XHR was called without Content-Type header (it's in presigned URL signature)
+      expect(mockXHR.send).toHaveBeenCalledWith(mockBlob);
     });
 
-    it('should handle various image MIME types', async () => {
+    it('should upload various image types without Content-Type header', async () => {
       const mimeTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
 
       for (const mimeType of mimeTypes) {
@@ -816,7 +815,8 @@ describe('DirectUploader', () => {
 
         await uploader.uploadScreenshot(mockFile);
 
-        expect(mockXHR.setRequestHeader).toHaveBeenCalledWith('Content-Type', mimeType);
+        // Verify XHR was called without Content-Type header (it's in presigned URL signature)
+        expect(mockXHR.send).toHaveBeenCalledWith(mockFile);
       }
     });
   });

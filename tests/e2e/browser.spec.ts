@@ -305,6 +305,9 @@ test.describe('BugSpotter SDK - Real Browser Tests', () => {
     await page.setContent(`
       <!DOCTYPE html>
       <html>
+        <head>
+          <script src="https://cdn.jsdelivr.net/npm/rrweb@latest/dist/rrweb.min.js"></script>
+        </head>
         <body>
           <div id="container">
             <h1>Replay Test</h1>

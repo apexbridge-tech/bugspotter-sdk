@@ -1,8 +1,8 @@
 # @bugspotter/sdk
 
-> Core SDK for capturing and reporting bugs
+> Core SDK for capturing and reporting bugs with session replay
 
-The BugSpotter SDK provides a comprehensive solution for capturing bug reports in web applications, including screenshots, console logs, network requests, and browser metadata.
+The BugSpotter SDK provides a comprehensive solution for capturing bug reports in web applications, including screenshots, console logs, network requests, session replay, and browser metadata.
 
 ## 📦 Installation
 

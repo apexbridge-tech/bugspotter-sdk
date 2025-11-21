@@ -5,6 +5,17 @@ All notable changes to the BugSpotter SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0-alpha.5](https://github.com/apexbridge-tech/bugspotter/compare/sdk-v0.1.3-alpha.5...sdk-v0.2.0-alpha.5) (2025-11-21)
+
+
+### ⚠ BREAKING CHANGES
+
+* **sdk:** BugSpotter.init() is now async and returns Promise<BugSpotter>. All callers must use \wait BugSpotter.init(config)\ instead of \BugSpotter.init(config)\. This change enables fetching replay quality settings from the backend before SDK initialization.
+
+### Features
+
+* **sdk:** add backend-controlled replay settings support ([#290](https://github.com/apexbridge-tech/bugspotter/issues/290)) ([0ea7c3b](https://github.com/apexbridge-tech/bugspotter/commit/0ea7c3b1ab456def3fd37c26bca6cf70da0f3ff9))
+
 ## [0.1.3-alpha.5](https://github.com/apexbridge-tech/bugspotter/compare/sdk-v0.1.2-alpha.5...sdk-v0.1.3-alpha.5) (2025-11-13)
 
 ### Tests

@@ -28,13 +28,13 @@ async function injectSDK(page: Page, config: Record<string, unknown> = {}) {
     );
   }
 
-  const isInitialized = await page.evaluate((cfg) => {
+  const isInitialized = await page.evaluate(async (cfg) => {
     // @ts-expect-error - BugSpotter is injected
     if (typeof BugSpotter === 'undefined') {
       return false;
     }
     // @ts-expect-error - Playwright types not fully compatible with test setup
-    window.bugspotterInstance = BugSpotter.init(cfg);
+    window.bugspotterInstance = await BugSpotter.init(cfg);
     return true;
   }, config);
 

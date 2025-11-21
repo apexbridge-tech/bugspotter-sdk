@@ -65,12 +65,26 @@ describe('E2E Configuration Tests', () => {
       fetchMock.mockResolvedValueOnce({
         ok: true,
         status: 200,
+        json: async () => ({
+          success: true,
+          data: {
+            inline_stylesheets: true,
+            inline_images: false,
+            collect_fonts: false,
+            record_canvas: false,
+            record_cross_origin_iframes: false,
+          },
+        }),
+      });
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
         json: async () => {
           return MOCK_BACKEND_RESPONSES.success.body;
         },
       });
 
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: 'test-api-key-12345',
@@ -93,12 +107,26 @@ describe('E2E Configuration Tests', () => {
       fetchMock.mockResolvedValueOnce({
         ok: true,
         status: 200,
+        json: async () => ({
+          success: true,
+          data: {
+            inline_stylesheets: true,
+            inline_images: false,
+            collect_fonts: false,
+            record_canvas: false,
+            record_cross_origin_iframes: false,
+          },
+        }),
+      });
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
         json: async () => {
           return MOCK_BACKEND_RESPONSES.success.body;
         },
       });
 
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         ...CONFIG_PRESETS.selfHosted,
       });
 
@@ -115,12 +143,26 @@ describe('E2E Configuration Tests', () => {
       fetchMock.mockResolvedValueOnce({
         ok: true,
         status: 200,
+        json: async () => ({
+          success: true,
+          data: {
+            inline_stylesheets: true,
+            inline_images: false,
+            collect_fonts: false,
+            record_canvas: false,
+            record_cross_origin_iframes: false,
+          },
+        }),
+      });
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
         json: async () => {
           return MOCK_BACKEND_RESPONSES.success.body;
         },
       });
 
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: 'test-api-key-12345',
@@ -148,12 +190,26 @@ describe('E2E Configuration Tests', () => {
       fetchMock.mockResolvedValueOnce({
         ok: true,
         status: 200,
+        json: async () => ({
+          success: true,
+          data: {
+            inline_stylesheets: true,
+            inline_images: false,
+            collect_fonts: false,
+            record_canvas: false,
+            record_cross_origin_iframes: false,
+          },
+        }),
+      });
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
         json: async () => {
           return MOCK_BACKEND_RESPONSES.success.body;
         },
       });
 
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: 'test-api-key-12345',
@@ -169,7 +225,7 @@ describe('E2E Configuration Tests', () => {
 
       await bugspotter.submit(payload);
 
-      const headers = fetchMock.mock.calls[0][1].headers;
+      const headers = fetchMock.mock.calls[1][1].headers;
       expect(headers['X-API-Key']).toBe('test-api-key-12345');
     });
 
@@ -179,12 +235,26 @@ describe('E2E Configuration Tests', () => {
       fetchMock.mockResolvedValueOnce({
         ok: true,
         status: 200,
+        json: async () => ({
+          success: true,
+          data: {
+            inline_stylesheets: true,
+            inline_images: false,
+            collect_fonts: false,
+            record_canvas: false,
+            record_cross_origin_iframes: false,
+          },
+        }),
+      });
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
         json: async () => {
           return MOCK_BACKEND_RESPONSES.success.body;
         },
       });
 
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: 'test-api-key-12345',
@@ -200,7 +270,7 @@ describe('E2E Configuration Tests', () => {
 
       await bugspotter.submit(payload);
 
-      const headers = fetchMock.mock.calls[0][1].headers;
+      const headers = fetchMock.mock.calls[1][1].headers;
       // Auth is now required - API key should be present
       expect(headers['X-API-Key']).toBe('test-api-key-12345');
     });
@@ -210,7 +280,7 @@ describe('E2E Configuration Tests', () => {
 
   describe('PII Sanitization Configuration', () => {
     it('should work with PII detection enabled', async () => {
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: 'test-api-key-12345',
@@ -240,7 +310,7 @@ describe('E2E Configuration Tests', () => {
     });
 
     it('should work with PII detection disabled', async () => {
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: 'test-api-key-12345',
@@ -269,7 +339,7 @@ describe('E2E Configuration Tests', () => {
     });
 
     it('should work with selective PII patterns', async () => {
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: 'test-api-key-12345',
@@ -301,7 +371,7 @@ describe('E2E Configuration Tests', () => {
     });
 
     it('should work with minimal PII preset', async () => {
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: 'test-api-key-12345',
@@ -336,12 +406,26 @@ describe('E2E Configuration Tests', () => {
       fetchMock.mockResolvedValueOnce({
         ok: true,
         status: 200,
+        json: async () => ({
+          success: true,
+          data: {
+            inline_stylesheets: true,
+            inline_images: false,
+            collect_fonts: false,
+            record_canvas: false,
+            record_cross_origin_iframes: false,
+          },
+        }),
+      });
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
         json: async () => {
           return MOCK_BACKEND_RESPONSES.success.body;
         },
       });
 
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: 'test-api-key-12345',
@@ -378,7 +462,7 @@ describe('E2E Configuration Tests', () => {
 
   describe('Replay Configuration', () => {
     it('should capture replay when enabled', async () => {
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: 'test-api-key-12345',
@@ -403,7 +487,7 @@ describe('E2E Configuration Tests', () => {
     });
 
     it('should not capture replay when disabled', async () => {
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: 'test-api-key-12345',
@@ -427,7 +511,7 @@ describe('E2E Configuration Tests', () => {
     });
 
     it('should respect custom replay duration', async () => {
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: 'test-api-key-12345',
@@ -442,7 +526,7 @@ describe('E2E Configuration Tests', () => {
     });
 
     it('should respect replay sampling configuration', async () => {
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: 'test-api-key-12345',
@@ -463,8 +547,8 @@ describe('E2E Configuration Tests', () => {
   });
 
   describe('Widget Configuration', () => {
-    it('should create widget when showWidget is true', () => {
-      const bugspotter = BugSpotter.init({
+    it('should create widget when showWidget is true', async () => {
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: 'test-api-key-12345',
@@ -479,8 +563,8 @@ describe('E2E Configuration Tests', () => {
       bugspotter.destroy();
     });
 
-    it('should not create widget when showWidget is false', () => {
-      const bugspotter = BugSpotter.init({
+    it('should not create widget when showWidget is false', async () => {
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: 'test-api-key-12345',
@@ -495,8 +579,8 @@ describe('E2E Configuration Tests', () => {
       bugspotter.destroy();
     });
 
-    it('should apply custom widget options', () => {
-      const bugspotter = BugSpotter.init({
+    it('should apply custom widget options', async () => {
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: 'test-api-key-12345',
@@ -523,7 +607,7 @@ describe('E2E Configuration Tests', () => {
 
   describe('Configuration Combinations', () => {
     it('should work with minimal configuration', async () => {
-      const bugspotter = BugSpotter.init(CONFIG_PRESETS.minimal);
+      const bugspotter = await BugSpotter.init(CONFIG_PRESETS.minimal);
 
       const report = await bugspotter.capture();
 
@@ -536,6 +620,20 @@ describe('E2E Configuration Tests', () => {
     it('should work with full configuration', async () => {
       // Optimized flow: Create (with presigned URL) + Confirm upload
       fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            success: true,
+            data: {
+              inline_stylesheets: true,
+              inline_images: false,
+              collect_fonts: false,
+              record_canvas: false,
+              record_cross_origin_iframes: false,
+            },
+          }),
+        })
         .mockResolvedValueOnce({
           ok: true,
           status: 200,
@@ -558,7 +656,7 @@ describe('E2E Configuration Tests', () => {
           json: async () => ({ success: true }), // Replay confirmation
         });
 
-      const bugspotter = BugSpotter.init(CONFIG_PRESETS.full);
+      const bugspotter = await BugSpotter.init(CONFIG_PRESETS.full);
 
       console.log('Test with PII: test@example.com');
 
@@ -586,12 +684,26 @@ describe('E2E Configuration Tests', () => {
       fetchMock.mockResolvedValueOnce({
         ok: true,
         status: 200,
+        json: async () => ({
+          success: true,
+          data: {
+            inline_stylesheets: true,
+            inline_images: false,
+            collect_fonts: false,
+            record_canvas: false,
+            record_cross_origin_iframes: false,
+          },
+        }),
+      });
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
         json: async () => {
           return MOCK_BACKEND_RESPONSES.success.body;
         },
       });
 
-      const bugspotter = BugSpotter.init(CONFIG_PRESETS.noAuth);
+      const bugspotter = await BugSpotter.init(CONFIG_PRESETS.noAuth);
 
       const report = await bugspotter.capture();
       report.replay = []; // Clear replay to avoid presigned URL upload
@@ -599,7 +711,7 @@ describe('E2E Configuration Tests', () => {
 
       await bugspotter.submit(payload);
 
-      const headers = fetchMock.mock.calls[0][1].headers;
+      const headers = fetchMock.mock.calls[1][1].headers;
       expect(headers['X-API-Key']).toBe('test-api-key-12345');
     });
   });

@@ -69,6 +69,23 @@ describe('Happy Path: Complete Bug Reporting Flow', () => {
     // ============================================================================
     // STEP 1: Initialize SDK with Full Configuration
     // ============================================================================
+
+    // Mock replay settings fetch (called during init)
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        success: true,
+        data: {
+          inline_stylesheets: true,
+          inline_images: false,
+          collect_fonts: false,
+          record_canvas: false,
+          record_cross_origin_iframes: false,
+        },
+      }),
+    });
+
     const config: BugSpotterConfig = {
       auth: {
         type: 'api-key',
@@ -87,7 +104,7 @@ describe('Happy Path: Complete Bug Reporting Flow', () => {
       },
     };
 
-    const bugspotter = BugSpotter.init(config);
+    const bugspotter = await BugSpotter.init(config);
     expect(bugspotter).toBeDefined();
     expect(BugSpotter.getInstance()).toBe(bugspotter);
 
@@ -225,12 +242,17 @@ describe('Happy Path: Complete Bug Reporting Flow', () => {
     // in the mock response. Future improvement: return { id, success, message }
     // from submitBugReport() so callers can access the result programmatically.
 
-    // Optimized flow: create (with presigned URLs) + 2 confirm calls = 3 total
-    // Improvement: -2 HTTP requests vs old flow (5 total)
-    expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(3);
+    // Optimized flow: settings + create (with presigned URLs) + 2 confirm calls = 4 total
+    // Improvement: -2 HTTP requests vs old flow (6 total)
+    expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(4);
+
+    // Verify call 0: Fetch replay settings (during init)
+    const settingsCall = fetchMock.mock.calls[0];
+    expect(settingsCall[0]).toBe(`${config.endpoint}/api/v1/settings/replay`);
+    expect(settingsCall[1].headers['x-api-key']).toBe('test-api-key-12345');
 
     // Verify call 1: Create bug report (includes hasScreenshot and hasReplay flags)
-    const createCall = fetchMock.mock.calls[0];
+    const createCall = fetchMock.mock.calls[1];
     expect(createCall[0]).toBe(config.endpoint);
     expect(createCall[1].method).toBe('POST');
     expect(createCall[1].headers['X-API-Key']).toBe('test-api-key-12345');
@@ -247,14 +269,14 @@ describe('Happy Path: Complete Bug Reporting Flow', () => {
     expect(createBody.hasReplay).toBe(true); // NEW: SDK tells backend it has replay
 
     // Verify call 2: Screenshot upload confirmation
-    const screenshotConfirmCall = fetchMock.mock.calls[1];
+    const screenshotConfirmCall = fetchMock.mock.calls[2];
     expect(screenshotConfirmCall[0]).toContain('/api/v1/reports/' + bugId + '/confirm-upload');
     expect(screenshotConfirmCall[1].method).toBe('POST');
     const screenshotConfirmBody = JSON.parse(screenshotConfirmCall[1].body);
     expect(screenshotConfirmBody.fileType).toBe('screenshot');
 
     // Verify call 3: Replay upload confirmation
-    const replayConfirmCall = fetchMock.mock.calls[2];
+    const replayConfirmCall = fetchMock.mock.calls[3];
     expect(replayConfirmCall[0]).toContain('/api/v1/reports/' + bugId + '/confirm-upload');
     expect(replayConfirmCall[1].method).toBe('POST');
     const replayConfirmBody = JSON.parse(replayConfirmCall[1].body);

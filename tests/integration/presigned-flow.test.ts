@@ -149,6 +149,22 @@ describe('SDK Presigned URL Upload Flow', () => {
   });
 
   it('should complete full bug report submission with screenshot and replay', async () => {
+    // Mock settings endpoint
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        success: true,
+        data: {
+          inline_stylesheets: true,
+          inline_images: false,
+          collect_fonts: false,
+          record_canvas: false,
+          record_cross_origin_iframes: false,
+        },
+      }),
+    });
+
     // Optimized flow: Create (with presigned URLs) + S3 uploads (handled by global fetch) + confirmations
     fetchMock
       .mockResolvedValueOnce({
@@ -183,7 +199,7 @@ describe('SDK Presigned URL Upload Flow', () => {
       });
 
     // Initialize SDK
-    const sdk = BugSpotter.init({
+    const sdk = await BugSpotter.init({
       endpoint: MOCK_ENDPOINT,
       showWidget: false,
       auth: {
@@ -210,29 +226,35 @@ describe('SDK Presigned URL Upload Flow', () => {
       report,
     });
 
-    // Optimized flow: 3 API calls (create with URLs + 2 confirms)
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    // Optimized flow: 4 API calls (settings + create with URLs + 2 confirms)
+    expect(fetchMock).toHaveBeenCalledTimes(4);
 
-    // Verify bug report creation
-    const createCall = fetchMock.mock.calls[0];
+    // Verify bug report creation (call 1, after settings at 0)
+    const createCall = fetchMock.mock.calls[1];
     expect(createCall[0]).toBe(MOCK_ENDPOINT);
 
-    // Verify confirmation calls (calls 1 and 2)
-    const screenshotConfirmCall = fetchMock.mock.calls[1];
+    // Verify confirmation calls (calls 2 and 3)
+    const screenshotConfirmCall = fetchMock.mock.calls[2];
     expect(screenshotConfirmCall[0]).toContain('/confirm-upload');
 
-    const replayConfirmCall = fetchMock.mock.calls[2];
+    const replayConfirmCall = fetchMock.mock.calls[3];
     expect(replayConfirmCall[0]).toContain('/confirm-upload');
   });
 
   it('should handle bug report creation without screenshot', async () => {
+    // No settings mock needed - replay is disabled so settings aren't fetched
     fetchMock.mockResolvedValueOnce({
       ok: true,
       status: 201,
-      json: async () => mockBugReportResponse,
+      json: async () => ({
+        success: true,
+        data: {
+          id: MOCK_BUG_ID,
+        },
+      }),
     });
 
-    const sdk = BugSpotter.init({
+    const sdk = await BugSpotter.init({
       endpoint: MOCK_ENDPOINT,
       showWidget: false,
       auth: {
@@ -254,12 +276,28 @@ describe('SDK Presigned URL Upload Flow', () => {
       report,
     });
 
-    // Only bug report creation call, no uploads
+    // Only bug report creation call, no settings (replay disabled) or uploads
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(xhrInstances.length).toBe(0);
   });
 
   it('should handle screenshot upload failure gracefully', async () => {
+    // Mock settings endpoint
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        success: true,
+        data: {
+          inline_stylesheets: true,
+          inline_images: false,
+          collect_fonts: false,
+          record_canvas: false,
+          record_cross_origin_iframes: false,
+        },
+      }),
+    });
+
     // Bug report succeeds, screenshot presigned URL fails
     fetchMock
       .mockResolvedValueOnce({
@@ -273,7 +311,7 @@ describe('SDK Presigned URL Upload Flow', () => {
         text: async () => 'Internal server error',
       });
 
-    const sdk = BugSpotter.init({
+    const sdk = await BugSpotter.init({
       endpoint: MOCK_ENDPOINT,
       showWidget: false,
       auth: {
@@ -300,6 +338,22 @@ describe('SDK Presigned URL Upload Flow', () => {
   });
 
   it('should handle replay upload with compressed events', async () => {
+    // Mock settings endpoint
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        success: true,
+        data: {
+          inline_stylesheets: true,
+          inline_images: false,
+          collect_fonts: false,
+          record_canvas: false,
+          record_cross_origin_iframes: false,
+        },
+      }),
+    });
+
     // Optimized flow: Create (with presigned URL for replay) + confirm
     fetchMock
       .mockResolvedValueOnce({
@@ -313,7 +367,7 @@ describe('SDK Presigned URL Upload Flow', () => {
         json: async () => mockConfirmResponse,
       });
 
-    const sdk = BugSpotter.init({
+    const sdk = await BugSpotter.init({
       endpoint: MOCK_ENDPOINT,
       showWidget: false,
       auth: {
@@ -351,11 +405,27 @@ describe('SDK Presigned URL Upload Flow', () => {
       report,
     });
 
-    // Verify replay upload was attempted (create + confirm)
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    // Verify replay upload was attempted (settings + create + confirm)
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
   it('should handle both screenshot and replay uploads concurrently', async () => {
+    // Mock settings endpoint
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        success: true,
+        data: {
+          inline_stylesheets: true,
+          inline_images: false,
+          collect_fonts: false,
+          record_canvas: false,
+          record_cross_origin_iframes: false,
+        },
+      }),
+    });
+
     // Optimized flow: Create (with presigned URLs) + S3 uploads (handled by global fetch) + confirmations
     fetchMock
       .mockResolvedValueOnce({
@@ -389,7 +459,7 @@ describe('SDK Presigned URL Upload Flow', () => {
         json: async () => mockConfirmResponse,
       });
 
-    const sdk = BugSpotter.init({
+    const sdk = await BugSpotter.init({
       endpoint: MOCK_ENDPOINT,
       showWidget: false,
       auth: {
@@ -418,18 +488,34 @@ describe('SDK Presigned URL Upload Flow', () => {
       report,
     });
 
-    // Optimized flow: 3 API calls (create with URLs + 2 confirms)
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    // Optimized flow: 4 API calls (settings + create with URLs + 2 confirms)
+    expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 
   it('should handle bug report creation failure', async () => {
+    // Mock settings endpoint
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        success: true,
+        data: {
+          inline_stylesheets: true,
+          inline_images: false,
+          collect_fonts: false,
+          record_canvas: false,
+          record_cross_origin_iframes: false,
+        },
+      }),
+    });
+
     fetchMock.mockResolvedValueOnce({
       ok: false,
       status: 400,
       text: async () => 'Invalid request',
     });
 
-    const sdk = BugSpotter.init({
+    const sdk = await BugSpotter.init({
       endpoint: MOCK_ENDPOINT,
       showWidget: false,
       auth: {
@@ -449,12 +535,28 @@ describe('SDK Presigned URL Upload Flow', () => {
       })
     ).rejects.toThrow('Failed to submit bug report');
 
-    // No uploads should be attempted
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    // No uploads should be attempted (settings + failed create)
+    expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(xhrInstances.length).toBe(0);
   });
 
   it('should handle missing bug report ID in response', async () => {
+    // Mock settings endpoint
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        success: true,
+        data: {
+          inline_stylesheets: true,
+          inline_images: false,
+          collect_fonts: false,
+          record_canvas: false,
+          record_cross_origin_iframes: false,
+        },
+      }),
+    });
+
     fetchMock.mockResolvedValueOnce({
       ok: true,
       status: 201,
@@ -467,7 +569,7 @@ describe('SDK Presigned URL Upload Flow', () => {
       }),
     });
 
-    const sdk = BugSpotter.init({
+    const sdk = await BugSpotter.init({
       endpoint: MOCK_ENDPOINT,
       showWidget: false,
       auth: {
@@ -501,7 +603,7 @@ describe('SDK Presigned URL Upload Flow', () => {
       });
 
       // Initialize SDK without auth
-      const sdk = BugSpotter.init({
+      const sdk = await BugSpotter.init({
         endpoint: MOCK_ENDPOINT,
         showWidget: false,
         // @ts-expect-error - Testing missing auth
@@ -530,7 +632,7 @@ describe('SDK Presigned URL Upload Flow', () => {
       });
 
       // Initialize SDK with wrong auth type
-      const sdk = BugSpotter.init({
+      const sdk = await BugSpotter.init({
         endpoint: MOCK_ENDPOINT,
         showWidget: false,
         auth: {
@@ -560,7 +662,7 @@ describe('SDK Presigned URL Upload Flow', () => {
       });
 
       // Initialize SDK without apiKey
-      const sdk = BugSpotter.init({
+      const sdk = await BugSpotter.init({
         endpoint: MOCK_ENDPOINT,
         showWidget: false,
         auth: {
@@ -592,7 +694,7 @@ describe('SDK Presigned URL Upload Flow', () => {
       });
 
       // Initialize SDK without projectId
-      const sdk = BugSpotter.init({
+      const sdk = await BugSpotter.init({
         endpoint: MOCK_ENDPOINT,
         showWidget: false,
         auth: {
@@ -617,6 +719,22 @@ describe('SDK Presigned URL Upload Flow', () => {
     });
 
     it('should throw error when screenshot upload fails', async () => {
+      // Mock settings endpoint
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          success: true,
+          data: {
+            inline_stylesheets: true,
+            inline_images: false,
+            collect_fonts: false,
+            record_canvas: false,
+            record_cross_origin_iframes: false,
+          },
+        }),
+      });
+
       // Setup mocks: create report with presigned URL (optimized flow)
       fetchMock.mockResolvedValueOnce({
         ok: true,
@@ -653,7 +771,7 @@ describe('SDK Presigned URL Upload Flow', () => {
         return fetchMock(url, ...args);
       }) as any;
 
-      const sdk = BugSpotter.init({
+      const sdk = await BugSpotter.init({
         endpoint: MOCK_ENDPOINT,
         showWidget: false,
         auth: {

@@ -44,6 +44,49 @@ BugSpotter.init({
 });
 ```
 
+### Backend-Controlled Quality Settings
+
+By default, the SDK fetches replay quality settings from the backend `/api/v1/settings/replay` endpoint. This allows administrators to control replay quality globally without requiring SDK updates.
+
+**Default Backend Settings:**
+
+- `inlineStylesheet: true` - Include CSS stylesheets in recordings
+- `inlineImages: false` - Don't inline images (smaller payload)
+- `collectFonts: false` - Don't collect font files
+- `recordCanvas: false` - Don't record canvas elements
+- `recordCrossOriginIframes: false` - Don't record cross-origin iframes
+
+**User Configuration Override:**
+
+You can override backend settings in your SDK configuration. User config takes precedence over backend settings:
+
+```typescript
+await BugSpotter.init({
+  apiKey: 'your-api-key',
+  endpoint: 'https://api.bugspotter.com',
+  replay: {
+    enabled: true,
+    duration: 15,
+    // Override backend settings:
+    inlineImages: true, // Force enable inline images
+    recordCanvas: true, // Force enable canvas recording
+    collectFonts: true, // Force enable font collection
+    inlineStylesheet: false, // Force disable stylesheets
+    recordCrossOriginIframes: false, // Control iframe recording
+  },
+});
+```
+
+**Note:** `BugSpotter.init()` is now async to support fetching backend settings. Always use `await`:
+
+```typescript
+// ✅ GOOD: Await init to ensure settings are fetched
+await BugSpotter.init(config);
+
+// ❌ BAD: Missing await - settings might not be applied
+BugSpotter.init(config);
+```
+
 ### Disabling Replay
 
 ```typescript

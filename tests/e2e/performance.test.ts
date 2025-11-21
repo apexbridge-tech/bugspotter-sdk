@@ -120,10 +120,10 @@ describe('E2E Performance Benchmarks', () => {
   });
 
   describe('SDK Initialization Performance', () => {
-    it('should initialize SDK in less than 50ms', () => {
+    it('should initialize SDK in less than 50ms', async () => {
       const startTime = performance.now();
 
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: '',
@@ -145,10 +145,10 @@ describe('E2E Performance Benchmarks', () => {
       console.log(`✓ SDK initialization: ${initTime.toFixed(2)}ms (target: <50ms)`);
     });
 
-    it('should initialize minimal SDK in less than 20ms', () => {
+    it('should initialize minimal SDK in less than 20ms', async () => {
       const startTime = performance.now();
 
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: 'test-api-key-12345',
@@ -172,7 +172,7 @@ describe('E2E Performance Benchmarks', () => {
 
   describe('Bug Capture Performance', () => {
     it('should capture bug report in less than 500ms', async () => {
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: 'test-api-key-12345',
@@ -208,7 +208,7 @@ describe('E2E Performance Benchmarks', () => {
     });
 
     it('should capture without replay faster (<300ms)', async () => {
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: 'test-api-key-12345',
@@ -238,7 +238,7 @@ describe('E2E Performance Benchmarks', () => {
     it(
       'should capture large DOM efficiently',
       async () => {
-        const bugspotter = BugSpotter.init({
+        const bugspotter = await BugSpotter.init({
           auth: {
             type: 'api-key',
             apiKey: 'test-api-key-12345',
@@ -289,7 +289,7 @@ describe('E2E Performance Benchmarks', () => {
 
   describe('Payload Preparation Performance', () => {
     it('should prepare full payload in less than 2 seconds', async () => {
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: '',
@@ -376,7 +376,7 @@ describe('E2E Performance Benchmarks', () => {
 
   describe('Sanitization Performance', () => {
     it('should sanitize console logs with minimal overhead (<500ms in JSDOM)', async () => {
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: 'test-api-key-12345',
@@ -402,7 +402,7 @@ describe('E2E Performance Benchmarks', () => {
       bugspotter.destroy();
 
       // Compare with disabled sanitization
-      const bugspotterNoSanitization = BugSpotter.init({
+      const bugspotterNoSanitization = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: 'test-api-key-12345',
@@ -445,7 +445,7 @@ describe('E2E Performance Benchmarks', () => {
 
   describe('Memory Usage', () => {
     it('should maintain reasonable memory footprint', async () => {
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: 'test-api-key-12345',
@@ -485,7 +485,7 @@ describe('E2E Performance Benchmarks', () => {
       const workflowStart = performance.now();
 
       // 1. Initialize
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: 'test-api-key-12345',
@@ -540,7 +540,7 @@ describe('E2E Performance Benchmarks', () => {
 
   describe('Concurrent Operations', () => {
     it('should handle multiple captures efficiently', async () => {
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: 'test-api-key-12345',

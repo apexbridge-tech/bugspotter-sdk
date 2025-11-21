@@ -22,8 +22,75 @@ const logger = getLogger();
 // Re-export VERSION for public API
 export { VERSION };
 
+/**
+ * Replay quality settings fetched from backend
+ */
+interface ReplayQualitySettings {
+  inline_stylesheets: boolean;
+  inline_images: boolean;
+  collect_fonts: boolean;
+  record_canvas: boolean;
+  record_cross_origin_iframes: boolean;
+}
+
+/**
+ * Fetch replay quality settings from backend
+ * Falls back to hardcoded defaults if fetch fails or settings not available
+ *
+ * @param endpoint - API endpoint URL
+ * @param apiKey - Optional API key for authentication
+ * @returns Replay quality settings with defaults applied
+ */
+async function fetchReplaySettings(
+  endpoint: string,
+  apiKey?: string
+): Promise<ReplayQualitySettings> {
+  const defaults: ReplayQualitySettings = {
+    inline_stylesheets: true,
+    inline_images: false,
+    collect_fonts: false,
+    record_canvas: false,
+    record_cross_origin_iframes: false,
+  };
+
+  try {
+    const apiBaseUrl = getApiBaseUrl(endpoint);
+    const headers: Record<string, string> = {};
+    if (apiKey) {
+      headers['x-api-key'] = apiKey;
+    }
+
+    const response = await fetch(`${apiBaseUrl}/api/v1/settings/replay`, { headers });
+
+    if (!response.ok) {
+      logger.warn(`Failed to fetch replay settings: ${response.status}. Using defaults.`);
+      return defaults;
+    }
+
+    const result = await response.json();
+
+    if (!result.success || !result.data) {
+      logger.warn('Invalid replay settings response. Using defaults.');
+      return defaults;
+    }
+
+    return {
+      inline_stylesheets: result.data.inline_stylesheets ?? defaults.inline_stylesheets,
+      inline_images: result.data.inline_images ?? defaults.inline_images,
+      collect_fonts: result.data.collect_fonts ?? defaults.collect_fonts,
+      record_canvas: result.data.record_canvas ?? defaults.record_canvas,
+      record_cross_origin_iframes:
+        result.data.record_cross_origin_iframes ?? defaults.record_cross_origin_iframes,
+    };
+  } catch (error) {
+    logger.warn('Failed to fetch replay settings from backend. Using defaults.', error);
+    return defaults;
+  }
+}
+
 export class BugSpotter {
   private static instance: BugSpotter | undefined;
+  private static initPromise: Promise<BugSpotter> | undefined;
 
   private config: BugSpotterConfig;
   private screenshot: ScreenshotCapture;
@@ -60,6 +127,11 @@ export class BugSpotter {
       this.domCollector = new DOMCollector({
         duration: config.replay?.duration ?? DEFAULT_REPLAY_DURATION_SECONDS,
         sampling: config.replay?.sampling,
+        inlineStylesheet: config.replay?.inlineStylesheet,
+        inlineImages: config.replay?.inlineImages,
+        collectFonts: config.replay?.collectFonts,
+        recordCanvas: config.replay?.recordCanvas,
+        recordCrossOriginIframes: config.replay?.recordCrossOriginIframes,
         sanitizer: this.sanitizer,
       });
       this.domCollector.startRecording();
@@ -74,11 +146,70 @@ export class BugSpotter {
     }
   }
 
-  static init(config: BugSpotterConfig): BugSpotter {
-    if (!BugSpotter.instance) {
-      BugSpotter.instance = new BugSpotter(config);
+  static async init(config: BugSpotterConfig): Promise<BugSpotter> {
+    // If instance exists, warn about singleton behavior
+    if (BugSpotter.instance) {
+      logger.warn(
+        'BugSpotter.init() called multiple times. Returning existing instance. ' +
+          'Call destroy() first to reinitialize with new config.'
+      );
+      return BugSpotter.instance;
     }
-    return BugSpotter.instance;
+
+    // If initialization is already in progress, wait for it
+    if (BugSpotter.initPromise) {
+      logger.warn('BugSpotter.init() called while initialization in progress. Waiting...');
+      return BugSpotter.initPromise;
+    }
+
+    // Start initialization and cache the promise
+    BugSpotter.initPromise = BugSpotter.createInstance(config);
+
+    try {
+      BugSpotter.instance = await BugSpotter.initPromise;
+      return BugSpotter.instance;
+    } finally {
+      // Clear the promise once initialization completes (success or failure)
+      BugSpotter.initPromise = undefined;
+    }
+  }
+
+  /**
+   * Internal factory method to create a new BugSpotter instance
+   * Fetches replay settings from backend before initialization
+   */
+  private static async createInstance(config: BugSpotterConfig): Promise<BugSpotter> {
+    // Fetch replay quality settings from backend if replay is enabled
+    let backendSettings: ReplayQualitySettings | null = null;
+    if (config.replay?.enabled !== false && config.endpoint) {
+      // Validate auth is configured before attempting fetch
+      if (!config.auth?.apiKey) {
+        logger.warn(
+          'Endpoint provided but no API key configured. Skipping backend settings fetch.'
+        );
+      } else {
+        backendSettings = await fetchReplaySettings(config.endpoint, config.auth.apiKey);
+      }
+    }
+
+    // Merge backend settings with user config (user config takes precedence)
+    const mergedConfig: BugSpotterConfig = {
+      ...config,
+      replay: {
+        ...config.replay,
+        inlineStylesheet:
+          config.replay?.inlineStylesheet ?? backendSettings?.inline_stylesheets ?? true,
+        inlineImages: config.replay?.inlineImages ?? backendSettings?.inline_images ?? false,
+        collectFonts: config.replay?.collectFonts ?? backendSettings?.collect_fonts ?? false,
+        recordCanvas: config.replay?.recordCanvas ?? backendSettings?.record_canvas ?? false,
+        recordCrossOriginIframes:
+          config.replay?.recordCrossOriginIframes ??
+          backendSettings?.record_cross_origin_iframes ??
+          false,
+      },
+    };
+
+    return new BugSpotter(mergedConfig);
   }
 
   static getInstance(): BugSpotter | null {
@@ -253,6 +384,7 @@ export class BugSpotter {
     this.domCollector?.destroy();
     this.widget?.destroy();
     BugSpotter.instance = undefined;
+    BugSpotter.initPromise = undefined;
   }
 }
 
@@ -285,6 +417,17 @@ export interface BugSpotterConfig {
       /** Throttle scroll events in milliseconds (default: 100) */
       scroll?: number;
     };
+    /** Quality settings (optional, backend controlled by default) */
+    /** Whether to inline stylesheets in recordings (default: backend controlled) */
+    inlineStylesheet?: boolean;
+    /** Whether to inline images in recordings (default: backend controlled) */
+    inlineImages?: boolean;
+    /** Whether to collect fonts for replay (default: backend controlled) */
+    collectFonts?: boolean;
+    /** Whether to record canvas elements (default: backend controlled) */
+    recordCanvas?: boolean;
+    /** Whether to record cross-origin iframes (default: backend controlled) */
+    recordCrossOriginIframes?: boolean;
   };
   sanitize?: {
     /** Enable PII sanitization (default: true) */

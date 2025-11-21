@@ -12,7 +12,7 @@ describe('BugSpotter', () => {
   });
 
   describe('Singleton Pattern', () => {
-    it('should create a singleton instance', () => {
+    it('should create a singleton instance', async () => {
       const config: BugSpotterConfig = {
         auth: {
           type: 'api-key',
@@ -20,13 +20,13 @@ describe('BugSpotter', () => {
           projectId: 'proj-12345678-1234-1234-1234-123456789abc',
         },
       };
-      const instance1 = BugSpotter.init(config);
-      const instance2 = BugSpotter.init(config);
+      const instance1 = await BugSpotter.init(config);
+      const instance2 = await BugSpotter.init(config);
 
       expect(instance1).toBe(instance2);
     });
 
-    it('should return the same instance from getInstance', () => {
+    it('should return the same instance from getInstance', async () => {
       const config: BugSpotterConfig = {
         auth: {
           type: 'api-key',
@@ -34,7 +34,7 @@ describe('BugSpotter', () => {
           projectId: 'proj-12345678-1234-1234-1234-123456789abc',
         },
       };
-      const instance1 = BugSpotter.init(config);
+      const instance1 = await BugSpotter.init(config);
       const instance2 = BugSpotter.getInstance();
 
       expect(instance1).toBe(instance2);
@@ -47,7 +47,7 @@ describe('BugSpotter', () => {
   });
 
   describe('Configuration', () => {
-    it('should initialize with apiKey only', () => {
+    it('should initialize with apiKey only', async () => {
       const config: BugSpotterConfig = {
         auth: {
           type: 'api-key',
@@ -55,13 +55,29 @@ describe('BugSpotter', () => {
           projectId: 'proj-12345678-1234-1234-1234-123456789abc',
         },
       };
-      const bugspotter = BugSpotter.init(config);
+      const bugspotter = await BugSpotter.init(config);
 
       expect(bugspotter).toBeDefined();
-      expect(bugspotter.getConfig()).toEqual(config);
+      expect(bugspotter.getConfig().auth).toEqual(config.auth);
     });
 
-    it('should initialize with endpoint only', () => {
+    it('should initialize with endpoint only', async () => {
+      // Mock settings endpoint
+      vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          success: true,
+          data: {
+            inline_stylesheets: true,
+            inline_images: false,
+            collect_fonts: false,
+            record_canvas: false,
+            record_cross_origin_iframes: false,
+          },
+        }),
+      } as Response);
+
       const config: BugSpotterConfig = {
         auth: {
           type: 'api-key',
@@ -70,13 +86,31 @@ describe('BugSpotter', () => {
         },
         endpoint: 'https://api.example.com',
       };
-      const bugspotter = BugSpotter.init(config);
+      const bugspotter = await BugSpotter.init(config);
 
       expect(bugspotter).toBeDefined();
-      expect(bugspotter.getConfig()).toEqual(config);
+      const savedConfig = bugspotter.getConfig();
+      expect(savedConfig.auth).toEqual(config.auth);
+      expect(savedConfig.endpoint).toBe(config.endpoint);
     });
 
-    it('should initialize with both apiKey and endpoint', () => {
+    it('should initialize with both apiKey and endpoint', async () => {
+      // Mock settings endpoint
+      vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          success: true,
+          data: {
+            inline_stylesheets: true,
+            inline_images: false,
+            collect_fonts: false,
+            record_canvas: false,
+            record_cross_origin_iframes: false,
+          },
+        }),
+      } as Response);
+
       const config: BugSpotterConfig = {
         auth: {
           type: 'api-key',
@@ -85,13 +119,15 @@ describe('BugSpotter', () => {
         },
         endpoint: 'https://api.example.com',
       };
-      const bugspotter = BugSpotter.init(config);
+      const bugspotter = await BugSpotter.init(config);
 
       expect(bugspotter).toBeDefined();
-      expect(bugspotter.getConfig()).toEqual(config);
+      const savedConfig = bugspotter.getConfig();
+      expect(savedConfig.auth).toEqual(config.auth);
+      expect(savedConfig.endpoint).toBe(config.endpoint);
     });
 
-    it('should initialize with minimal config', () => {
+    it('should initialize with minimal config', async () => {
       const config: BugSpotterConfig = {
         auth: {
           type: 'api-key',
@@ -99,13 +135,13 @@ describe('BugSpotter', () => {
           projectId: 'proj-12345678-1234-1234-1234-123456789abc',
         },
       };
-      const bugspotter = BugSpotter.init(config);
+      const bugspotter = await BugSpotter.init(config);
 
       expect(bugspotter).toBeDefined();
-      expect(bugspotter.getConfig()).toEqual(config);
+      expect(bugspotter.getConfig().auth).toEqual(config.auth);
     });
 
-    it('should return a copy of config (not reference)', () => {
+    it('should return a copy of config (not reference)', async () => {
       const config: BugSpotterConfig = {
         auth: {
           type: 'api-key',
@@ -113,17 +149,17 @@ describe('BugSpotter', () => {
           projectId: 'proj-12345678-1234-1234-1234-123456789abc',
         },
       };
-      const bugspotter = BugSpotter.init(config);
+      const bugspotter = await BugSpotter.init(config);
       const configCopy = bugspotter.getConfig();
 
-      expect(configCopy).toEqual(config);
+      expect(configCopy.auth).toEqual(config.auth);
       expect(configCopy).not.toBe(config);
     });
   });
 
   describe('Capture', () => {
     it('should capture all data types', async () => {
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: '',
@@ -149,7 +185,7 @@ describe('BugSpotter', () => {
     });
 
     it('should capture replay events when enabled', async () => {
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: '',
@@ -175,7 +211,7 @@ describe('BugSpotter', () => {
     });
 
     it('should not capture replay events when disabled', async () => {
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: '',
@@ -194,7 +230,7 @@ describe('BugSpotter', () => {
     });
 
     it('should respect replay duration configuration', async () => {
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: '',
@@ -211,7 +247,7 @@ describe('BugSpotter', () => {
     });
 
     it('should capture console logs', async () => {
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: '',
@@ -229,7 +265,7 @@ describe('BugSpotter', () => {
     });
 
     it('should capture metadata with required fields', async () => {
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: '',
@@ -247,7 +283,7 @@ describe('BugSpotter', () => {
     });
 
     it('should return BugReport with correct structure', async () => {
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: '',
@@ -278,8 +314,8 @@ describe('BugSpotter', () => {
   });
 
   describe('Lifecycle', () => {
-    it('should destroy and clear singleton instance', () => {
-      const bugspotter = BugSpotter.init({
+    it('should destroy and clear singleton instance', async () => {
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: '',
@@ -293,7 +329,7 @@ describe('BugSpotter', () => {
       expect(BugSpotter.getInstance()).toBeNull();
     });
 
-    it('should allow re-initialization after destroy', () => {
+    it('should allow re-initialization after destroy', async () => {
       const config1: BugSpotterConfig = {
         auth: {
           type: 'api-key',
@@ -301,7 +337,7 @@ describe('BugSpotter', () => {
           projectId: 'proj-12345678-1234-1234-1234-123456789abc',
         },
       };
-      const instance1 = BugSpotter.init(config1);
+      const instance1 = await BugSpotter.init(config1);
 
       instance1.destroy();
 
@@ -312,14 +348,14 @@ describe('BugSpotter', () => {
           projectId: 'proj-12345678-1234-1234-1234-123456789abc',
         },
       };
-      const instance2 = BugSpotter.init(config2);
+      const instance2 = await BugSpotter.init(config2);
 
       expect(instance2).not.toBe(instance1);
-      expect(instance2.getConfig()).toEqual(config2);
+      expect(instance2.getConfig().auth).toEqual(config2.auth);
     });
 
-    it('should clean up console interceptor on destroy', () => {
-      const bugspotter = BugSpotter.init({
+    it('should clean up console interceptor on destroy', async () => {
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: '',
@@ -336,8 +372,8 @@ describe('BugSpotter', () => {
       }).not.toThrow();
     });
 
-    it('should clean up network interceptor on destroy', () => {
-      const bugspotter = BugSpotter.init({
+    it('should clean up network interceptor on destroy', async () => {
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: '',
@@ -354,7 +390,7 @@ describe('BugSpotter', () => {
 
   describe('Multiple Capture Calls', () => {
     it('should handle multiple capture calls', async () => {
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: '',
@@ -372,7 +408,7 @@ describe('BugSpotter', () => {
     });
 
     it('should accumulate console logs between captures', async () => {
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: '',
@@ -393,8 +429,8 @@ describe('BugSpotter', () => {
   });
 
   describe('Widget Integration', () => {
-    it('should create widget by default', () => {
-      const bugspotter = BugSpotter.init({
+    it('should create widget by default', async () => {
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: '',
@@ -409,8 +445,8 @@ describe('BugSpotter', () => {
       bugspotter.destroy();
     });
 
-    it('should not create widget when showWidget is false', () => {
-      const bugspotter = BugSpotter.init({
+    it('should not create widget when showWidget is false', async () => {
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: '',
@@ -426,8 +462,8 @@ describe('BugSpotter', () => {
       bugspotter.destroy();
     });
 
-    it('should pass widget options correctly', () => {
-      const bugspotter = BugSpotter.init({
+    it('should pass widget options correctly', async () => {
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: '',
@@ -451,8 +487,8 @@ describe('BugSpotter', () => {
       bugspotter.destroy();
     });
 
-    it('should destroy widget when BugSpotter is destroyed', () => {
-      const bugspotter = BugSpotter.init({
+    it('should destroy widget when BugSpotter is destroyed', async () => {
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: '',
@@ -470,7 +506,7 @@ describe('BugSpotter', () => {
     });
 
     it('should call capture when widget button is clicked', async () => {
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: '',
@@ -497,8 +533,8 @@ describe('BugSpotter', () => {
       bugspotter.destroy();
     });
 
-    it('should handle widget configuration with showWidget true explicitly', () => {
-      const bugspotter = BugSpotter.init({
+    it('should handle widget configuration with showWidget true explicitly', async () => {
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: '',
@@ -516,7 +552,7 @@ describe('BugSpotter', () => {
 
   describe('Bug Report Modal Integration', () => {
     it('should show modal with screenshot when widget button is clicked', async () => {
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: '',
@@ -554,7 +590,7 @@ describe('BugSpotter', () => {
 
     it('should log bug report data when modal is submitted', async () => {
       const consoleLogSpy = vi.spyOn(console, 'log');
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: '',
@@ -613,7 +649,7 @@ describe('BugSpotter', () => {
         return el.shadowRoot?.querySelector('.overlay');
       }).length;
 
-      const bugspotter = BugSpotter.init({
+      const bugspotter = await BugSpotter.init({
         auth: {
           type: 'api-key',
           apiKey: '',

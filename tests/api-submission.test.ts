@@ -91,7 +91,7 @@ describe('API Submission', () => {
           json: async () => ({ success: true }), // Screenshot confirmation
         });
 
-      const bugSpotter = BugSpotter.init({
+      const bugSpotter = await BugSpotter.init({
         auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
@@ -140,7 +140,7 @@ describe('API Submission', () => {
         json: async () => ({ success: true, data: { id: TEST_BUG_ID } }),
       });
 
-      const bugSpotter = BugSpotter.init({
+      const bugSpotter = await BugSpotter.init({
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
         replay: { enabled: false },
@@ -188,7 +188,7 @@ describe('API Submission', () => {
           json: async () => ({ success: true }), // Screenshot confirmation
         });
 
-      const bugSpotter = BugSpotter.init({
+      const bugSpotter = await BugSpotter.init({
         auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
@@ -206,6 +206,20 @@ describe('API Submission', () => {
     it('should upload replay events when replay is enabled', async () => {
       // Optimized flow: create (with presigned URLs) + S3 uploads + confirmations
       fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            success: true,
+            data: {
+              inline_stylesheets: true,
+              inline_images: false,
+              collect_fonts: false,
+              record_canvas: false,
+              record_cross_origin_iframes: false,
+            },
+          }),
+        })
         .mockResolvedValueOnce({
           ok: true,
           status: 201,
@@ -247,7 +261,7 @@ describe('API Submission', () => {
           json: async () => ({ success: true }), // Replay confirmation
         });
 
-      const bugSpotter = BugSpotter.init({
+      const bugSpotter = await BugSpotter.init({
         auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
@@ -264,8 +278,8 @@ describe('API Submission', () => {
 
       await expect(bugSpotter.submit(payload)).resolves.not.toThrow();
 
-      // Should have made 5 fetch calls: create + 2 S3 uploads + 2 confirmations
-      expect(fetchMock).toHaveBeenCalledTimes(5);
+      // Should have made 6 fetch calls: settings + create + 2 S3 uploads + 2 confirmations
+      expect(fetchMock).toHaveBeenCalledTimes(6);
 
       bugSpotter.destroy();
     });
@@ -277,7 +291,7 @@ describe('API Submission', () => {
         json: async () => ({ success: true, data: { id: TEST_BUG_ID } }),
       });
 
-      const bugSpotter = BugSpotter.init({
+      const bugSpotter = await BugSpotter.init({
         auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
@@ -298,7 +312,7 @@ describe('API Submission', () => {
 
   describe('Error handling', () => {
     it('should throw error if no endpoint is configured', async () => {
-      const bugSpotter = BugSpotter.init({
+      const bugSpotter = await BugSpotter.init({
         auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
         showWidget: false,
         replay: { enabled: false },
@@ -324,7 +338,7 @@ describe('API Submission', () => {
         },
       });
 
-      const bugSpotter = BugSpotter.init({
+      const bugSpotter = await BugSpotter.init({
         auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
@@ -340,16 +354,31 @@ describe('API Submission', () => {
     });
 
     it('should throw error on HTTP 5xx error', async () => {
-      fetchMock.mockResolvedValueOnce({
-        ok: false,
-        status: 500,
-        statusText: 'Internal Server Error',
-        text: async () => {
-          return 'Server error occurred';
-        },
-      });
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            success: true,
+            data: {
+              inline_stylesheets: true,
+              inline_images: false,
+              collect_fonts: false,
+              record_canvas: false,
+              record_cross_origin_iframes: false,
+            },
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 500,
+          statusText: 'Internal Server Error',
+          text: async () => {
+            return 'Server error occurred';
+          },
+        });
 
-      const bugSpotter = BugSpotter.init({
+      const bugSpotter = await BugSpotter.init({
         auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
@@ -364,9 +393,23 @@ describe('API Submission', () => {
     });
 
     it('should handle network errors', async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          success: true,
+          data: {
+            inline_stylesheets: true,
+            inline_images: false,
+            collect_fonts: false,
+            record_canvas: false,
+            record_cross_origin_iframes: false,
+          },
+        }),
+      });
       fetchMock.mockRejectedValueOnce(new Error('Network error'));
 
-      const bugSpotter = BugSpotter.init({
+      const bugSpotter = await BugSpotter.init({
         auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
@@ -389,7 +432,7 @@ describe('API Submission', () => {
         },
       });
 
-      const bugSpotter = BugSpotter.init({
+      const bugSpotter = await BugSpotter.init({
         auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
@@ -403,6 +446,20 @@ describe('API Submission', () => {
     });
 
     it('should handle timeout errors', async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          success: true,
+          data: {
+            inline_stylesheets: true,
+            inline_images: false,
+            collect_fonts: false,
+            record_canvas: false,
+            record_cross_origin_iframes: false,
+          },
+        }),
+      });
       fetchMock.mockImplementationOnce(() => {
         return new Promise((_, reject) => {
           return setTimeout(() => {
@@ -411,7 +468,7 @@ describe('API Submission', () => {
         });
       });
 
-      const bugSpotter = BugSpotter.init({
+      const bugSpotter = await BugSpotter.init({
         auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
@@ -456,7 +513,7 @@ describe('API Submission', () => {
           json: async () => ({ success: true }), // Screenshot confirmation
         });
 
-      const bugSpotter = BugSpotter.init({
+      const bugSpotter = await BugSpotter.init({
         auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
@@ -535,7 +592,7 @@ describe('API Submission', () => {
             json: async () => ({ success: true }), // Screenshot confirmation
           });
 
-        const bugSpotter = BugSpotter.init({
+        const bugSpotter = await BugSpotter.init({
           auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
           endpoint,
           showWidget: false,

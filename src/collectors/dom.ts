@@ -14,6 +14,12 @@ export interface DOMCollectorConfig {
     /** Throttle scroll events (ms, default: 100) */
     scroll?: number;
   };
+  /** Whether to inline stylesheets in recordings (default: true) */
+  inlineStylesheet?: boolean;
+  /** Whether to inline images in recordings (default: false) */
+  inlineImages?: boolean;
+  /** Whether to collect fonts for replay (default: false) */
+  collectFonts?: boolean;
   /** Whether to record canvas elements (default: false) */
   recordCanvas?: boolean;
   /** Whether to record cross-origin iframes (default: false) */
@@ -37,6 +43,9 @@ export class DOMCollector {
   private config: DOMCollectorConfig & {
     duration: number;
     sampling: Required<DOMCollectorConfig['sampling']>;
+    inlineStylesheet: boolean;
+    inlineImages: boolean;
+    collectFonts: boolean;
     recordCanvas: boolean;
     recordCrossOriginIframes: boolean;
   };
@@ -50,6 +59,9 @@ export class DOMCollector {
         mousemove: config.sampling?.mousemove ?? 50,
         scroll: config.sampling?.scroll ?? 100,
       },
+      inlineStylesheet: config.inlineStylesheet ?? true,
+      inlineImages: config.inlineImages ?? false,
+      collectFonts: config.collectFonts ?? false,
       recordCanvas: config.recordCanvas ?? false,
       recordCrossOriginIframes: config.recordCrossOriginIframes ?? false,
       sanitizer: config.sanitizer,
@@ -110,10 +122,10 @@ export class DOMCollector {
           headMetaAuthorship: true, // Don't record authorship meta tags
           headMetaVerification: true, // Don't record verification meta tags
         },
-        // Don't inline images to keep payload size down
-        inlineImages: false,
-        // Collect fonts for proper replay
-        collectFonts: false,
+        // Quality settings (controlled by backend or user config)
+        inlineStylesheet: this.config.inlineStylesheet,
+        inlineImages: this.config.inlineImages,
+        collectFonts: this.config.collectFonts,
       };
 
       this.stopRecordingFn = record(recordConfig);

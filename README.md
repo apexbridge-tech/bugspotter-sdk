@@ -55,8 +55,8 @@ The built SDK will be available at `dist/bugspotter.min.js` (~99 KB minified wit
 ```javascript
 import BugSpotter from '@bugspotter/sdk';
 
-// Initialize with auto-widget
-const bugSpotter = BugSpotter.init({
+// Initialize with auto-widget (note: init is async)
+const bugSpotter = await BugSpotter.init({
   endpoint: 'https://api.bugspotter.com/api/v1/reports',
   auth: {
     type: 'api-key',
@@ -72,7 +72,7 @@ const bugSpotter = BugSpotter.init({
 ```javascript
 const BugSpotter = require('@bugspotter/sdk');
 
-const bugSpotter = BugSpotter.init({
+const bugSpotter = await BugSpotter.init({
   endpoint: 'https://api.bugspotter.com/api/v1/reports',
   auth: {
     type: 'api-key',
@@ -275,7 +275,7 @@ BugSpotter.init({
 
 #### `BugSpotter.init(config)`
 
-Initialize the SDK.
+Initialize the SDK. **This method is async** to support fetching backend-controlled replay quality settings.
 
 **Parameters:**
 
@@ -298,6 +298,12 @@ interface BugSpotterConfig {
       mousemove?: number; // Mousemove throttle in ms (default: 50)
       scroll?: number; // Scroll throttle in ms (default: 100)
     };
+    // Quality settings (optional, backend controlled by default)
+    inlineStylesheet?: boolean; // Inline CSS stylesheets (default: backend controlled)
+    inlineImages?: boolean; // Inline images (default: backend controlled)
+    collectFonts?: boolean; // Collect fonts (default: backend controlled)
+    recordCanvas?: boolean; // Record canvas elements (default: backend controlled)
+    recordCrossOriginIframes?: boolean; // Record cross-origin iframes (default: backend controlled)
   };
   sanitize?: {
     // PII sanitization configuration

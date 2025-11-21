@@ -48,7 +48,7 @@ async function fetchReplaySettings(
   const defaults: ReplayQualitySettings = {
     inline_stylesheets: true,
     inline_images: false,
-    collect_fonts: false,
+    collect_fonts: true,
     record_canvas: false,
     record_cross_origin_iframes: false,
   };

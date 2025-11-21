@@ -299,6 +299,143 @@ test.describe('BugSpotter SDK - Real Browser Tests', () => {
     expect(messages).toContain('[REDACTED');
   });
 
+  test('should preserve full snapshot in replay buffer (prevents "Node not found" errors)', async ({
+    page,
+  }) => {
+    await page.setContent(`
+      <!DOCTYPE html>
+      <html>
+        <body>
+          <div id="container">
+            <h1>Replay Test</h1>
+            <button id="add-button">Add Element</button>
+            <div id="content"></div>
+          </div>
+        </body>
+      </html>
+    `);
+
+    await injectSDK(page, {
+      showWidget: false,
+      replay: {
+        enabled: true,
+        duration: 5, // 5 second buffer
+      },
+    });
+
+    // Wait for initial full snapshot to be recorded
+    await page.waitForTimeout(100);
+
+    // Simulate user interactions over time that create DOM mutations
+    for (let i = 0; i < 10; i++) {
+      await page.evaluate((index) => {
+        const button = document.getElementById('add-button');
+        if (button) {
+          button.click();
+        }
+        const content = document.getElementById('content');
+        const newElement = document.createElement('p');
+        newElement.id = `element-${index}`;
+        newElement.textContent = `Element ${index}`;
+        content?.appendChild(newElement);
+      }, i);
+      await page.waitForTimeout(600); // 600ms between actions (total 6 seconds > 5s buffer)
+    }
+
+    // Capture the report after buffer duration has passed
+    const report = await page.evaluate(async () => {
+      // @ts-expect-error - Playwright types not fully compatible with test setup
+      if (!window.bugspotterInstance) {
+        return null;
+      }
+      // @ts-expect-error - Playwright types not fully compatible with test setup
+      return await window.bugspotterInstance.capture();
+    });
+
+    expect(report).toBeTruthy();
+    expect(report.replay).toBeDefined();
+    expect(report.replay.length).toBeGreaterThan(0);
+
+    // Verify replay data has both full snapshot and mutations
+    const events = report.replay;
+
+    // Should have at least one full snapshot (type 2)
+    const fullSnapshots = events.filter((event: any) => event.type === 2);
+    expect(fullSnapshots.length).toBeGreaterThan(0);
+
+    // Should have incremental snapshots (type 3 - mutations)
+    const mutations = events.filter((event: any) => event.type === 3);
+    expect(mutations.length).toBeGreaterThan(0);
+
+    // Most importantly: verify the replay can be played without errors
+    // by checking that the first event is a full snapshot
+    expect(events[0].type).toBe(2);
+
+    console.log(
+      `Replay events captured: ${events.length} (${fullSnapshots.length} full snapshots, ${mutations.length} mutations)`
+    );
+
+    // Now verify rrweb can actually replay this data without "Node not found" errors
+    const replayErrors = await page.evaluate((replayEvents) => {
+      const errors: string[] = [];
+
+      // Import rrweb replayer - must be available for test to pass
+      // @ts-expect-error - rrweb types
+      if (typeof rrweb === 'undefined') {
+        throw new Error('rrweb.Replayer not available - cannot verify replay functionality');
+      }
+
+      try {
+        // Create a container for replay
+        const replayContainer = document.createElement('div');
+        replayContainer.id = 'replay-container';
+        replayContainer.style.display = 'none';
+        document.body.appendChild(replayContainer);
+
+        // Capture console errors during replay
+        const originalError = console.error;
+        console.error = (...args: any[]) => {
+          const message = args.join(' ');
+          if (message.includes('Node') && message.includes('not found')) {
+            errors.push(message);
+          }
+          originalError.apply(console, args);
+        };
+
+        // @ts-expect-error - rrweb types
+        const replayer = new rrweb.Replayer(replayEvents, {
+          root: replayContainer,
+          skipInactive: true,
+          speed: 10, // Fast replay for testing
+        });
+
+        // Try to initialize replay
+        replayer.pause(0);
+
+        // Restore console.error
+        console.error = originalError;
+
+        // Cleanup
+        replayContainer.remove();
+      } catch (error: any) {
+        errors.push(error.message || String(error));
+      }
+
+      return errors;
+    }, events);
+
+    // This is the key assertion: no "Node with id X not found" errors
+    const nodeNotFoundErrors = replayErrors.filter(
+      (err) => err.includes('Node') && err.includes('not found')
+    );
+
+    if (nodeNotFoundErrors.length > 0) {
+      console.error('Replay errors detected:', nodeNotFoundErrors);
+    }
+
+    expect(nodeNotFoundErrors.length).toBe(0);
+  });
+
   test('should handle Shadow DOM', async ({ page }) => {
     await page.setContent(`
       <!DOCTYPE html>

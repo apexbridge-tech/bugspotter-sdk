@@ -26,6 +26,7 @@ export { VERSION };
  * Replay quality settings fetched from backend
  */
 interface ReplayQualitySettings {
+  duration: number;
   inline_stylesheets: boolean;
   inline_images: boolean;
   collect_fonts: boolean;
@@ -46,6 +47,7 @@ async function fetchReplaySettings(
   apiKey?: string
 ): Promise<ReplayQualitySettings> {
   const defaults: ReplayQualitySettings = {
+    duration: DEFAULT_REPLAY_DURATION_SECONDS,
     inline_stylesheets: true,
     inline_images: false,
     collect_fonts: true,
@@ -75,6 +77,7 @@ async function fetchReplaySettings(
     }
 
     return {
+      duration: result.data.duration ?? defaults.duration,
       inline_stylesheets: result.data.inline_stylesheets ?? defaults.inline_stylesheets,
       inline_images: result.data.inline_images ?? defaults.inline_images,
       collect_fonts: result.data.collect_fonts ?? defaults.collect_fonts,
@@ -197,6 +200,8 @@ export class BugSpotter {
       ...config,
       replay: {
         ...config.replay,
+        duration:
+          config.replay?.duration ?? backendSettings?.duration ?? DEFAULT_REPLAY_DURATION_SECONDS,
         inlineStylesheet:
           config.replay?.inlineStylesheet ?? backendSettings?.inline_stylesheets ?? true,
         inlineImages: config.replay?.inlineImages ?? backendSettings?.inline_images ?? false,

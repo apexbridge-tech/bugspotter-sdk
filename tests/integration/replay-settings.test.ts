@@ -43,6 +43,7 @@ describe('Replay Quality Settings Integration', () => {
         json: async () => ({
           success: true,
           data: {
+            duration: 15,
             inline_stylesheets: true,
             inline_images: false,
             collect_fonts: true,
@@ -65,6 +66,7 @@ describe('Replay Quality Settings Integration', () => {
         json: async () => ({
           success: true,
           data: {
+            duration: 15,
             inline_stylesheets: true,
             inline_images: false,
             collect_fonts: true,
@@ -178,6 +180,7 @@ describe('Replay Quality Settings Integration', () => {
         json: async () => ({
           success: true,
           data: {
+            duration: 20,
             inline_stylesheets: true,
             inline_images: false,
             collect_fonts: true,
@@ -210,6 +213,7 @@ describe('Replay Quality Settings Integration', () => {
         json: async () => ({
           success: true,
           data: {
+            duration: 30,
             inline_stylesheets: false,
             inline_images: true,
             collect_fonts: false,
@@ -231,6 +235,7 @@ describe('Replay Quality Settings Integration', () => {
         json: async () => ({
           success: true,
           data: {
+            duration: 15,
             inline_stylesheets: true,
             inline_images: false,
             collect_fonts: true,
@@ -293,6 +298,7 @@ describe('Replay Quality Settings Integration', () => {
         json: async () => ({
           success: true,
           data: {
+            duration: 15,
             inline_stylesheets: true,
             inline_images: false,
             collect_fonts: true,
@@ -317,6 +323,7 @@ describe('Replay Quality Settings Integration', () => {
         json: async () => ({
           success: true,
           data: {
+            duration: 15,
             inline_stylesheets: true,
             inline_images: false,
             collect_fonts: true,

@@ -7,15 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.1-alpha.5](https://github.com/apexbridge-tech/bugspotter/compare/sdk-v0.2.0-alpha.5...sdk-v0.2.1-alpha.5) (2025-11-21)
 
-
 ### Bug Fixes
 
-* **test:** load rrweb from CDN for replay verification ([#297](https://github.com/apexbridge-tech/bugspotter/issues/297)) ([cbd575f](https://github.com/apexbridge-tech/bugspotter/commit/cbd575f4ab50da7b81df5be13d8a48fd48f391e6))
-
+- **test:** load rrweb from CDN for replay verification ([#297](https://github.com/apexbridge-tech/bugspotter/issues/297)) ([cbd575f](https://github.com/apexbridge-tech/bugspotter/commit/cbd575f4ab50da7b81df5be13d8a48fd48f391e6))
 
 ### Documentation
 
-* **sdk:** update README to mention session replay feature ([#298](https://github.com/apexbridge-tech/bugspotter/issues/298)) ([28535c2](https://github.com/apexbridge-tech/bugspotter/commit/28535c2cf9df4deaebb96a92a4503a7371813142))
+- **sdk:** update README to mention session replay feature ([#298](https://github.com/apexbridge-tech/bugspotter/issues/298)) ([28535c2](https://github.com/apexbridge-tech/bugspotter/commit/28535c2cf9df4deaebb96a92a4503a7371813142))
 
 ## [0.2.0-alpha.5](https://github.com/apexbridge-tech/bugspotter/compare/sdk-v0.1.3-alpha.5...sdk-v0.2.0-alpha.5) (2025-11-21)
 

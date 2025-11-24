@@ -5,6 +5,18 @@ All notable changes to the BugSpotter SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2-alpha.5](https://github.com/apexbridge-tech/bugspotter/compare/sdk-v0.2.1-alpha.5...sdk-v0.2.2-alpha.5) (2025-11-24)
+
+
+### Features
+
+* **sdk:** Add mouse event sampling settings support ([#313](https://github.com/apexbridge-tech/bugspotter/issues/313)) ([dd49bd0](https://github.com/apexbridge-tech/bugspotter/commit/dd49bd0fba99be1b3c6043669c9df8c4ae04f8c9))
+
+
+### Bug Fixes
+
+* **ci:** auto-format CHANGELOG in release-please PRs ([#300](https://github.com/apexbridge-tech/bugspotter/issues/300)) ([35a5541](https://github.com/apexbridge-tech/bugspotter/commit/35a5541450d75029964d060587784682f2ac3613))
+
 ## [0.2.1-alpha.5](https://github.com/apexbridge-tech/bugspotter/compare/sdk-v0.2.0-alpha.5...sdk-v0.2.1-alpha.5) (2025-11-21)
 
 ### Bug Fixes

@@ -55,6 +55,8 @@ By default, the SDK fetches replay quality settings from the backend `/api/v1/se
 - `collectFonts: false` - Don't collect font files
 - `recordCanvas: false` - Don't record canvas elements
 - `recordCrossOriginIframes: false` - Don't record cross-origin iframes
+- `replay_sampling_mousemove: 50` - Mouse movement sampling rate in milliseconds
+- `replay_sampling_scroll: 100` - Scroll event sampling rate in milliseconds
 
 **User Configuration Override:**
 
@@ -67,12 +69,17 @@ await BugSpotter.init({
   replay: {
     enabled: true,
     duration: 15,
-    // Override backend settings:
+    // Override backend quality settings:
     inlineImages: true, // Force enable inline images
     recordCanvas: true, // Force enable canvas recording
     collectFonts: true, // Force enable font collection
     inlineStylesheet: false, // Force disable stylesheets
     recordCrossOriginIframes: false, // Control iframe recording
+    // Override backend sampling settings:
+    sampling: {
+      mousemove: 25, // Override to 25ms (40 FPS)
+      scroll: 50, // Override to 50ms (20 FPS)
+    },
   },
 });
 ```

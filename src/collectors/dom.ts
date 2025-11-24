@@ -89,18 +89,8 @@ export class DOMCollector {
         sampling: {
           mousemove: this.config.sampling?.mousemove ?? 50,
           scroll: this.config.sampling?.scroll ?? 100,
-          // Also throttle mouse interactions slightly for better performance
-          mouseInteraction: {
-            MouseUp: false,
-            MouseDown: false,
-            Click: false,
-            ContextMenu: false,
-            DblClick: false,
-            Focus: false,
-            Blur: false,
-            TouchStart: false,
-            TouchEnd: false,
-          },
+          // Record all mouse interactions for replay visibility
+          mouseInteraction: true,
         },
         recordCanvas: this.config.recordCanvas,
         recordCrossOriginIframes: this.config.recordCrossOriginIframes,

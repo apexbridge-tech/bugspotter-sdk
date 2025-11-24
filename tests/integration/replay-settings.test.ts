@@ -49,6 +49,8 @@ describe('Replay Quality Settings Integration', () => {
             collect_fonts: true,
             record_canvas: false,
             record_cross_origin_iframes: false,
+            sampling_mousemove: 50,
+            sampling_scroll: 100,
           },
         }),
       } as Response);
@@ -72,6 +74,8 @@ describe('Replay Quality Settings Integration', () => {
             collect_fonts: true,
             record_canvas: false,
             record_cross_origin_iframes: false,
+            sampling_mousemove: 50,
+            sampling_scroll: 100,
           },
         }),
       } as Response);
@@ -186,6 +190,8 @@ describe('Replay Quality Settings Integration', () => {
             collect_fonts: true,
             record_canvas: false,
             record_cross_origin_iframes: false,
+            sampling_mousemove: 50,
+            sampling_scroll: 100,
           },
         }),
       } as Response);
@@ -241,6 +247,8 @@ describe('Replay Quality Settings Integration', () => {
             collect_fonts: true,
             record_canvas: false,
             record_cross_origin_iframes: false,
+            sampling_mousemove: 50,
+            sampling_scroll: 100,
           },
         }),
       } as Response);
@@ -304,6 +312,8 @@ describe('Replay Quality Settings Integration', () => {
             collect_fonts: true,
             record_canvas: false,
             record_cross_origin_iframes: false,
+            sampling_mousemove: 50,
+            sampling_scroll: 100,
           },
         }),
       } as Response);
@@ -329,6 +339,8 @@ describe('Replay Quality Settings Integration', () => {
             collect_fonts: true,
             record_canvas: false,
             record_cross_origin_iframes: false,
+            sampling_mousemove: 50,
+            sampling_scroll: 100,
           },
         }),
       } as Response);

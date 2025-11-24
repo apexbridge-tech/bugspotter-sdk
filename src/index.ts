@@ -32,6 +32,8 @@ interface ReplayQualitySettings {
   collect_fonts: boolean;
   record_canvas: boolean;
   record_cross_origin_iframes: boolean;
+  sampling_mousemove: number;
+  sampling_scroll: number;
 }
 
 /**
@@ -53,6 +55,8 @@ async function fetchReplaySettings(
     collect_fonts: true,
     record_canvas: false,
     record_cross_origin_iframes: false,
+    sampling_mousemove: 50,
+    sampling_scroll: 100,
   };
 
   try {
@@ -84,6 +88,8 @@ async function fetchReplaySettings(
       record_canvas: result.data.record_canvas ?? defaults.record_canvas,
       record_cross_origin_iframes:
         result.data.record_cross_origin_iframes ?? defaults.record_cross_origin_iframes,
+      sampling_mousemove: result.data.sampling_mousemove ?? defaults.sampling_mousemove,
+      sampling_scroll: result.data.sampling_scroll ?? defaults.sampling_scroll,
     };
   } catch (error) {
     logger.warn('Failed to fetch replay settings from backend. Using defaults.', error);
@@ -211,6 +217,11 @@ export class BugSpotter {
           config.replay?.recordCrossOriginIframes ??
           backendSettings?.record_cross_origin_iframes ??
           false,
+        sampling: {
+          mousemove:
+            config.replay?.sampling?.mousemove ?? backendSettings?.sampling_mousemove ?? 50,
+          scroll: config.replay?.sampling?.scroll ?? backendSettings?.sampling_scroll ?? 100,
+        },
       },
     };
 

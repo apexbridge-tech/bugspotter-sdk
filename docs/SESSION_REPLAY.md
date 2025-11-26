@@ -11,6 +11,29 @@ The BugSpotter SDK now includes session replay functionality that captures DOM m
 - **Automatic Recording**: Starts recording when BugSpotter initializes
 - **Minimal Overhead**: Slim DOM recording options to reduce payload size
 - **Serializable Events**: All events are JSON-serializable for easy transmission
+- **Browser-Side Decompression**: Replay files are decompressed and processed in the browser
+- **Automatic Meta Event Injection**: Missing Meta events (viewport dimensions) are automatically injected for proper replay rendering
+
+## Architecture
+
+### Data Flow
+
+1. **SDK Side**: Records rrweb events → Compresses to gzip → Uploads to backend storage (MinIO/S3)
+2. **Backend**: Stores compressed `.replay` files, provides presigned URLs for direct download
+3. **Admin Panel**: Downloads compressed file → Decompresses in browser → Injects Meta event if missing → Renders with rrweb-player
+
+### Required Event Types for Replay
+
+For a session replay to render correctly, it must contain:
+
+1. **Meta Event (type 4)**: Contains viewport dimensions (`width`, `height`, `href`)
+   - If missing, automatically injected by the admin panel with default dimensions (1280x720)
+2. **FullSnapshot Event (type 2)**: Complete DOM snapshot at recording start
+   - This is the initial state of the page
+3. **IncrementalSnapshot Events (type 3)**: DOM mutations, mouse movements, clicks, scrolls
+   - These are the changes that occurred during the session
+
+**Note**: The SDK always includes Meta events in recordings. However, if you're working with older replays or manually constructed events, the admin panel will automatically inject a Meta event to ensure proper rendering.
 
 ## Configuration
 

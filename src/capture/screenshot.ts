@@ -15,7 +15,7 @@ export interface ScreenshotCaptureOptions extends CaptureOptions {
 }
 
 const DEFAULT_SCREENSHOT_OPTIONS = {
-  quality: 0.8,
+  quality: 0.95, // Increased from 0.8 to 0.95 for higher quality PNG capture
   cacheBust: true,
   backgroundColor: '#ffffff',
   excludeAttribute: 'data-bugspotter-exclude',

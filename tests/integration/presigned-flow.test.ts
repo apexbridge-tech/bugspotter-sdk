@@ -268,7 +268,8 @@ describe('SDK Presigned URL Upload Flow', () => {
     });
 
     const report = await sdk.capture();
-    // No screenshot preview
+    // No screenshot - clear the internal preview from the report
+    report._screenshotPreview = undefined;
 
     await sdk['submit']({
       title: 'Test Bug Without Screenshot',
@@ -588,7 +589,7 @@ describe('SDK Presigned URL Upload Flow', () => {
         description: 'Testing missing ID',
         report,
       })
-    ).rejects.toThrow('Bug report ID not returned from server');
+    ).rejects.toThrow('Invalid server response format');
 
     // No uploads should be attempted
     expect(xhrInstances.length).toBe(0);

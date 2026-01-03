@@ -1,26 +1,70 @@
-import { ScreenshotCapture } from './capture/screenshot';
-import { ConsoleCapture } from './capture/console';
-import { NetworkCapture } from './capture/network';
-import { MetadataCapture } from './capture/metadata';
 import type { BrowserMetadata } from './capture/metadata';
 import { FloatingButton, type FloatingButtonOptions } from './widget/button';
 import { BugReportModal } from './widget/modal';
-import { DOMCollector } from './collectors';
 import type { eventWithTime } from '@rrweb/types';
 import { createSanitizer, type Sanitizer } from './utils/sanitize';
 import { getLogger } from './utils/logger';
-import { submitWithAuth, type AuthConfig, type RetryConfig } from './core/transport';
+import type { AuthConfig, RetryConfig } from './core/transport';
 import type { OfflineConfig } from './core/offline-queue';
-import { FileUploadHandler } from './core/file-upload-handler';
 import { DEFAULT_REPLAY_DURATION_SECONDS } from './constants';
 import { getApiBaseUrl } from './utils/url-helpers';
-import { validateAuthConfig } from './utils/config-validator';
 import { VERSION } from './version';
+import { type DeduplicationConfig } from './utils/deduplicator';
+import { validateDeduplicationConfig } from './utils/config-validator';
+import { CaptureManager } from './core/capture-manager';
+import { BugReporter } from './core/bug-reporter';
 
 const logger = getLogger();
 
 // Re-export VERSION for public API
 export { VERSION };
+
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+
+const DEFAULT_MOUSEMOVE_SAMPLING = 50;
+const DEFAULT_SCROLL_SAMPLING = 100;
+
+// ============================================================================
+// TYPE GUARDS
+// ============================================================================
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Merge replay configuration from user config and backend settings
+ * User config takes precedence over backend settings
+ */
+function mergeReplayConfig(
+  userConfig: BugSpotterConfig['replay'],
+  backendSettings: ReplayQualitySettings | null
+): BugSpotterConfig['replay'] {
+  return {
+    ...userConfig,
+    duration: userConfig?.duration ?? backendSettings?.duration ?? DEFAULT_REPLAY_DURATION_SECONDS,
+    inlineStylesheet: userConfig?.inlineStylesheet ?? backendSettings?.inline_stylesheets ?? true,
+    inlineImages: userConfig?.inlineImages ?? backendSettings?.inline_images ?? false,
+    collectFonts: userConfig?.collectFonts ?? backendSettings?.collect_fonts ?? false,
+    recordCanvas: userConfig?.recordCanvas ?? backendSettings?.record_canvas ?? false,
+    recordCrossOriginIframes:
+      userConfig?.recordCrossOriginIframes ?? backendSettings?.record_cross_origin_iframes ?? false,
+    sampling: {
+      mousemove:
+        userConfig?.sampling?.mousemove ??
+        backendSettings?.sampling_mousemove ??
+        DEFAULT_MOUSEMOVE_SAMPLING,
+      scroll:
+        userConfig?.sampling?.scroll ?? backendSettings?.sampling_scroll ?? DEFAULT_SCROLL_SAMPLING,
+    },
+  };
+}
+
+// ============================================================================
+// BACKEND INTEGRATION
+// ============================================================================
 
 /**
  * Replay quality settings fetched from backend
@@ -55,8 +99,8 @@ async function fetchReplaySettings(
     collect_fonts: true,
     record_canvas: false,
     record_cross_origin_iframes: false,
-    sampling_mousemove: 50,
-    sampling_scroll: 100,
+    sampling_mousemove: DEFAULT_MOUSEMOVE_SAMPLING,
+    sampling_scroll: DEFAULT_SCROLL_SAMPLING,
   };
 
   try {
@@ -101,53 +145,43 @@ export class BugSpotter {
   private static instance: BugSpotter | undefined;
   private static initPromise: Promise<BugSpotter> | undefined;
 
-  private config: BugSpotterConfig;
-  private screenshot: ScreenshotCapture;
-  private console: ConsoleCapture;
-  private network: NetworkCapture;
-  private metadata: MetadataCapture;
-  private domCollector?: DOMCollector;
+  private config: Readonly<BugSpotterConfig>;
   private widget?: FloatingButton;
   private sanitizer?: Sanitizer;
+  private captureManager: CaptureManager;
+  private bugReporter: BugReporter;
 
   constructor(config: BugSpotterConfig) {
+    // Validate deduplication configuration if provided
+    if (config.deduplication) {
+      validateDeduplicationConfig(config.deduplication);
+    }
+
     this.config = config;
 
-    // Initialize sanitizer if enabled
-    if (config.sanitize?.enabled !== false) {
+    // Initialize sanitizer (enabled by default)
+    const sanitizeEnabled = config.sanitize?.enabled ?? true;
+    if (sanitizeEnabled) {
       this.sanitizer = createSanitizer({
-        enabled: config.sanitize?.enabled ?? true,
+        enabled: sanitizeEnabled,
         patterns: config.sanitize?.patterns,
         customPatterns: config.sanitize?.customPatterns,
         excludeSelectors: config.sanitize?.excludeSelectors,
       });
     }
 
-    this.screenshot = new ScreenshotCapture();
-    this.console = new ConsoleCapture({ sanitizer: this.sanitizer });
-    this.network = new NetworkCapture({ sanitizer: this.sanitizer });
-    this.metadata = new MetadataCapture({ sanitizer: this.sanitizer });
+    // Initialize capture manager
+    this.captureManager = new CaptureManager({
+      sanitizer: this.sanitizer,
+      replay: config.replay,
+    });
 
-    // Note: FileUploadHandler is created per-report since it needs bugId
-    // See submit() method for initialization
+    // Initialize bug reporter
+    this.bugReporter = new BugReporter(config);
 
-    // Initialize DOM collector if replay is enabled
-    if (config.replay?.enabled !== false) {
-      this.domCollector = new DOMCollector({
-        duration: config.replay?.duration ?? DEFAULT_REPLAY_DURATION_SECONDS,
-        sampling: config.replay?.sampling,
-        inlineStylesheet: config.replay?.inlineStylesheet,
-        inlineImages: config.replay?.inlineImages,
-        collectFonts: config.replay?.collectFonts,
-        recordCanvas: config.replay?.recordCanvas,
-        recordCrossOriginIframes: config.replay?.recordCrossOriginIframes,
-        sanitizer: this.sanitizer,
-      });
-      this.domCollector.startRecording();
-    }
-
-    // Initialize widget if enabled
-    if (config.showWidget !== false) {
+    // Initialize widget (enabled by default)
+    const widgetEnabled = config.showWidget ?? true;
+    if (widgetEnabled) {
       this.widget = new FloatingButton(config.widgetOptions);
       this.widget.onClick(async () => {
         await this.handleBugReport();
@@ -190,7 +224,8 @@ export class BugSpotter {
   private static async createInstance(config: BugSpotterConfig): Promise<BugSpotter> {
     // Fetch replay quality settings from backend if replay is enabled
     let backendSettings: ReplayQualitySettings | null = null;
-    if (config.replay?.enabled !== false && config.endpoint) {
+    const replayEnabled = config.replay?.enabled ?? true;
+    if (replayEnabled && config.endpoint) {
       // Validate auth is configured before attempting fetch
       if (!config.auth?.apiKey) {
         logger.warn(
@@ -204,25 +239,7 @@ export class BugSpotter {
     // Merge backend settings with user config (user config takes precedence)
     const mergedConfig: BugSpotterConfig = {
       ...config,
-      replay: {
-        ...config.replay,
-        duration:
-          config.replay?.duration ?? backendSettings?.duration ?? DEFAULT_REPLAY_DURATION_SECONDS,
-        inlineStylesheet:
-          config.replay?.inlineStylesheet ?? backendSettings?.inline_stylesheets ?? true,
-        inlineImages: config.replay?.inlineImages ?? backendSettings?.inline_images ?? false,
-        collectFonts: config.replay?.collectFonts ?? backendSettings?.collect_fonts ?? false,
-        recordCanvas: config.replay?.recordCanvas ?? backendSettings?.record_canvas ?? false,
-        recordCrossOriginIframes:
-          config.replay?.recordCrossOriginIframes ??
-          backendSettings?.record_cross_origin_iframes ??
-          false,
-        sampling: {
-          mousemove:
-            config.replay?.sampling?.mousemove ?? backendSettings?.sampling_mousemove ?? 50,
-          scroll: config.replay?.sampling?.scroll ?? backendSettings?.sampling_scroll ?? 100,
-        },
-      },
+      replay: mergeReplayConfig(config.replay, backendSettings),
     };
 
     return new BugSpotter(mergedConfig);
@@ -238,17 +255,7 @@ export class BugSpotter {
    * File uploads use presigned URLs returned from the backend
    */
   async capture(): Promise<BugReport> {
-    const screenshotPreview = await this.screenshot.capture();
-    const replayEvents = this.domCollector?.getEvents() ?? [];
-
-    return {
-      console: this.console.getLogs(),
-      network: this.network.getRequests(),
-      metadata: this.metadata.capture(),
-      replay: replayEvents,
-      // Internal: screenshot preview for modal (not sent to API)
-      _screenshotPreview: screenshotPreview,
-    };
+    return await this.captureManager.captureAll();
   }
 
   private async handleBugReport(): Promise<void> {
@@ -281,113 +288,7 @@ export class BugSpotter {
    * @public - Exposed for programmatic submission (bypassing modal)
    */
   async submit(payload: BugReportPayload): Promise<void> {
-    validateAuthConfig({
-      endpoint: this.config.endpoint,
-      auth: this.config.auth,
-    });
-
-    logger.debug(`Submitting bug report to ${this.config.endpoint}`);
-
-    // Step 1: Create bug report and request presigned URLs
-    const { report, ...metadata } = payload;
-
-    // Check what files we need to upload
-    const hasScreenshot = !!(
-      report._screenshotPreview && report._screenshotPreview.startsWith('data:image/')
-    );
-    const hasReplay = !!(report.replay && report.replay.length > 0);
-
-    logger.debug('File upload detection', {
-      hasScreenshot,
-      screenshotSize: report._screenshotPreview?.length || 0,
-      hasReplay,
-      replayEventCount: report.replay?.length || 0,
-    });
-
-    const createPayload = {
-      ...metadata,
-      report: {
-        console: report.console,
-        network: report.network,
-        metadata: report.metadata,
-        // Don't send replay events or screenshot in initial request
-      },
-      // Tell backend we have files so it can generate presigned URLs
-      hasScreenshot,
-      hasReplay,
-    };
-
-    const contentHeaders: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-
-    const response = await submitWithAuth(
-      this.config.endpoint!, // Validated in validateAuthConfig
-      JSON.stringify(createPayload),
-      contentHeaders,
-      {
-        auth: this.config.auth,
-        retry: this.config.retry,
-        offline: this.config.offline,
-      }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => 'Unknown error');
-      throw new Error(
-        `Failed to submit bug report: ${response.status} ${response.statusText}. ${errorText}`
-      );
-    }
-
-    const result = await response.json().catch(() => ({ success: false }));
-
-    logger.debug('Bug report creation response', {
-      success: result.success,
-      bugId: result.data?.id,
-      hasPresignedUrls: !!result.data?.presignedUrls,
-      presignedUrlKeys: result.data?.presignedUrls ? Object.keys(result.data.presignedUrls) : [],
-    });
-
-    if (!result.success || !result.data?.id) {
-      throw new Error('Bug report ID not returned from server');
-    }
-
-    const bugId = result.data.id;
-
-    // Step 2: Upload screenshot and replay using presigned URLs from response
-    if (!hasScreenshot && !hasReplay) {
-      logger.debug('No files to upload, bug report created successfully', { bugId });
-      return; // No files to upload, nothing more to do
-    }
-
-    // Validate presigned URLs were returned
-    if (!result.data.presignedUrls) {
-      logger.error('Presigned URLs not returned despite requesting file uploads', {
-        bugId,
-        hasScreenshot,
-        hasReplay,
-      });
-      throw new Error(
-        'Server did not provide presigned URLs for file uploads. Check backend configuration.'
-      );
-    }
-
-    // Use FileUploadHandler to handle all file upload operations
-    const apiEndpoint = getApiBaseUrl(this.config.endpoint!);
-    const uploadHandler = new FileUploadHandler(apiEndpoint, this.config.auth.apiKey);
-
-    try {
-      await uploadHandler.uploadFiles(bugId, report, result.data.presignedUrls);
-      logger.debug('File uploads completed successfully', { bugId });
-    } catch (error) {
-      logger.error('File upload failed', {
-        bugId,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      throw new Error(
-        `Bug report created (ID: ${bugId}) but file upload failed: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
+    await this.bugReporter.submit(payload);
   }
 
   getConfig(): Readonly<BugSpotterConfig> {
@@ -395,10 +296,9 @@ export class BugSpotter {
   }
 
   destroy(): void {
-    this.console.destroy();
-    this.network.destroy();
-    this.domCollector?.destroy();
+    this.captureManager.destroy();
     this.widget?.destroy();
+    this.bugReporter.destroy();
     BugSpotter.instance = undefined;
     BugSpotter.initPromise = undefined;
   }
@@ -420,6 +320,9 @@ export interface BugSpotterConfig {
 
   /** Offline queue configuration */
   offline?: OfflineConfig;
+
+  /** Deduplication configuration to prevent duplicate submissions */
+  deduplication?: DeduplicationConfig;
 
   replay?: {
     /** Enable session replay recording (default: true) */

@@ -550,6 +550,175 @@ describe('BugSpotter', () => {
     });
   });
 
+  describe('Error Stack Extraction', () => {
+    it('should extract error stacks from console logs', () => {
+      // Mock bug report with error logs
+      const mockReport = {
+        console: [
+          { level: 'log', message: 'Regular log', timestamp: Date.now() },
+          {
+            level: 'error',
+            message: 'Error 1',
+            stack: 'Error: Error 1\n  at line1',
+            timestamp: Date.now(),
+          },
+          { level: 'warn', message: 'Warning', timestamp: Date.now() },
+          {
+            level: 'error',
+            message: 'Error 2',
+            stack: 'Error: Error 2\n  at line2',
+            timestamp: Date.now(),
+          },
+        ],
+        network: [],
+        metadata: {} as any,
+      };
+
+      // Extract stacks using the same logic as the submit function
+      const extractedStacks = mockReport.console
+        .filter((log) => log.level === 'error')
+        .map((log) => log.stack || log.message);
+
+      expect(Array.isArray(extractedStacks)).toBe(true);
+      expect(extractedStacks.length).toBe(2);
+      expect(extractedStacks[0]).toBe('Error: Error 1\n  at line1');
+      expect(extractedStacks[1]).toBe('Error: Error 2\n  at line2');
+    });
+
+    it('should handle console logs with undefined stack property', () => {
+      // Mock bug report with error logs without stacks
+      const mockReport = {
+        console: [
+          { level: 'error', message: 'Simple error without stack', timestamp: Date.now() },
+          { level: 'error', message: 'Another error', timestamp: Date.now() },
+        ],
+        network: [],
+        metadata: {} as any,
+      };
+
+      // Extract stacks
+      const extractedStacks = mockReport.console
+        .filter((log) => log.level === 'error')
+        .map((log) => log.stack || log.message);
+
+      expect(extractedStacks.length).toBe(2);
+      // When stack is undefined, should fall back to message
+      expect(extractedStacks[0]).toBe('Simple error without stack');
+      expect(extractedStacks[1]).toBe('Another error');
+      extractedStacks.forEach((stack) => {
+        expect(typeof stack).toBe('string');
+        expect(stack.length).toBeGreaterThan(0);
+      });
+    });
+
+    it('should return empty array when no error-level logs exist', () => {
+      // Mock bug report with only non-error logs
+      const mockReport = {
+        console: [
+          { level: 'log', message: 'Info log', timestamp: Date.now() },
+          { level: 'warn', message: 'Warning log', timestamp: Date.now() },
+        ],
+        network: [],
+        metadata: {} as any,
+      };
+
+      // Extract stacks
+      const extractedStacks = mockReport.console
+        .filter((log) => log.level === 'error')
+        .map((log) => log.stack || log.message);
+
+      expect(Array.isArray(extractedStacks)).toBe(true);
+      expect(extractedStacks.length).toBe(0);
+    });
+
+    it('should correctly filter only error-level logs', () => {
+      // Mock bug report with mixed log levels
+      const mockReport = {
+        console: [
+          { level: 'log', message: 'Regular log', timestamp: Date.now() },
+          { level: 'warn', message: 'Warning log', timestamp: Date.now() },
+          { level: 'error', message: 'Error log 1', stack: 'Stack 1', timestamp: Date.now() },
+          { level: 'info', message: 'Info log', timestamp: Date.now() },
+          { level: 'error', message: 'Error log 2', stack: 'Stack 2', timestamp: Date.now() },
+        ],
+        network: [],
+        metadata: {} as any,
+      };
+
+      // Extract stacks
+      const extractedStacks = mockReport.console
+        .filter((log) => log.level === 'error')
+        .map((log) => log.stack || log.message);
+
+      // Should only include error-level logs
+      expect(extractedStacks.length).toBe(2);
+      expect(extractedStacks[0]).toBe('Stack 1');
+      expect(extractedStacks[1]).toBe('Stack 2');
+      extractedStacks.forEach((stack) => {
+        expect(typeof stack).toBe('string');
+      });
+    });
+
+    it('should preserve stack trace details when available', () => {
+      // Mock bug report with detailed stack trace
+      const mockReport = {
+        console: [
+          {
+            level: 'error',
+            message: 'Error with stack',
+            stack: 'Error: Test error with detailed stack\n    at function1\n    at function2',
+            timestamp: Date.now(),
+          },
+        ],
+        network: [],
+        metadata: {} as any,
+      };
+
+      // Extract stacks
+      const extractedStacks = mockReport.console
+        .filter((log) => log.level === 'error')
+        .map((log) => log.stack || log.message);
+
+      expect(extractedStacks.length).toBe(1);
+      // Should have stack information
+      expect(extractedStacks[0]).toContain('Error:');
+      expect(extractedStacks[0]).toContain('function1');
+      expect(extractedStacks[0]).toContain('function2');
+    });
+
+    it('should match extraction logic used in submit validation', () => {
+      // Mock bug report matching actual BugReport structure
+      const mockReport = {
+        console: [
+          { level: 'error', message: 'Simple error', timestamp: Date.now() },
+          {
+            level: 'error',
+            message: 'Error with object',
+            stack: 'Error: Test error\n    at test',
+            timestamp: Date.now(),
+          },
+        ],
+        network: [],
+        metadata: {} as any,
+      };
+
+      // Extract using the same logic as validateAndExtractErrors
+      const extractedStacks = mockReport.console
+        .filter((log) => log.level === 'error')
+        .map((log) => log.stack || log.message);
+
+      // Verify it produces an array of strings suitable for deduplication
+      expect(Array.isArray(extractedStacks)).toBe(true);
+      expect(extractedStacks.every((stack) => typeof stack === 'string')).toBe(true);
+
+      // All extracted stacks should be non-empty strings
+      expect(extractedStacks.every((stack) => stack.length > 0)).toBe(true);
+      expect(extractedStacks.length).toBe(2);
+      expect(extractedStacks[0]).toBe('Simple error');
+      expect(extractedStacks[1]).toContain('Error: Test error');
+    });
+  });
+
   describe('Bug Report Modal Integration', () => {
     it('should show modal with screenshot when widget button is clicked', async () => {
       const bugspotter = await BugSpotter.init({

@@ -7,6 +7,7 @@ import { describe, it, expect, beforeEach, afterEach, afterAll, vi } from 'vites
 import { BugSpotter } from '../../src/index';
 import { compressData, estimateSize } from '../../src/core/compress';
 import { generateLargePayload } from '../fixtures/e2e-fixtures';
+import { createFetchMock } from '../utils/fetch-mock-helpers';
 
 /**
  * Helper function to wait for async operations
@@ -30,9 +31,14 @@ describe('E2E Performance Benchmarks', () => {
 
     originalFetch = global.fetch;
     fetchMock = vi.fn();
-    global.fetch = fetchMock as any;
 
-    // Mock successful response
+    // Use shared fetch mock helper with default successful responses
+    global.fetch = createFetchMock({
+      apiMock: fetchMock,
+      bugId: 'perf-test-bug-id',
+    }) as any;
+
+    // Mock successful response with presigned URLs (already handled by createFetchMock)
     fetchMock.mockResolvedValue({
       ok: true,
       status: 200,
@@ -44,6 +50,16 @@ describe('E2E Performance Benchmarks', () => {
             title: 'Test Bug',
             status: 'open',
             created_at: new Date().toISOString(),
+            presignedUrls: {
+              screenshot: {
+                uploadUrl: 'https://s3.example.com/presigned-screenshot',
+                storageKey: 'screenshots/test-key',
+              },
+              replay: {
+                uploadUrl: 'https://s3.example.com/presigned-replay',
+                storageKey: 'replays/test-key',
+              },
+            },
           },
         };
       },

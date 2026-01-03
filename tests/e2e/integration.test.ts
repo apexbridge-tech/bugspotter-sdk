@@ -17,10 +17,32 @@ import {
   MOCK_BACKEND_RESPONSES,
   generateLargePayload,
 } from '../fixtures/e2e-fixtures';
+import { createFetchMock } from '../utils/fetch-mock-helpers';
 
 describe('E2E Integration Tests', () => {
   let fetchMock: ReturnType<typeof vi.fn>;
   let originalFetch: typeof global.fetch;
+
+  /**
+   * Helper to mock the settings endpoint response
+   * Used by BugSpotter.init() to fetch replay settings
+   */
+  const mockSettingsEndpoint = () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        success: true,
+        data: {
+          inline_stylesheets: true,
+          inline_images: false,
+          collect_fonts: false,
+          record_canvas: false,
+          record_cross_origin_iframes: false,
+        },
+      }),
+    });
+  };
 
   beforeEach(() => {
     // Clean up any existing instance
@@ -32,7 +54,9 @@ describe('E2E Integration Tests', () => {
     // Mock fetch
     originalFetch = global.fetch;
     fetchMock = vi.fn();
-    global.fetch = fetchMock as any;
+
+    // Use shared fetch mock helper
+    global.fetch = createFetchMock({ apiMock: fetchMock }) as any;
   });
 
   afterEach(() => {
@@ -48,21 +72,7 @@ describe('E2E Integration Tests', () => {
 
   describe('Complete SDK Flow: Init → Capture → Compress → Sanitize → Send', () => {
     it('should complete full workflow successfully', async () => {
-      // Mock settings endpoint (called during init)
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({
-          success: true,
-          data: {
-            inline_stylesheets: true,
-            inline_images: false,
-            collect_fonts: false,
-            record_canvas: false,
-            record_cross_origin_iframes: false,
-          },
-        }),
-      });
+      mockSettingsEndpoint();
 
       // Mock successful API response
       fetchMock.mockResolvedValueOnce({
@@ -154,21 +164,7 @@ describe('E2E Integration Tests', () => {
     });
 
     it('should handle large payloads with compression', async () => {
-      // Mock settings endpoint
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({
-          success: true,
-          data: {
-            inline_stylesheets: true,
-            inline_images: false,
-            collect_fonts: false,
-            record_canvas: false,
-            record_cross_origin_iframes: false,
-          },
-        }),
-      });
+      mockSettingsEndpoint();
 
       fetchMock.mockResolvedValueOnce({
         ok: true,
@@ -221,21 +217,7 @@ describe('E2E Integration Tests', () => {
 
   describe('Backend Response Handling', () => {
     it('should handle 200 OK response', async () => {
-      // Mock settings endpoint
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({
-          success: true,
-          data: {
-            inline_stylesheets: true,
-            inline_images: false,
-            collect_fonts: false,
-            record_canvas: false,
-            record_cross_origin_iframes: false,
-          },
-        }),
-      });
+      mockSettingsEndpoint();
 
       fetchMock.mockResolvedValueOnce({
         ok: true,
@@ -265,21 +247,7 @@ describe('E2E Integration Tests', () => {
     });
 
     it('should handle 201 Created response', async () => {
-      // Mock settings endpoint
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({
-          success: true,
-          data: {
-            inline_stylesheets: true,
-            inline_images: false,
-            collect_fonts: false,
-            record_canvas: false,
-            record_cross_origin_iframes: false,
-          },
-        }),
-      });
+      mockSettingsEndpoint();
 
       fetchMock.mockResolvedValueOnce({
         ok: true,
@@ -309,21 +277,8 @@ describe('E2E Integration Tests', () => {
     });
 
     it('should handle 401 Unauthorized response', async () => {
-      // Mock settings endpoint
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({
-          success: true,
-          data: {
-            inline_stylesheets: true,
-            inline_images: false,
-            collect_fonts: false,
-            record_canvas: false,
-            record_cross_origin_iframes: false,
-          },
-        }),
-      });
+      mockSettingsEndpoint();
+
       fetchMock.mockResolvedValueOnce({
         ok: false,
         status: 401,
@@ -352,21 +307,8 @@ describe('E2E Integration Tests', () => {
     });
 
     it('should handle 400 Bad Request response', async () => {
-      // Mock settings endpoint
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({
-          success: true,
-          data: {
-            inline_stylesheets: true,
-            inline_images: false,
-            collect_fonts: false,
-            record_canvas: false,
-            record_cross_origin_iframes: false,
-          },
-        }),
-      });
+      mockSettingsEndpoint();
+
       fetchMock.mockResolvedValueOnce({
         ok: false,
         status: 400,
@@ -393,21 +335,8 @@ describe('E2E Integration Tests', () => {
     });
 
     it('should handle 500 Internal Server Error response', async () => {
-      // Mock settings endpoint
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({
-          success: true,
-          data: {
-            inline_stylesheets: true,
-            inline_images: false,
-            collect_fonts: false,
-            record_canvas: false,
-            record_cross_origin_iframes: false,
-          },
-        }),
-      });
+      mockSettingsEndpoint();
+
       fetchMock.mockResolvedValueOnce({
         ok: false,
         status: 500,
@@ -761,21 +690,7 @@ describe('E2E Integration Tests', () => {
 
   describe('Retry and Offline Queue', () => {
     it('should retry failed requests with exponential backoff', async () => {
-      // Mock settings endpoint first
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({
-          success: true,
-          data: {
-            inline_stylesheets: true,
-            inline_images: false,
-            collect_fonts: false,
-            record_canvas: false,
-            record_cross_origin_iframes: false,
-          },
-        }),
-      });
+      mockSettingsEndpoint();
 
       // Fail 2 times, then succeed
       fetchMock
@@ -837,21 +752,7 @@ describe('E2E Integration Tests', () => {
     });
 
     it('should fail after max retries exhausted', async () => {
-      // Mock settings endpoint first
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({
-          success: true,
-          data: {
-            inline_stylesheets: true,
-            inline_images: false,
-            collect_fonts: false,
-            record_canvas: false,
-            record_cross_origin_iframes: false,
-          },
-        }),
-      });
+      mockSettingsEndpoint();
 
       // All attempts fail
       fetchMock.mockResolvedValue({

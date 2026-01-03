@@ -22,7 +22,7 @@ describe('ScreenshotCapture', () => {
     expect(htmlToImage.toPng).toHaveBeenCalledWith(
       document.body,
       expect.objectContaining({
-        quality: 0.8,
+        quality: 0.95, // Updated from 0.8 to match new default
         cacheBust: true,
         backgroundColor: '#ffffff',
       })

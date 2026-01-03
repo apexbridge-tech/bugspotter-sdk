@@ -7,6 +7,11 @@
 
 import { test, expect, type Page } from '@playwright/test';
 import path from 'path';
+import type { eventWithTime } from '@rrweb/types';
+
+// Use inline types instead of importing from @bugspotter/types to avoid circular dependency
+type ConsoleLog = { level: string; message: string; timestamp: number; stack?: string };
+type NetworkRequest = { url: string; method: string; status?: number; timestamp: number };
 
 const LARGE_DOM_FIXTURE = path.join(__dirname, '../fixtures/large-dom-e2e.html');
 
@@ -20,7 +25,7 @@ async function injectSDK(page: Page, config: Record<string, unknown> = {}) {
     await page.addScriptTag({
       path: path.join(__dirname, '../../dist/bugspotter.min.js'),
     });
-  } catch (error) {
+  } catch {
     // If dist doesn't exist, this is a critical error
     throw new Error(
       'BugSpotter SDK bundle not found at dist/bugspotter.min.js. ' +
@@ -128,11 +133,16 @@ test.describe('BugSpotter SDK - Real Browser Tests', () => {
       console.warn('Test warning message');
     });
 
-    // Wait for console logs to be captured by the SDK
+    // Wait for console logs to be captured by the SDK (poll via capture())
     await page.waitForFunction(
-      () => {
+      async () => {
         // @ts-expect-error - BugSpotter is injected
-        return window.bugspotterInstance?.console?.getLogs()?.length >= 3;
+        if (!window.bugspotterInstance) {
+          return false;
+        }
+        // @ts-expect-error - capture returns Promise
+        const report = await window.bugspotterInstance.capture();
+        return report?.console?.length >= 3;
       },
       { timeout: 5000 }
     );
@@ -149,7 +159,7 @@ test.describe('BugSpotter SDK - Real Browser Tests', () => {
 
     expect(consoleLogs.length).toBeGreaterThan(0);
 
-    const messages = consoleLogs.map((log: any) => {
+    const messages = consoleLogs.map((log: ConsoleLog) => {
       return log.message;
     });
     expect(
@@ -171,14 +181,22 @@ test.describe('BugSpotter SDK - Real Browser Tests', () => {
 
     // Make a fetch request
     await page.evaluate(async () => {
-      await fetch('https://jsonplaceholder.typicode.com/todos/1').catch(() => {});
+      await fetch('https://jsonplaceholder.typicode.com/todos/1').catch((error) => {
+        // Expected: Network request may fail in test environment, but should still be captured
+        console.log('Network request failed (expected in test):', error.message);
+      });
     });
 
-    // Wait for network request to be captured by the SDK
+    // Wait for network request to be captured by the SDK (poll via capture())
     await page.waitForFunction(
-      () => {
+      async () => {
         // @ts-expect-error - BugSpotter is injected
-        return window.bugspotterInstance?.network?.getRequests()?.length > 0;
+        if (!window.bugspotterInstance) {
+          return false;
+        }
+        // @ts-expect-error - capture returns Promise
+        const report = await window.bugspotterInstance.capture();
+        return report?.network?.length > 0;
       },
       { timeout: 5000 }
     );
@@ -194,7 +212,7 @@ test.describe('BugSpotter SDK - Real Browser Tests', () => {
     });
 
     expect(networkRequests.length).toBeGreaterThan(0);
-    const urls = networkRequests.map((req: any) => {
+    const urls = networkRequests.map((req: NetworkRequest) => {
       return req.url;
     });
     expect(
@@ -207,7 +225,7 @@ test.describe('BugSpotter SDK - Real Browser Tests', () => {
   test('should handle large DOM efficiently', async ({ page }) => {
     try {
       await page.goto(`file://${LARGE_DOM_FIXTURE}`);
-    } catch (error) {
+    } catch {
       throw new Error(
         `Large DOM fixture not found at ${LARGE_DOM_FIXTURE}. Please create the fixture file for this test.`
       );
@@ -265,11 +283,16 @@ test.describe('BugSpotter SDK - Real Browser Tests', () => {
       console.log('Payment card: 4532-1234-5678-9010');
     });
 
-    // Wait for console logs to be captured and sanitized
+    // Wait for console logs to be captured and sanitized (poll via capture())
     await page.waitForFunction(
-      () => {
+      async () => {
         // @ts-expect-error - BugSpotter is injected
-        return window.bugspotterInstance?.console?.getLogs()?.length >= 3;
+        if (!window.bugspotterInstance) {
+          return false;
+        }
+        // @ts-expect-error - capture returns Promise
+        const report = await window.bugspotterInstance.capture();
+        return report?.console?.length >= 3;
       },
       { timeout: 5000 }
     );
@@ -285,7 +308,7 @@ test.describe('BugSpotter SDK - Real Browser Tests', () => {
     });
 
     const messages = consoleLogs
-      .map((log: any) => {
+      .map((log: ConsoleLog) => {
         return log.message;
       })
       .join(' ');
@@ -363,11 +386,11 @@ test.describe('BugSpotter SDK - Real Browser Tests', () => {
     const events = report.replay;
 
     // Should have at least one full snapshot (type 2)
-    const fullSnapshots = events.filter((event: any) => event.type === 2);
+    const fullSnapshots = events.filter((event: eventWithTime) => event.type === 2);
     expect(fullSnapshots.length).toBeGreaterThan(0);
 
     // Should have incremental snapshots (type 3 - mutations)
-    const mutations = events.filter((event: any) => event.type === 3);
+    const mutations = events.filter((event: eventWithTime) => event.type === 3);
     expect(mutations.length).toBeGreaterThan(0);
 
     // Most importantly: verify the replay can be played without errors
@@ -397,7 +420,7 @@ test.describe('BugSpotter SDK - Real Browser Tests', () => {
 
         // Capture console errors during replay
         const originalError = console.error;
-        console.error = (...args: any[]) => {
+        console.error = (...args: unknown[]) => {
           const message = args.join(' ');
           if (message.includes('Node') && message.includes('not found')) {
             errors.push(message);
@@ -420,8 +443,8 @@ test.describe('BugSpotter SDK - Real Browser Tests', () => {
 
         // Cleanup
         replayContainer.remove();
-      } catch (error: any) {
-        errors.push(error.message || String(error));
+      } catch (error: unknown) {
+        errors.push(error instanceof Error ? error.message : String(error));
       }
 
       return errors;
@@ -460,11 +483,16 @@ test.describe('BugSpotter SDK - Real Browser Tests', () => {
       sanitize: { enabled: true },
     });
 
-    // Wait for replay events to be recorded
+    // Wait for replay events to be recorded (poll via capture())
     await page.waitForFunction(
-      () => {
+      async () => {
         // @ts-expect-error - BugSpotter is injected
-        return window.bugspotterInstance?.domCollector?.getEvents()?.length > 0;
+        if (!window.bugspotterInstance) {
+          return false;
+        }
+        // @ts-expect-error - capture returns Promise
+        const report = await window.bugspotterInstance.capture();
+        return report?.replay?.length > 0;
       },
       { timeout: 5000 }
     );
@@ -562,11 +590,16 @@ test.describe('BugSpotter SDK - Real Browser Tests', () => {
       console.log('Test log 2');
     });
 
-    // Wait for logs to be captured before measuring capture performance
+    // Wait for logs to be captured before measuring capture performance (poll via capture())
     await page.waitForFunction(
-      () => {
+      async () => {
         // @ts-expect-error - BugSpotter is injected
-        return window.bugspotterInstance?.console?.getLogs()?.length >= 2;
+        if (!window.bugspotterInstance) {
+          return false;
+        }
+        // @ts-expect-error - capture returns Promise
+        const report = await window.bugspotterInstance.capture();
+        return report?.console?.length >= 2;
       },
       { timeout: 5000 }
     );

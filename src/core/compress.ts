@@ -11,10 +11,10 @@ const logger = getLogger();
 // Configuration constants
 const COMPRESSION_DEFAULTS = {
   GZIP_LEVEL: 6, // Balanced speed/size ratio (0-9)
-  IMAGE_MAX_WIDTH: 1920,
-  IMAGE_MAX_HEIGHT: 1080,
-  IMAGE_WEBP_QUALITY: 0.8,
-  IMAGE_JPEG_QUALITY: 0.85,
+  IMAGE_MAX_WIDTH: 2560, // Increased from 1920 to support 2K displays
+  IMAGE_MAX_HEIGHT: 1440, // Increased from 1080 to support 2K displays
+  IMAGE_WEBP_QUALITY: 0.92, // Increased from 0.8 for better detail preservation
+  IMAGE_JPEG_QUALITY: 0.92, // Increased from 0.85 for better fallback quality
   IMAGE_LOAD_TIMEOUT: 3000, // milliseconds
 } as const;
 
@@ -240,6 +240,11 @@ export async function compressImage(base64: string, config?: CompressionConfig):
 
     canvas.width = width;
     canvas.height = height;
+
+    // Enable high-quality image smoothing for better resize quality
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
     ctx.drawImage(img, 0, 0, width, height);
 
     if (supportsWebP()) {

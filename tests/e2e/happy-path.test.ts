@@ -7,6 +7,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { BugSpotter } from '../../src/index';
 import type { BugSpotterConfig } from '../../src/index';
 import { TEST_SCREENSHOT_DATA_URL } from '../fixtures/test-images';
+import { createFetchMock } from '../utils/fetch-mock-helpers';
 
 describe('Happy Path: Complete Bug Reporting Flow', () => {
   let fetchMock: ReturnType<typeof vi.fn>;
@@ -23,35 +24,8 @@ describe('Happy Path: Complete Bug Reporting Flow', () => {
     originalFetch = global.fetch;
     fetchMock = vi.fn();
 
-    // Create a custom fetch that handles API calls, data URLs, and S3 uploads
-    global.fetch = (async (input: any, init?: any) => {
-      const url = typeof input === 'string' ? input : input.url;
-
-      // Handle data URLs (for screenshot blob conversion)
-      if (url.startsWith('data:')) {
-        const base64Data = url.split(',')[1];
-        const binaryString = atob(base64Data);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
-        const blob = new Blob([bytes], { type: 'image/png' });
-        return {
-          blob: async () => blob,
-        };
-      }
-
-      // Handle S3 presigned URL uploads (simulated success)
-      if (url.includes('s3.amazonaws.com')) {
-        return Promise.resolve({
-          ok: true,
-          status: 200,
-        });
-      }
-
-      // Handle regular API calls
-      return fetchMock(input, init);
-    }) as any;
+    // Use shared fetch mock helper
+    global.fetch = createFetchMock({ apiMock: fetchMock }) as any;
   });
 
   afterEach(() => {

@@ -194,6 +194,16 @@ export const MOCK_BACKEND_RESPONSES = {
         title: 'Test Bug',
         status: 'open',
         created_at: new Date().toISOString(),
+        presignedUrls: {
+          screenshot: {
+            uploadUrl: 'https://s3.example.com/presigned-screenshot',
+            storageKey: 'screenshots/test-key',
+          },
+          replay: {
+            uploadUrl: 'https://s3.example.com/presigned-replay',
+            storageKey: 'replays/test-key',
+          },
+        },
       },
       message: 'Bug report submitted successfully',
       timestamp: Date.now(),
@@ -208,6 +218,16 @@ export const MOCK_BACKEND_RESPONSES = {
         title: 'Test Bug',
         status: 'open',
         created_at: new Date().toISOString(),
+        presignedUrls: {
+          screenshot: {
+            uploadUrl: 'https://s3.example.com/presigned-screenshot',
+            storageKey: 'screenshots/test-key',
+          },
+          replay: {
+            uploadUrl: 'https://s3.example.com/presigned-replay',
+            storageKey: 'replays/test-key',
+          },
+        },
       },
       timestamp: Date.now(),
     },

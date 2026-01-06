@@ -257,6 +257,41 @@ export class StyleManager {
         cursor: not-allowed;
       }
       
+      .btn.loading {
+        position: relative;
+        padding-left: 2.5rem;
+      }
+      
+      .btn.loading::after {
+        content: '';
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        top: 50%;
+        left: 1rem;
+        margin-top: -8px;
+        border: 2px solid transparent;
+        border-top-color: currentColor;
+        border-radius: 50%;
+        animation: spinner 0.6s linear infinite;
+      }
+      
+      @keyframes spinner {
+        to { transform: rotate(360deg); }
+      }
+      
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border-width: 0;
+      }
+      
       .btn-secondary {
         background: #6c757d;
         color: white;

@@ -22,6 +22,7 @@ export interface PIIDetection {
 
 export interface BugReportModalOptions {
   onSubmit: (data: BugReportData) => void | Promise<void>;
+  onProgress?: (message: string) => void;
   onClose?: () => void;
 }
 
@@ -92,6 +93,8 @@ export class BugReportModal {
     const elements = this.domCache.get();
     elements.titleError.style.display = 'none';
     elements.descriptionError.style.display = 'none';
+    elements.submitError.style.display = 'none';
+    elements.progressStatus.textContent = '';
 
     // Setup components
     this.setupRedactionCanvas();
@@ -296,6 +299,11 @@ export class BugReportModal {
 
     const elements = this.domCache.get();
 
+    // Prevent double submission
+    if (elements.submitButton.disabled) {
+      return;
+    }
+
     const formData: FormData = {
       title: elements.titleInput.value,
       description: elements.descriptionTextarea.value,
@@ -333,6 +341,24 @@ export class BugReportModal {
     // Clear any previous error messages on successful validation
     elements.titleError.style.display = 'none';
     elements.descriptionError.style.display = 'none';
+    elements.submitError.style.display = 'none';
+
+    // Disable submit button and show loading state
+    const originalButtonText = elements.submitButton.textContent || 'Submit Bug Report';
+    elements.submitButton.disabled = true;
+    elements.submitButton.textContent = 'Preparing...';
+    elements.submitButton.classList.add('loading');
+
+    // Helper to update progress
+    const updateProgress = (message: string) => {
+      elements.submitButton.textContent = message;
+      elements.progressStatus.textContent = message; // Announce to screen readers
+      if (this.options.onProgress) {
+        this.options.onProgress(message);
+      }
+    };
+
+    updateProgress('Preparing screenshot...');
 
     // Prepare screenshot with redactions
     let finalScreenshot = this.originalScreenshot;
@@ -359,11 +385,23 @@ export class BugReportModal {
     };
 
     try {
+      updateProgress('Uploading report...');
       await this.options.onSubmit(bugReportData);
       this.close();
     } catch (error) {
       getLogger().error('Error submitting bug report:', error);
-      alert('Failed to submit bug report. Please try again.');
+
+      // Show error message in modal instead of blocking alert
+      elements.submitError.textContent = 'Failed to submit bug report. Please try again.';
+      elements.submitError.style.display = 'block';
+
+      // Clear stale progress status for screen readers
+      elements.progressStatus.textContent = '';
+
+      // Re-enable submit button on error
+      elements.submitButton.disabled = false;
+      elements.submitButton.textContent = originalButtonText;
+      elements.submitButton.classList.remove('loading');
     }
   }
 

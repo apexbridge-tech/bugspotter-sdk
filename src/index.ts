@@ -277,6 +277,9 @@ export class BugSpotter {
           }
         }
       },
+      onProgress: (message) => {
+        logger.debug('Upload progress:', message);
+      },
     });
 
     modal.show(report._screenshotPreview || '');

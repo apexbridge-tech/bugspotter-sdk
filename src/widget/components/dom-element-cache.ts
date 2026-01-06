@@ -22,8 +22,10 @@ export interface ModalElements {
   piiSection: HTMLElement;
   piiContent: HTMLElement;
   piiConfirmCheckbox: HTMLInputElement;
+  submitError: HTMLElement;
   cancelButton: HTMLButtonElement;
   submitButton: HTMLButtonElement;
+  progressStatus: HTMLElement;
 }
 
 export class DOMElementCache {
@@ -58,8 +60,10 @@ export class DOMElementCache {
       piiSection: this.getRequiredElement('#pii-section', modal),
       piiContent: this.getRequiredElement('#pii-content', modal),
       piiConfirmCheckbox: this.getRequiredElement('#pii-confirm', modal) as HTMLInputElement,
+      submitError: this.getRequiredElement('#submit-error', modal),
       cancelButton: this.getRequiredElement('#btn-cancel', modal) as HTMLButtonElement,
       submitButton: this.getRequiredElement('#btn-submit', modal) as HTMLButtonElement,
+      progressStatus: this.getRequiredElement('#progress-status', modal),
     };
 
     return this.elements;

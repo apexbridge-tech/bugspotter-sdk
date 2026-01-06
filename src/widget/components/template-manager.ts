@@ -39,6 +39,7 @@ export class TemplateManager {
           ${this.generateHeader()}
           ${this.generateBody(screenshotDataUrl)}
           ${this.generateFooter()}
+          <div role="status" aria-live="polite" aria-atomic="true" class="sr-only" id="progress-status"></div>
         </div>
       </div>
     `;
@@ -177,6 +178,7 @@ export class TemplateManager {
   private generateFooter(): string {
     return `
       <div class="footer">
+        <div class="error" id="submit-error" style="display: none;"></div>
         <button type="button" class="btn btn-secondary" id="btn-cancel">
           ${this.escapeHtml(this.config.cancelButtonText)}
         </button>

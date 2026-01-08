@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { ConsoleCapture } from '../../src/capture/console';
+import { ConsoleCapture, SDK_LOG_PREFIX } from '../../src/capture/console';
 
 describe('ConsoleCapture', () => {
   let consoleCapture: ConsoleCapture;
@@ -149,5 +149,72 @@ describe('ConsoleCapture', () => {
     const logs = consoleCapture.getLogs();
 
     expect(logs[0].message).toBe('42 true false 3.14');
+  });
+
+  describe('SDK Internal Log Filtering', () => {
+    it('should filter SDK debug logs with [BugSpotter] prefix', () => {
+      console.log(`${SDK_LOG_PREFIX} Internal debug message`);
+
+      const logs = consoleCapture.getLogs();
+
+      expect(logs).toHaveLength(0);
+    });
+
+    it('should filter SDK info logs with [BugSpotter] prefix', () => {
+      console.info(`${SDK_LOG_PREFIX} Internal info message`);
+
+      const logs = consoleCapture.getLogs();
+
+      expect(logs).toHaveLength(0);
+    });
+
+    it('should filter SDK warn logs with [BugSpotter] prefix', () => {
+      console.warn(`${SDK_LOG_PREFIX} Internal warning`);
+
+      const logs = consoleCapture.getLogs();
+
+      expect(logs).toHaveLength(0);
+    });
+
+    it('should NOT filter SDK errors with [BugSpotter] prefix', () => {
+      console.error(`${SDK_LOG_PREFIX} Internal error`);
+
+      const logs = consoleCapture.getLogs();
+
+      expect(logs).toHaveLength(1);
+      expect(logs[0].level).toBe('error');
+      expect(logs[0].message).toContain(SDK_LOG_PREFIX);
+    });
+
+    it('should capture normal user logs regardless of content', () => {
+      console.log('User application log');
+      console.info('User info');
+      console.warn('User warning');
+
+      const logs = consoleCapture.getLogs();
+
+      expect(logs).toHaveLength(3);
+      expect(logs[0].message).toBe('User application log');
+      expect(logs[1].message).toBe('User info');
+      expect(logs[2].message).toBe('User warning');
+    });
+
+    it('should filter SDK logs mixed with user logs', () => {
+      console.log('User log 1');
+      console.log(`${SDK_LOG_PREFIX} SDK debug`);
+      console.log('User log 2');
+      console.error(`${SDK_LOG_PREFIX} SDK error`);
+      console.warn(`${SDK_LOG_PREFIX} SDK warning`);
+      console.log('User log 3');
+
+      const logs = consoleCapture.getLogs();
+
+      expect(logs).toHaveLength(4);
+      expect(logs[0].message).toBe('User log 1');
+      expect(logs[1].message).toBe('User log 2');
+      expect(logs[2].message).toContain(SDK_LOG_PREFIX); // SDK error kept
+      expect(logs[2].level).toBe('error');
+      expect(logs[3].message).toBe('User log 3');
+    });
   });
 });

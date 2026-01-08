@@ -173,6 +173,7 @@ export class BugSpotter {
     // Initialize capture manager
     this.captureManager = new CaptureManager({
       sanitizer: this.sanitizer,
+      ...(config.endpoint && { apiEndpoint: getApiBaseUrl(config.endpoint) }),
       replay: config.replay,
     });
 

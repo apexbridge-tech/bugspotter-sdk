@@ -4,6 +4,12 @@ import { CircularBuffer } from '../core/circular-buffer';
 type ConsoleLevel = 'log' | 'warn' | 'error' | 'info' | 'debug';
 const CONSOLE_METHODS: readonly ConsoleLevel[] = ['log', 'warn', 'error', 'info', 'debug'] as const;
 
+/**
+ * Prefix used for SDK internal log messages
+ * Exported for testing purposes
+ */
+export const SDK_LOG_PREFIX = '[BugSpotter]';
+
 export interface ConsoleCaptureOptions extends CaptureOptions {
   maxLogs?: number;
   captureStackTrace?: boolean;
@@ -55,10 +61,10 @@ export class ConsoleCapture extends BaseCapture<LogEntry[], ConsoleCaptureOption
       .join(' ');
   }
 
-  private createLogEntry(method: ConsoleLevel, args: unknown[]): LogEntry {
+  private createLogEntry(method: ConsoleLevel, args: unknown[], message?: string): LogEntry {
     const log: LogEntry = {
       level: method,
-      message: this.formatMessage(args),
+      message: message ?? this.formatMessage(args),
       timestamp: Date.now(),
     };
 
@@ -80,6 +86,20 @@ export class ConsoleCapture extends BaseCapture<LogEntry[], ConsoleCaptureOption
     this.buffer.add(log);
   }
 
+  /**
+   * Check if log should be filtered (SDK internal logs)
+   * Filters out SDK debug logs (prefix [BugSpotter]) except errors
+   */
+  private shouldFilterLog(message: string, level: ConsoleLevel): boolean {
+    // Always keep SDK errors for debugging
+    if (level === 'error') {
+      return false;
+    }
+
+    // Filter SDK internal logs (debug/info/warn only)
+    return message.startsWith(SDK_LOG_PREFIX);
+  }
+
   private interceptConsole(levels: readonly ConsoleLevel[] = CONSOLE_METHODS): void {
     levels.forEach((method) => {
       try {
@@ -88,8 +108,13 @@ export class ConsoleCapture extends BaseCapture<LogEntry[], ConsoleCaptureOption
 
         console[method] = (...args: unknown[]) => {
           try {
-            const log = this.createLogEntry(method, args);
-            this.addLog(log);
+            const message = this.formatMessage(args);
+
+            // Filter SDK internal logs before creating log entry
+            if (!this.shouldFilterLog(message, method)) {
+              const log = this.createLogEntry(method, args, message);
+              this.addLog(log);
+            }
           } catch (error) {
             this.handleError('creating log entry', error);
           }

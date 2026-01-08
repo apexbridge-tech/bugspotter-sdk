@@ -183,4 +183,160 @@ describe('NetworkCapture', () => {
       networkCapture.clear();
     });
   });
+
+  describe('SDK API endpoint filtering', () => {
+    it('should filter requests to SDK API endpoint', async () => {
+      const apiEndpoint = 'https://api.bugspotter.com';
+      const filterUrls = (url: string) => !url.startsWith(apiEndpoint);
+      const capture = new NetworkCapture({ filterUrls });
+      capture.clear();
+
+      mockFetch.mockResolvedValue(new Response('', { status: 200 }));
+
+      // Make request to SDK API
+      await fetch(`${apiEndpoint}/bug-reports`);
+
+      const requests = capture.getRequests();
+
+      expect(requests).toHaveLength(0);
+    });
+
+    it('should capture requests to other endpoints', async () => {
+      const apiEndpoint = 'https://api.bugspotter.com';
+      const filterUrls = (url: string) => !url.startsWith(apiEndpoint);
+      const capture = new NetworkCapture({ filterUrls });
+      capture.clear();
+
+      mockFetch.mockResolvedValue(new Response('', { status: 200 }));
+
+      // Make request to user's API
+      await fetch('https://myapp.com/api/data');
+
+      const requests = capture.getRequests();
+
+      expect(requests).toHaveLength(1);
+      expect(requests[0].url).toBe('https://myapp.com/api/data');
+    });
+
+    it('should NOT filter user URLs that contain SDK endpoint as substring', async () => {
+      const apiEndpoint = 'https://api.bugspotter.com';
+      const filterUrls = (url: string) => !url.startsWith(apiEndpoint);
+      const capture = new NetworkCapture({ filterUrls });
+      capture.clear();
+
+      mockFetch.mockResolvedValue(new Response('', { status: 200 }));
+
+      // User URL that contains SDK endpoint in query param - should NOT be filtered
+      await fetch('https://user-api.com/data?source=https://api.bugspotter.com');
+
+      const requests = capture.getRequests();
+
+      expect(requests).toHaveLength(1);
+      expect(requests[0].url).toBe('https://user-api.com/data?source=https://api.bugspotter.com');
+    });
+
+    it('should NOT filter URLs with SDK endpoint in path segment', async () => {
+      const apiEndpoint = 'https://api.bugspotter.com';
+      const filterUrls = (url: string) => !url.startsWith(apiEndpoint);
+      const capture = new NetworkCapture({ filterUrls });
+      capture.clear();
+
+      mockFetch.mockResolvedValue(new Response('', { status: 200 }));
+
+      // URL with SDK endpoint as path segment - should NOT be filtered
+      await fetch('https://example.com/api.bugspotter.com/data');
+
+      const requests = capture.getRequests();
+
+      expect(requests).toHaveLength(1);
+      expect(requests[0].url).toBe('https://example.com/api.bugspotter.com/data');
+    });
+
+    it('should NOT filter URLs with similar subdomain', async () => {
+      const apiEndpoint = 'https://api.bugspotter.com';
+      const filterUrls = (url: string) => !url.startsWith(apiEndpoint);
+      const capture = new NetworkCapture({ filterUrls });
+      capture.clear();
+
+      mockFetch.mockResolvedValue(new Response('', { status: 200 }));
+
+      // Similar but different subdomain - should NOT be filtered
+      await fetch('https://notapi.bugspotter.com/endpoint');
+
+      const requests = capture.getRequests();
+
+      expect(requests).toHaveLength(1);
+      expect(requests[0].url).toBe('https://notapi.bugspotter.com/endpoint');
+    });
+
+    it('should NOT filter URLs with partial domain match', async () => {
+      const apiEndpoint = 'https://api.com';
+      const filterUrls = (url: string) => !url.startsWith(apiEndpoint);
+      const capture = new NetworkCapture({ filterUrls });
+      capture.clear();
+
+      mockFetch.mockResolvedValue(new Response('', { status: 200 }));
+
+      // Different domain that contains 'api.com' - should NOT be filtered
+      await fetch('https://myapi.com/data');
+
+      const requests = capture.getRequests();
+
+      expect(requests).toHaveLength(1);
+      expect(requests[0].url).toBe('https://myapi.com/data');
+    });
+
+    it('should filter SDK API requests mixed with user requests', async () => {
+      const apiEndpoint = 'https://api.bugspotter.com';
+      const filterUrls = (url: string) => !url.startsWith(apiEndpoint);
+      const capture = new NetworkCapture({ filterUrls });
+      capture.clear();
+
+      mockFetch.mockResolvedValue(new Response('', { status: 200 }));
+
+      // Mix of SDK and user requests
+      await fetch('https://myapp.com/api/users'); // Captured
+      await fetch(`${apiEndpoint}/bug-reports`); // Filtered
+      await fetch('https://myapp.com/api/products'); // Captured
+      await fetch(`${apiEndpoint}/screenshots`); // Filtered
+      await fetch('https://external.com/data'); // Captured
+
+      const requests = capture.getRequests();
+
+      expect(requests).toHaveLength(3);
+      expect(requests[0].url).toBe('https://myapp.com/api/users');
+      expect(requests[1].url).toBe('https://myapp.com/api/products');
+      expect(requests[2].url).toBe('https://external.com/data');
+    });
+
+    it('should work without filterUrls option', async () => {
+      const capture = new NetworkCapture(); // No filterUrls
+      capture.clear();
+
+      mockFetch.mockResolvedValue(new Response('', { status: 200 }));
+
+      await fetch('https://any.url.com/endpoint');
+
+      const requests = capture.getRequests();
+
+      expect(requests).toHaveLength(1);
+    });
+
+    it('should handle localhost API endpoints', async () => {
+      const apiEndpoint = 'http://localhost:3000';
+      const filterUrls = (url: string) => !url.startsWith(apiEndpoint);
+      const capture = new NetworkCapture({ filterUrls });
+      capture.clear();
+
+      mockFetch.mockResolvedValue(new Response('', { status: 200 }));
+
+      await fetch(`${apiEndpoint}/api/bug-reports`);
+      await fetch('http://localhost:8080/user-api');
+
+      const requests = capture.getRequests();
+
+      expect(requests).toHaveLength(1);
+      expect(requests[0].url).toBe('http://localhost:8080/user-api');
+    });
+  });
 });

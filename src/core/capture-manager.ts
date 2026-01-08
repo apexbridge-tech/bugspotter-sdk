@@ -18,6 +18,7 @@ import { DEFAULT_REPLAY_DURATION_SECONDS } from '../constants';
  */
 export interface CaptureManagerConfig {
   sanitizer?: Sanitizer;
+  apiEndpoint?: string; // API endpoint URL for filtering SDK network calls
   replay?: {
     enabled?: boolean;
     duration?: number;
@@ -48,7 +49,17 @@ export class CaptureManager {
     // Initialize core capture modules
     this.screenshot = new ScreenshotCapture();
     this.console = new ConsoleCapture({ sanitizer: config.sanitizer });
-    this.network = new NetworkCapture({ sanitizer: config.sanitizer });
+
+    // Configure network capture to filter SDK API calls
+    const networkOptions: { sanitizer?: Sanitizer; filterUrls?: (url: string) => boolean } = {
+      sanitizer: config.sanitizer,
+    };
+    if (config.apiEndpoint) {
+      const endpoint = config.apiEndpoint;
+      networkOptions.filterUrls = (url: string) => !url.startsWith(endpoint);
+    }
+    this.network = new NetworkCapture(networkOptions);
+
     this.metadata = new MetadataCapture({ sanitizer: config.sanitizer });
 
     // Initialize optional replay/DOM collector

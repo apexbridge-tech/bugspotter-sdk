@@ -226,13 +226,13 @@ describe('ConsoleCapture', () => {
 
       const logs = consoleCapture.getLogs();
 
-      // Should have 4 logs: errors are kept, non-prefix messages are kept too
+      // Should have 4 logs: warn with prefix is filtered, the rest are kept
       expect(logs).toHaveLength(4);
-      expect(logs[0].message).toContain('Some text'); // Not filtered (no prefix)
-      expect(logs[1].message).toContain('Beginning'); // Not filtered (no prefix)
-      expect(logs[2].message).toContain('at the end'); // Not filtered (no prefix)
-      expect(logs[3].message).toContain(SDK_LOG_PREFIX); // Error kept
-      expect(logs[3].level).toBe('error');
+      expect(logs[0].message).toContain('Some text'); // Not filtered (no prefix at start)
+      expect(logs[1].message).toContain('Beginning'); // Not filtered (no prefix at start)
+      expect(logs[2].message).toContain('error in middle of message'); // Error kept
+      expect(logs[2].level).toBe('error');
+      expect(logs[3].message).toBe('User log without prefix');
     });
   });
 });

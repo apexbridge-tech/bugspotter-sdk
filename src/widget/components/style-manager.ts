@@ -16,6 +16,50 @@ export interface StyleConfig {
 export class StyleManager {
   private config: Required<StyleConfig>;
 
+  // ============================================================================
+  // SPACING & SIZING CONSTANTS
+  // ============================================================================
+  private readonly SPACING = {
+    xs: 8,
+    sm: 12,
+    md: 16,
+    lg: 20,
+  };
+
+  private readonly BREAKPOINTS = {
+    tablet: 768,
+    mobile: 480,
+  };
+
+  private readonly MODAL_SIZES = {
+    desktop: '600px',
+    tablet: '500px',
+    mobilePercent: '98%',
+    headerHeight: '30px',
+  };
+
+  // ============================================================================
+  // FONT & LAYOUT CONSTANTS
+  // ============================================================================
+  private readonly FONT_SIZES = {
+    h2: '20px',
+    h2Mobile: '18px',
+    label: '14px',
+    labelMobile: '13px',
+    body: '14px',
+    small: '12px',
+    sr: '13px',
+  };
+
+  private readonly BORDER_STYLES = {
+    primary: '1px solid #e0e0e0',
+    light: '1px solid #ddd',
+  };
+
+  private readonly SHADOW_STYLES = {
+    modal: '0 4px 6px rgba(0, 0, 0, 0.1)',
+  };
+
   constructor(config: StyleConfig = {}) {
     this.config = {
       primaryColor: config.primaryColor || '#007bff',
@@ -32,6 +76,25 @@ export class StyleManager {
    */
   generateStyles(): string {
     return `
+      ${this.generateOverlayStyles()}
+      ${this.generateModalStyles()}
+      ${this.generateHeaderStyles()}
+      ${this.generateBodyStyles()}
+      ${this.generateFormStyles()}
+      ${this.generateButtonStyles()}
+      ${this.generatePIIStyles()}
+      ${this.generateLoadingStyles()}
+      ${this.generateAccessibilityStyles()}
+      ${this.generateTabletResponsiveStyles()}
+      ${this.generateMobileResponsiveStyles()}
+    `;
+  }
+
+  // ============================================================================
+  // COMPONENT STYLES - OVERLAY & MODAL
+  // ============================================================================
+  private generateOverlayStyles(): string {
+    return `
       .overlay {
         position: fixed;
         top: 0;
@@ -45,15 +108,19 @@ export class StyleManager {
         z-index: ${this.config.zIndex};
         font-family: ${this.config.fontFamily};
       }
-      
+    `;
+  }
+
+  private generateModalStyles(): string {
+    return `
       .modal {
         background: white;
         border-radius: 8px;
         width: 90%;
-        max-width: 600px;
+        max-width: ${this.MODAL_SIZES.desktop};
         max-height: 90vh;
         overflow-y: auto;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        box-shadow: ${this.SHADOW_STYLES.modal};
         scrollbar-width: none;
         -ms-overflow-style: none;
       }
@@ -61,10 +128,17 @@ export class StyleManager {
       .modal::-webkit-scrollbar {
         display: none;
       }
-      
+    `;
+  }
+
+  // ============================================================================
+  // COMPONENT STYLES - HEADER
+  // ============================================================================
+  private generateHeaderStyles(): string {
+    return `
       .header {
-        padding: 20px;
-        border-bottom: 1px solid #e0e0e0;
+        padding: ${this.SPACING.lg}px;
+        border-bottom: ${this.BORDER_STYLES.primary};
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -72,7 +146,7 @@ export class StyleManager {
       
       .header h2 {
         margin: 0;
-        font-size: 20px;
+        font-size: ${this.FONT_SIZES.h2};
         font-weight: 600;
       }
       
@@ -83,8 +157,8 @@ export class StyleManager {
         cursor: pointer;
         color: #666;
         padding: 0;
-        width: 30px;
-        height: 30px;
+        width: ${this.MODAL_SIZES.headerHeight};
+        height: ${this.MODAL_SIZES.headerHeight};
         display: flex;
         align-items: center;
         justify-content: center;
@@ -94,29 +168,40 @@ export class StyleManager {
       .close:hover {
         background: #f0f0f0;
       }
-      
+    `;
+  }
+
+  // ============================================================================
+  // COMPONENT STYLES - BODY & FORM
+  // ============================================================================
+  private generateBodyStyles(): string {
+    return `
       .body {
-        padding: 20px;
+        padding: ${this.SPACING.lg}px;
       }
-      
+    `;
+  }
+
+  private generateFormStyles(): string {
+    return `
       .form-group {
-        margin-bottom: 20px;
+        margin-bottom: ${this.SPACING.lg}px;
       }
       
       .label {
         display: block;
-        margin-bottom: 8px;
+        margin-bottom: ${this.SPACING.xs}px;
         font-weight: 500;
-        font-size: 14px;
+        font-size: ${this.FONT_SIZES.label};
       }
       
       .input,
       .textarea {
         width: 100%;
-        padding: 10px;
-        border: 1px solid #ddd;
+        padding: ${this.SPACING.xs}px;
+        border: ${this.BORDER_STYLES.light};
         border-radius: ${this.config.borderRadius};
-        font-size: 14px;
+        font-size: ${this.FONT_SIZES.body};
         font-family: ${this.config.fontFamily};
         box-sizing: border-box;
       }
@@ -132,91 +217,11 @@ export class StyleManager {
         resize: vertical;
       }
       
-      .screenshot-container {
-        margin-top: 10px;
-        position: relative;
-      }
-      
-      .screenshot {
-        max-width: 100%;
-        border: 1px solid #ddd;
-        border-radius: ${this.config.borderRadius};
-      }
-      
-      .redaction-canvas {
-        position: absolute;
-        top: 0;
-        left: 0;
-        cursor: crosshair;
-        border: 2px solid ${this.config.primaryColor};
-        border-radius: ${this.config.borderRadius};
-      }
-      
-      .redaction-controls {
-        margin-top: 10px;
-        display: flex;
-        gap: 10px;
-      }
-      
-      .btn-redact,
-      .btn-clear {
-        padding: 8px 16px;
-        border: 1px solid #ddd;
-        border-radius: ${this.config.borderRadius};
-        background: white;
-        cursor: pointer;
-        font-size: 14px;
-      }
-      
-      .btn-redact:hover,
-      .btn-clear:hover {
-        background: #f5f5f5;
-      }
-      
-      .btn-redact.active {
-        background: ${this.config.primaryColor};
-        color: white;
-        border-color: ${this.config.primaryColor};
-      }
-      
-      .pii-section {
-        margin-top: 20px;
-        padding: 15px;
-        background: #fff3cd;
-        border: 1px solid #ffc107;
-        border-radius: ${this.config.borderRadius};
-      }
-      
-      .pii-title {
-        margin: 0 0 10px 0;
-        font-size: 14px;
-        font-weight: 600;
-        color: #856404;
-      }
-      
-      .pii-list {
-        margin: 0;
-        padding-left: 20px;
-        font-size: 13px;
-        color: #856404;
-      }
-      
-      .pii-badge {
-        display: inline-block;
-        padding: 2px 8px;
-        margin: 2px;
-        background: #ffc107;
-        color: #856404;
-        border-radius: 12px;
-        font-size: 12px;
-        font-weight: 500;
-      }
-      
       .checkbox-group {
         display: flex;
         align-items: center;
-        gap: 8px;
-        margin-top: 15px;
+        gap: ${this.SPACING.xs}px;
+        margin-top: ${this.SPACING.md}px;
       }
       
       .checkbox {
@@ -227,25 +232,38 @@ export class StyleManager {
       
       .checkbox-label {
         margin: 0;
-        font-size: 14px;
+        font-size: ${this.FONT_SIZES.body};
         cursor: pointer;
         user-select: none;
       }
       
+      .error {
+        color: ${this.config.dangerColor};
+        font-size: ${this.FONT_SIZES.small};
+        margin-top: 4px;
+      }
+    `;
+  }
+
+  // ============================================================================
+  // COMPONENT STYLES - BUTTONS & CONTROLS
+  // ============================================================================
+  private generateButtonStyles(): string {
+    return `
       .footer {
-        padding: 20px;
-        border-top: 1px solid #e0e0e0;
+        padding: ${this.SPACING.lg}px;
+        border-top: ${this.BORDER_STYLES.primary};
         display: flex;
         justify-content: flex-end;
-        gap: 10px;
+        gap: ${this.SPACING.xs}px;
       }
       
       .btn {
-        padding: 10px 20px;
+        padding: ${this.SPACING.xs}px ${this.SPACING.md}px;
         border: none;
         border-radius: ${this.config.borderRadius};
         cursor: pointer;
-        font-size: 14px;
+        font-size: ${this.FONT_SIZES.body};
         font-weight: 500;
       }
       
@@ -263,6 +281,109 @@ export class StyleManager {
         cursor: not-allowed;
       }
       
+      .btn-secondary {
+        background: #6c757d;
+        color: white;
+      }
+      
+      .btn-secondary:hover {
+        opacity: 0.9;
+      }
+      
+      .redaction-controls {
+        margin-top: ${this.SPACING.xs}px;
+        display: flex;
+        gap: ${this.SPACING.xs}px;
+      }
+      
+      .btn-redact,
+      .btn-clear {
+        padding: ${this.SPACING.xs}px ${this.SPACING.md}px;
+        border: ${this.BORDER_STYLES.light};
+        border-radius: ${this.config.borderRadius};
+        background: white;
+        cursor: pointer;
+        font-size: ${this.FONT_SIZES.body};
+      }
+      
+      .btn-redact:hover,
+      .btn-clear:hover {
+        background: #f5f5f5;
+      }
+      
+      .btn-redact.active {
+        background: ${this.config.primaryColor};
+        color: white;
+        border-color: ${this.config.primaryColor};
+      }
+      
+      .screenshot-container {
+        margin-top: ${this.SPACING.xs}px;
+        position: relative;
+      }
+      
+      .screenshot {
+        max-width: 100%;
+        border: ${this.BORDER_STYLES.light};
+        border-radius: ${this.config.borderRadius};
+      }
+      
+      .redaction-canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        cursor: crosshair;
+        border: 2px solid ${this.config.primaryColor};
+        border-radius: ${this.config.borderRadius};
+      }
+    `;
+  }
+
+  // ============================================================================
+  // COMPONENT STYLES - PII DETECTION
+  // ============================================================================
+  private generatePIIStyles(): string {
+    return `
+      .pii-section {
+        margin-top: ${this.SPACING.lg}px;
+        padding: ${this.SPACING.md}px;
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        border-radius: ${this.config.borderRadius};
+      }
+      
+      .pii-title {
+        margin: 0 0 ${this.SPACING.xs}px 0;
+        font-size: ${this.FONT_SIZES.body};
+        font-weight: 600;
+        color: #856404;
+      }
+      
+      .pii-list {
+        margin: 0;
+        padding-left: 20px;
+        font-size: ${this.FONT_SIZES.sr};
+        color: #856404;
+      }
+      
+      .pii-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        margin: 2px;
+        background: #ffc107;
+        color: #856404;
+        border-radius: 12px;
+        font-size: ${this.FONT_SIZES.small};
+        font-weight: 500;
+      }
+    `;
+  }
+
+  // ============================================================================
+  // COMPONENT STYLES - LOADING STATE
+  // ============================================================================
+  private generateLoadingStyles(): string {
+    return `
       .btn.loading {
         position: relative;
         padding-left: 2.5rem;
@@ -285,7 +406,14 @@ export class StyleManager {
       @keyframes spinner {
         to { transform: rotate(360deg); }
       }
-      
+    `;
+  }
+
+  // ============================================================================
+  // COMPONENT STYLES - ACCESSIBILITY
+  // ============================================================================
+  private generateAccessibilityStyles(): string {
+    return `
       .sr-only {
         position: absolute;
         width: 1px;
@@ -297,44 +425,36 @@ export class StyleManager {
         white-space: nowrap;
         border-width: 0;
       }
-      
-      .btn-secondary {
-        background: #6c757d;
-        color: white;
-      }
-      
-      .btn-secondary:hover {
-        opacity: 0.9;
-      }
-      
-      .error {
-        color: ${this.config.dangerColor};
-        font-size: 12px;
-        margin-top: 4px;
-      }
-      
-      /* Tablet breakpoint */
-      @media (max-width: 768px) {
+    `;
+  }
+
+  // ============================================================================
+  // RESPONSIVE STYLES - TABLET (≤768px)
+  // ============================================================================
+  private generateTabletResponsiveStyles(): string {
+    return `
+      @media (max-width: ${this.BREAKPOINTS.tablet}px) {
         .modal {
           width: 95%;
-          max-width: 500px;
+          max-width: ${this.MODAL_SIZES.tablet};
         }
         
         .header {
-          padding: 16px;
+          padding: ${this.SPACING.md}px;
         }
         
         .body {
-          padding: 16px;
+          padding: ${this.SPACING.md}px;
         }
         
         .footer {
-          padding: 16px;
+          padding: ${this.SPACING.md}px;
         }
         
+        /* Prevent iOS zoom on input focus (requires 16px minimum) */
         .input,
         .textarea {
-          padding: 8px;
+          padding: ${this.SPACING.xs}px;
           font-size: 16px;
         }
         
@@ -342,45 +462,49 @@ export class StyleManager {
           min-height: 80px;
         }
       }
-      
-      /* Mobile breakpoint */
-      @media (max-width: 480px) {
+    `;
+  }
+
+  // ============================================================================
+  // RESPONSIVE STYLES - MOBILE (≤480px)
+  // ============================================================================
+  private generateMobileResponsiveStyles(): string {
+    return `
+      @media (max-width: ${this.BREAKPOINTS.mobile}px) {
         .modal {
-          width: 98%;
+          width: ${this.MODAL_SIZES.mobilePercent};
           max-width: 100%;
           max-height: 95vh;
         }
         
         .header {
-          padding: 12px;
+          padding: ${this.SPACING.sm}px;
         }
         
         .header h2 {
-          font-size: 18px;
+          font-size: ${this.FONT_SIZES.h2Mobile};
         }
         
         .body {
-          padding: 12px;
+          padding: ${this.SPACING.sm}px;
         }
         
         .footer {
-          padding: 12px;
-          flex-direction: column-reverse;
+          padding: ${this.SPACING.sm}px;
+          flex-direction: column;
         }
         
         .btn {
           width: 100%;
-          padding: 12px;
+          padding: ${this.SPACING.md}px;
         }
         
         .input,
         .textarea {
-          padding: 10px;
-          font-size: 16px;
+          padding: ${this.SPACING.xs}px;
         }
         
         .textarea {
-          min-height: 80px;
           resize: none;
         }
         
@@ -394,12 +518,12 @@ export class StyleManager {
         }
         
         .pii-section {
-          padding: 12px;
-          margin-top: 15px;
+          padding: ${this.SPACING.sm}px;
+          margin-top: ${this.SPACING.md}px;
         }
         
         .label {
-          font-size: 13px;
+          font-size: ${this.FONT_SIZES.labelMobile};
         }
         
         .close {

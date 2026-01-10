@@ -117,7 +117,7 @@ export class NetworkCapture extends BaseCapture<NetworkRequest[], NetworkCapture
     if (this.filterUrls) {
       const shouldCapture = this.filterUrls(request.url);
       const isError = request.status < 200 || request.status >= 300;
-      
+
       if (!shouldCapture && !isError) {
         return; // Filter out successful requests from filtered URLs
       }

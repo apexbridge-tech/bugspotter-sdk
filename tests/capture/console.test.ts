@@ -217,7 +217,7 @@ describe('ConsoleCapture', () => {
       expect(logs[3].message).toBe('User log 3');
     });
 
-    it('should filter SDK prefix appearing anywhere in the message', () => {
+    it('should NOT filter logs that contain SDK prefix as substring', () => {
       console.log('Some text ' + SDK_LOG_PREFIX + ' in the middle');
       console.info('Beginning ' + SDK_LOG_PREFIX);
       console.warn(SDK_LOG_PREFIX + ' at the end');
@@ -226,11 +226,13 @@ describe('ConsoleCapture', () => {
 
       const logs = consoleCapture.getLogs();
 
-      // Should have 2 logs: error (kept) and user log
-      expect(logs).toHaveLength(2);
-      expect(logs[0].message).toContain(SDK_LOG_PREFIX); // Error kept
-      expect(logs[0].level).toBe('error');
-      expect(logs[1].message).toBe('User log without prefix');
+      // Should have 4 logs: errors are kept, non-prefix messages are kept too
+      expect(logs).toHaveLength(4);
+      expect(logs[0].message).toContain('Some text'); // Not filtered (no prefix)
+      expect(logs[1].message).toContain('Beginning'); // Not filtered (no prefix)
+      expect(logs[2].message).toContain('at the end'); // Not filtered (no prefix)
+      expect(logs[3].message).toContain(SDK_LOG_PREFIX); // Error kept
+      expect(logs[3].level).toBe('error');
     });
   });
 });

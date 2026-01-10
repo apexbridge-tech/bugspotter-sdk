@@ -185,8 +185,9 @@ describe('NetworkCapture', () => {
   });
 
   describe('SDK API endpoint filtering', () => {
-    it('should filter requests to SDK API endpoint', async () => {
+    it('should filter requests to SDK API endpoint (filterUrls returns false)', async () => {
       const apiEndpoint = 'https://api.bugspotter.com';
+      // filterUrls returns false for SDK endpoint (filter it out), true for others (capture)
       const filterUrls = (url: string) => !url.startsWith(apiEndpoint);
       const capture = new NetworkCapture({ filterUrls });
       capture.clear();
@@ -201,7 +202,7 @@ describe('NetworkCapture', () => {
       expect(requests).toHaveLength(0);
     });
 
-    it('should capture requests to other endpoints', async () => {
+    it('should capture requests to other endpoints (filterUrls returns true)', async () => {
       const apiEndpoint = 'https://api.bugspotter.com';
       const filterUrls = (url: string) => !url.startsWith(apiEndpoint);
       const capture = new NetworkCapture({ filterUrls });
@@ -322,8 +323,9 @@ describe('NetworkCapture', () => {
       expect(requests).toHaveLength(1);
     });
 
-    it('should NOT filter error responses (non-2xx status) even if URL matches filter', async () => {
+    it('should NOT filter error responses even from filtered URLs', async () => {
       const apiEndpoint = 'https://api.bugspotter.com';
+      // filterUrls returns false for SDK endpoint (would filter), true for others (capture)
       const filterUrls = (url: string) => !url.startsWith(apiEndpoint);
       const capture = new NetworkCapture({ filterUrls });
       capture.clear();
@@ -340,7 +342,8 @@ describe('NetworkCapture', () => {
 
       const requests = capture.getRequests();
 
-      // Should have 2 error responses kept, but not the 200 response
+      // Should have 2 error responses kept (even though SDK API is filtered)
+      // but not the 200 response (filtered)
       expect(requests).toHaveLength(2);
       expect(requests[0].url).toBe(`${apiEndpoint}/not-found`);
       expect(requests[0].status).toBe(404);

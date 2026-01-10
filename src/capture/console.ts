@@ -98,7 +98,8 @@ export class ConsoleCapture extends BaseCapture<LogEntry[], ConsoleCaptureOption
     }
 
     // Filter SDK internal logs (debug/info/warn/log only)
-    return message.includes(SDK_LOG_PREFIX);
+    // Use startsWith to only match prefix, not substring anywhere in message
+    return message.startsWith(SDK_LOG_PREFIX);
   }
 
   private interceptConsole(levels: readonly ConsoleLevel[] = CONSOLE_METHODS): void {

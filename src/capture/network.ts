@@ -12,6 +12,12 @@ interface TrackedXMLHttpRequest extends XMLHttpRequest {
 
 export interface NetworkCaptureOptions extends CaptureOptions {
   maxRequests?: number;
+  /**
+   * Optional filter function to exclude URLs from capture
+   * Returns true to CAPTURE the URL, false to FILTER it out
+   * Note: Error responses (non-2xx status) are always captured regardless of filter result
+   * Example: (url) => !url.startsWith('https://api.bugspotter.com') captures all except SDK API
+   */
   filterUrls?: (url: string) => boolean;
 }
 
@@ -102,11 +108,18 @@ export class NetworkCapture extends BaseCapture<NetworkRequest[], NetworkCapture
   }
 
   private addRequest(request: NetworkRequest): void {
-    // Filter SDK requests, but always keep errors (non-2xx status) for debugging
-    if (this.filterUrls && !this.filterUrls(request.url)) {
-      // Only skip if not an error response
-      if (request.status >= 200 && request.status < 300) {
-        return;
+    // Check if URL should be filtered
+    // filterUrls returns true to CAPTURE, false to FILTER OUT
+    // Exception: Always capture error responses (non-2xx) for debugging purposes
+    // Rationale: Error responses from SDK API calls (4xx, 5xx) are invaluable for diagnosing
+    // connectivity issues, authentication failures, rate limiting, or backend problems that
+    // could affect bug report submission. Users need this visibility to troubleshoot SDK issues.
+    if (this.filterUrls) {
+      const shouldCapture = this.filterUrls(request.url);
+      const isError = request.status < 200 || request.status >= 300;
+      
+      if (!shouldCapture && !isError) {
+        return; // Filter out successful requests from filtered URLs
       }
     }
 

@@ -54,6 +54,12 @@ export class StyleManager {
         max-height: 90vh;
         overflow-y: auto;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+      
+      .modal::-webkit-scrollbar {
+        display: none;
       }
       
       .header {
@@ -305,6 +311,102 @@ export class StyleManager {
         color: ${this.config.dangerColor};
         font-size: 12px;
         margin-top: 4px;
+      }
+      
+      /* Tablet breakpoint */
+      @media (max-width: 768px) {
+        .modal {
+          width: 95%;
+          max-width: 500px;
+        }
+        
+        .header {
+          padding: 16px;
+        }
+        
+        .body {
+          padding: 16px;
+        }
+        
+        .footer {
+          padding: 16px;
+        }
+        
+        .input,
+        .textarea {
+          padding: 8px;
+          font-size: 16px;
+        }
+        
+        .textarea {
+          min-height: 80px;
+        }
+      }
+      
+      /* Mobile breakpoint */
+      @media (max-width: 480px) {
+        .modal {
+          width: 98%;
+          max-width: 100%;
+          max-height: 95vh;
+        }
+        
+        .header {
+          padding: 12px;
+        }
+        
+        .header h2 {
+          font-size: 18px;
+        }
+        
+        .body {
+          padding: 12px;
+        }
+        
+        .footer {
+          padding: 12px;
+          flex-direction: column-reverse;
+        }
+        
+        .btn {
+          width: 100%;
+          padding: 12px;
+        }
+        
+        .input,
+        .textarea {
+          padding: 10px;
+          font-size: 16px;
+        }
+        
+        .textarea {
+          min-height: 80px;
+          resize: none;
+        }
+        
+        .redaction-controls {
+          flex-direction: column;
+        }
+        
+        .btn-redact,
+        .btn-clear {
+          width: 100%;
+        }
+        
+        .pii-section {
+          padding: 12px;
+          margin-top: 15px;
+        }
+        
+        .label {
+          font-size: 13px;
+        }
+        
+        .close {
+          width: 28px;
+          height: 28px;
+          font-size: 20px;
+        }
       }
     `;
   }

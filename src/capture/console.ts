@@ -89,6 +89,7 @@ export class ConsoleCapture extends BaseCapture<LogEntry[], ConsoleCaptureOption
   /**
    * Check if log should be filtered (SDK internal logs)
    * Filters out SDK debug logs (prefix [BugSpotter]) except errors
+   * Errors are always captured even if they contain SDK prefix
    */
   private shouldFilterLog(message: string, level: ConsoleLevel): boolean {
     // Always keep SDK errors for debugging
@@ -96,8 +97,8 @@ export class ConsoleCapture extends BaseCapture<LogEntry[], ConsoleCaptureOption
       return false;
     }
 
-    // Filter SDK internal logs (debug/info/warn only)
-    return message.startsWith(SDK_LOG_PREFIX);
+    // Filter SDK internal logs (debug/info/warn/log only)
+    return message.includes(SDK_LOG_PREFIX);
   }
 
   private interceptConsole(levels: readonly ConsoleLevel[] = CONSOLE_METHODS): void {

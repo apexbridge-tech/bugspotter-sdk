@@ -216,5 +216,21 @@ describe('ConsoleCapture', () => {
       expect(logs[2].level).toBe('error');
       expect(logs[3].message).toBe('User log 3');
     });
+
+    it('should filter SDK prefix appearing anywhere in the message', () => {
+      console.log('Some text ' + SDK_LOG_PREFIX + ' in the middle');
+      console.info('Beginning ' + SDK_LOG_PREFIX);
+      console.warn(SDK_LOG_PREFIX + ' at the end');
+      console.error(SDK_LOG_PREFIX + ' error in middle of message');
+      console.log('User log without prefix');
+
+      const logs = consoleCapture.getLogs();
+
+      // Should have 2 logs: error (kept) and user log
+      expect(logs).toHaveLength(2);
+      expect(logs[0].message).toContain(SDK_LOG_PREFIX); // Error kept
+      expect(logs[0].level).toBe('error');
+      expect(logs[1].message).toBe('User log without prefix');
+    });
   });
 });

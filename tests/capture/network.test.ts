@@ -322,6 +322,58 @@ describe('NetworkCapture', () => {
       expect(requests).toHaveLength(1);
     });
 
+    it('should NOT filter error responses (non-2xx status) even if URL matches filter', async () => {
+      const apiEndpoint = 'https://api.bugspotter.com';
+      const filterUrls = (url: string) => !url.startsWith(apiEndpoint);
+      const capture = new NetworkCapture({ filterUrls });
+      capture.clear();
+
+      mockFetch
+        .mockResolvedValueOnce(new Response('', { status: 404 })) // Error
+        .mockResolvedValueOnce(new Response('', { status: 500 })) // Error
+        .mockResolvedValueOnce(new Response('', { status: 200 })); // Success
+
+      // Make requests to SDK API
+      await fetch(`${apiEndpoint}/not-found`);
+      await fetch(`${apiEndpoint}/server-error`);
+      await fetch(`${apiEndpoint}/success`);
+
+      const requests = capture.getRequests();
+
+      // Should have 2 error responses kept, but not the 200 response
+      expect(requests).toHaveLength(2);
+      expect(requests[0].url).toBe(`${apiEndpoint}/not-found`);
+      expect(requests[0].status).toBe(404);
+      expect(requests[1].url).toBe(`${apiEndpoint}/server-error`);
+      expect(requests[1].status).toBe(500);
+    });
+
+    it('should filter successful SDK requests while keeping error responses', async () => {
+      const apiEndpoint = 'https://api.bugspotter.com';
+      const filterUrls = (url: string) => !url.startsWith(apiEndpoint);
+      const capture = new NetworkCapture({ filterUrls });
+      capture.clear();
+
+      mockFetch
+        .mockResolvedValueOnce(new Response('', { status: 200 })) // Success to API
+        .mockResolvedValueOnce(new Response('', { status: 200 })) // Success to user
+        .mockResolvedValueOnce(new Response('', { status: 401 })) // Error from API
+        .mockResolvedValueOnce(new Response('', { status: 200 })); // Success to API
+
+      await fetch(`${apiEndpoint}/success`); // Filtered
+      await fetch('https://myapp.com/api'); // Captured
+      await fetch(`${apiEndpoint}/unauthorized`); // Captured (error)
+      await fetch(`${apiEndpoint}/another-success`); // Filtered
+
+      const requests = capture.getRequests();
+
+      expect(requests).toHaveLength(2);
+      expect(requests[0].url).toBe('https://myapp.com/api');
+      expect(requests[0].status).toBe(200);
+      expect(requests[1].url).toBe(`${apiEndpoint}/unauthorized`);
+      expect(requests[1].status).toBe(401);
+    });
+
     it('should handle localhost API endpoints', async () => {
       const apiEndpoint = 'http://localhost:3000';
       const filterUrls = (url: string) => !url.startsWith(apiEndpoint);

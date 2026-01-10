@@ -102,8 +102,12 @@ export class NetworkCapture extends BaseCapture<NetworkRequest[], NetworkCapture
   }
 
   private addRequest(request: NetworkRequest): void {
+    // Filter SDK requests, but always keep errors (non-2xx status) for debugging
     if (this.filterUrls && !this.filterUrls(request.url)) {
-      return; // Skip filtered URLs
+      // Only skip if not an error response
+      if (request.status >= 200 && request.status < 300) {
+        return;
+      }
     }
 
     this.buffer.add(request);

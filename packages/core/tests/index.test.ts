@@ -589,8 +589,8 @@ describe('BugSpotter', () => {
       // Mock bug report with error logs without stacks
       const mockReport = {
         console: [
-          { level: 'error', message: 'Simple error without stack', timestamp: Date.now() },
-          { level: 'error', message: 'Another error', timestamp: Date.now() },
+          { level: 'error', message: 'Simple error without stack', timestamp: Date.now(), stack: undefined },
+          { level: 'error', message: 'Another error', timestamp: Date.now(), stack: undefined },
         ],
         network: [],
         metadata: {} as any,
@@ -615,8 +615,8 @@ describe('BugSpotter', () => {
       // Mock bug report with only non-error logs
       const mockReport = {
         console: [
-          { level: 'log', message: 'Info log', timestamp: Date.now() },
-          { level: 'warn', message: 'Warning log', timestamp: Date.now() },
+          { level: 'log', message: 'Info log', timestamp: Date.now(), stack: undefined },
+          { level: 'warn', message: 'Warning log', timestamp: Date.now(), stack: undefined },
         ],
         network: [],
         metadata: {} as any,
@@ -635,10 +635,10 @@ describe('BugSpotter', () => {
       // Mock bug report with mixed log levels
       const mockReport = {
         console: [
-          { level: 'log', message: 'Regular log', timestamp: Date.now() },
-          { level: 'warn', message: 'Warning log', timestamp: Date.now() },
+          { level: 'log', message: 'Regular log', timestamp: Date.now(), stack: undefined },
+          { level: 'warn', message: 'Warning log', timestamp: Date.now(), stack: undefined },
           { level: 'error', message: 'Error log 1', stack: 'Stack 1', timestamp: Date.now() },
-          { level: 'info', message: 'Info log', timestamp: Date.now() },
+          { level: 'info', message: 'Info log', timestamp: Date.now(), stack: undefined },
           { level: 'error', message: 'Error log 2', stack: 'Stack 2', timestamp: Date.now() },
         ],
         network: [],

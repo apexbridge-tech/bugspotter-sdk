@@ -254,6 +254,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Generate version file
+        run: pnpm --filter @bugspotter/core generate-version
+
       - name: Type check core package
         run: pnpm --filter @bugspotter/core exec tsc --noEmit
 

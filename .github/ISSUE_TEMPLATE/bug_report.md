@@ -30,7 +30,7 @@ A clear and concise description of what actually happened.
 ## Code Sample
 ```javascript
 // Minimal code sample to reproduce the issue
-import { BugSpotter } from '@bugspotter/core';
+import { BugSpotter } from '@bugspotter/sdk';
 
 const bugSpotter = new BugSpotter({
   apiKey: 'your-api-key',

@@ -15,11 +15,11 @@ A professional bug reporting SDK with session replay capabilities for web applic
 ## Quick Start
 
 ```bash
-npm install @bugspotter/core
+npm install @bugspotter/sdk
 ```
 
 ```javascript
-import { BugSpotter } from '@bugspotter/core';
+import { BugSpotter } from '@bugspotter/sdk';
 
 const bugSpotter = new BugSpotter({
   apiKey: 'your-api-key',
@@ -31,7 +31,7 @@ bugSpotter.init();
 
 ## Packages
 
-- **[@bugspotter/core](./packages/core)** - Core SDK functionality
+- **[@bugspotter/sdk](./packages/core)** - Core SDK functionality
 
 ## Examples
 

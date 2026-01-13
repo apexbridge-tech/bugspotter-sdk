@@ -1,4 +1,4 @@
-import { BugSpotter } from '@bugspotter/core';
+import { BugSpotter } from '@bugspotter/sdk';
 
 let bugSpotter;
 let isInitialized = false;

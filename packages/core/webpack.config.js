@@ -1,6 +1,8 @@
 const path = require('path');
 
 module.exports = {
+  mode: 'production',
+  devtool: 'source-map',
   entry: './src/index.ts',
   output: {
     filename: 'bugspotter.min.js',

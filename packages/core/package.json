@@ -1,6 +1,6 @@
 {
   "name": "@bugspotter/core",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Professional bug reporting SDK with screenshots, session replay, and automatic error capture for web applications",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",

@@ -6,13 +6,13 @@ on:
       - 'v*'
 
 env:
-  NODE_VERSION: '18'
-  PNPM_VERSION: '8'
+  NODE_VERSION: '22'
 
 jobs:
   release:
     name: Release and Publish
     runs-on: ubuntu-latest
+    environment: production
     permissions:
       contents: write
       packages: write
@@ -22,15 +22,13 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           registry-url: 'https://registry.npmjs.org'
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -44,11 +42,6 @@ jobs:
       - name: Extract version from tag
         id: version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-
-      - name: Update package version
-        run: |
-          cd packages/core
-          npm version ${{ steps.version.outputs.VERSION }} --no-git-tag-version
 
       - name: Create Release Notes
         id: release_notes
@@ -78,8 +71,26 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - name: Upload to CDN
+        run: |
+          # Upload minified bundle to CDN
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.CDN_API_TOKEN }}" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary @packages/core/dist/bugspotter.min.js \
+            "https://your-cdn-endpoint.com/bugspotter/v${{ steps.version.outputs.VERSION }}/bugspotter.min.js"
+          
+          # Upload source map to CDN
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.CDN_API_TOKEN }}" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary @packages/core/dist/bugspotter.min.js.map \
+            "https://your-cdn-endpoint.com/bugspotter/v${{ steps.version.outputs.VERSION }}/bugspotter.min.js.map"
+        env:
+          CDN_API_TOKEN: ${{ secrets.CDN_API_TOKEN }}
+
       - name: Upload build artifacts to release
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: release-build-${{ steps.version.outputs.VERSION }}
           path: packages/core/dist/

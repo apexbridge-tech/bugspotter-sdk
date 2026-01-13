@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { BugSpotter } from '@bugspotter/core';
 
 let bugSpotter: BugSpotter;
@@ -23,7 +23,7 @@ function App() {
           setStatus('BugSpotter initialized and ready');
           setIsInitialized(true);
         },
-        onError: (error) => {
+        onError: (error: Error) => {
           setStatus(`BugSpotter error: ${error.message}`);
         }
       });

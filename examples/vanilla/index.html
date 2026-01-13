@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BugSpotter Vanilla JS Example</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .container {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            margin: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        button:hover {
+            background-color: #0056b3;
+        }
+        
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        button.danger {
+            background-color: #dc3545;
+        }
+        
+        button.danger:hover {
+            background-color: #c82333;
+        }
+        
+        #status {
+            background-color: white;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 16px;
+            margin: 16px 0;
+        }
+        
+        .error-demo {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 4px;
+            padding: 16px;
+            margin: 16px 0;
+            color: #721c24;
+        }
+        
+        .features {
+            background-color: #d1ecf1;
+            border: 1px solid #b8daff;
+            border-radius: 4px;
+            padding: 16px;
+            margin: 16px 0;
+        }
+        
+        ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>BugSpotter Vanilla JS Example</h1>
+    
+    <div class="container">
+        <h3>Status</h3>
+        <div id="status">Initializing BugSpotter...</div>
+    </div>
+
+    <div class="container">
+        <h3>Demo Actions</h3>
+        <button id="report-bug" disabled>Report Manual Bug</button>
+        <button id="capture-screenshot" disabled>Capture Screenshot</button>
+        <button id="simulate-error" class="danger">Simulate Error (Will be auto-reported)</button>
+    </div>
+
+    <div class="error-demo">
+        <h3>Error Boundary Test</h3>
+        <p>Click the "Simulate Error" button to test automatic error reporting.</p>
+        <p>BugSpotter will automatically capture the error, take a screenshot, and send a bug report.</p>
+    </div>
+
+    <div class="features">
+        <h3>Features Demonstrated</h3>
+        <ul>
+            <li>✅ Automatic initialization</li>
+            <li>✅ Manual bug reporting</li>
+            <li>✅ Screenshot capture</li>
+            <li>✅ Session replay (automatic)</li>
+            <li>✅ Error boundary integration</li>
+            <li>✅ Custom metadata</li>
+        </ul>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+</body>
+</html>

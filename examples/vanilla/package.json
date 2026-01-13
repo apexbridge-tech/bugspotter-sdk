@@ -1,0 +1,19 @@
+{
+  "name": "@bugspotter/example-vanilla",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Vanilla JavaScript example for BugSpotter SDK",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@bugspotter/core": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3"
+  }
+}

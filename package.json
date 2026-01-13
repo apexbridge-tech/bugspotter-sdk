@@ -1,92 +1,34 @@
 {
   "name": "@bugspotter/sdk",
-  "version": "0.3.0",
-  "description": "Professional bug reporting SDK with screenshots, session replay, and automatic error capture for web applications",
-  "main": "dist/index.js",
-  "module": "dist/index.esm.js",
-  "browser": "dist/bugspotter.min.js",
-  "types": "dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.esm.js",
-      "require": "./dist/index.js",
-      "browser": "./dist/bugspotter.min.js"
-    }
-  },
+  "version": "0.3.0", 
+  "private": true,
+  "description": "BugSpotter SDK - Browser bug reporting with session replay",
+  "type": "module",
   "scripts": {
-    "dev": "webpack --watch --mode development",
-    "generate-version": "node scripts/generate-version.js",
-    "prebuild": "npm run generate-version",
-    "build": "npm run build:webpack && npm run build:esm && npm run build:cjs",
-    "build:webpack": "webpack --mode production",
-    "build:esm": "tsc --project tsconfig.build.json --module ES2020 --outDir dist/esm && shx mv dist/esm/index.js dist/index.esm.js && shx rm -rf dist/esm",
-    "build:cjs": "tsc --project tsconfig.cjs.json",
-    "prepublishOnly": "npm run build && npm test",
-    "lint": "eslint \"src/**/*.{ts,js}\"",
-    "lint:fix": "eslint \"src/**/*.{ts,js}\" --fix",
-    "pretest": "npm run generate-version",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage",
-    "test:e2e": "vitest run --config vitest.e2e.config.ts",
-    "test:e2e:watch": "vitest --config vitest.e2e.config.ts",
-    "test:playwright": "playwright test",
-    "test:playwright:ui": "playwright test --ui"
+    "build": "pnpm --filter @bugspotter/core build",
+    "dev": "pnpm --filter @bugspotter/core dev",
+    "test": "pnpm --filter @bugspotter/core test",
+    "test:watch": "pnpm --filter @bugspotter/core test:watch", 
+    "test:e2e": "pnpm --filter @bugspotter/core test:e2e",
+    "test:coverage": "pnpm --filter @bugspotter/core test:coverage",
+    "lint": "pnpm --filter @bugspotter/core lint",
+    "lint:fix": "pnpm --filter @bugspotter/core lint:fix",
+    "format": "pnpm --filter @bugspotter/core format",
+    "format:check": "pnpm --filter @bugspotter/core format:check"
   },
-  "keywords": [
-    "bug-reporting",
-    "error-tracking",
-    "session-replay",
-    "screenshot",
-    "error-capture",
-    "debugging",
-    "monitoring",
-    "frontend",
-    "react",
-    "vue",
-    "angular",
-    "typescript"
-  ],
-  "author": "Apex Bridge Technology",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.0.0",
+  "author": "BugSpotter Team",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/apexbridge-tech/bugspotter.git",
-    "directory": "packages/sdk"
+    "url": "https://github.com/your-username/bugspotter-sdk.git"
   },
-  "bugs": {
-    "url": "https://github.com/apexbridge-tech/bugspotter/issues"
-  },
-  "homepage": "https://github.com/apexbridge-tech/bugspotter#readme",
-  "engines": {
-    "node": ">=16.0.0"
-  },
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
-  },
-  "dependencies": {
-    "@rrweb/types": "2.0.0-alpha.18",
-    "html-to-image": "^1.11.13",
-    "pako": "^2.1.0",
-    "rrweb": "2.0.0-alpha.4",
-    "rrweb-snapshot": "2.0.0-alpha.4"
-  },
-  "devDependencies": {
-    "@playwright/test": "^1.48.0",
-    "@types/node": "^20.11.0",
-    "@types/pako": "^2.0.4",
-    "@vitest/coverage-v8": "^3.2.4",
-    "@vitest/ui": "^3.2.4",
-    "happy-dom": "^19.0.2",
-    "jsdom": "^24.1.0",
-    "shx": "^0.4.0",
-    "ts-loader": "^9.5.1",
-    "typescript": "^5.3.3",
-    "vitest": "^3.2.4",
-    "webpack": "^5.90.0",
-    "webpack-cli": "^5.1.4"
-  }
+  "workspaces": [
+    "packages/*",
+    "examples/*"
+  ]
 }

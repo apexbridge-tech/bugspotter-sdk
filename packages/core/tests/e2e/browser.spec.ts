@@ -634,8 +634,8 @@ test.describe('BugSpotter SDK - Real Browser Tests', () => {
 });
 
 test.describe('Multi-Browser Compatibility', () => {
-  test('should work in Chromium', async ({ page }) => {
-    await page.setContent('<html><body><h1>Chromium Test</h1></body></html>');
+  test('should work in all browsers', async ({ page, browserName }) => {
+    await page.setContent('<html><body><h1>Browser Compatibility Test</h1></body></html>');
     await injectSDK(page, { showWidget: false });
 
     const report = await page.evaluate(async () => {
@@ -648,6 +648,15 @@ test.describe('Multi-Browser Compatibility', () => {
     });
 
     expect(report).toBeTruthy();
-    expect(report.metadata.browser).toContain('Chrome');
+    expect(report.metadata.browser).toBeTruthy();
+    
+    // Verify browser detection matches the actual browser
+    if (browserName === 'chromium') {
+      expect(report.metadata.browser).toContain('Chrome');
+    } else if (browserName === 'firefox') {
+      expect(report.metadata.browser).toContain('Firefox');
+    } else if (browserName === 'webkit') {
+      expect(report.metadata.browser).toContain('Safari');
+    }
   });
 });

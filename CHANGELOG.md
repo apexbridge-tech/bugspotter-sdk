@@ -2,7 +2,32 @@
 
 All notable changes to the BugSpotter SDK will be documented in this file.
 
-## [0.3.0] - 2025-01-13
+## [0.3.1] - 2026-01-13
+
+### Added
+
+- Node.js 22 LTS support for long-term stability
+- pnpm 9.15.0 integration with improved dependency resolution
+- Cross-browser E2E test suite (Chromium, Firefox, WebKit)
+- Enhanced CI/CD pipeline with better error handling
+- Backblaze B2 + BunnyCDN deployment support
+- GitHub Actions workflow improvements (latest action versions)
+
+### Changed
+
+- Updated Firefox large DOM test timeout from 35s to 45s for better compatibility
+- Improved ESLint configuration for test environments
+- Better handling of runtime-injected globals in type checking
+- Refactored release workflow for production deployments
+
+### Fixed
+
+- Resolved pnpm version conflict between CI config and package.json
+- Fixed E2E test timeouts for slower browser environments
+- Corrected TypeScript type definitions for test mocks
+- Fixed npm provenance verification with correct repository URL
+
+## [0.3.0] - 2026-01-10
 
 ### Added
 - Initial standalone SDK release

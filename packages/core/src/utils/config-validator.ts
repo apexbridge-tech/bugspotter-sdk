@@ -41,7 +41,9 @@ export function validateAuthConfig(context: ValidationContext): void {
  * Validate deduplication configuration
  * @throws Error if configuration is invalid
  */
-export function validateDeduplicationConfig(config?: DeduplicationConfig): void {
+export function validateDeduplicationConfig(
+  config?: DeduplicationConfig
+): void {
   if (!config) {
     return; // undefined config is allowed (uses defaults)
   }

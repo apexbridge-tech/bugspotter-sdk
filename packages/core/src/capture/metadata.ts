@@ -22,7 +22,10 @@ interface OSPattern {
   name: string;
 }
 
-export class MetadataCapture extends BaseCapture<BrowserMetadata, MetadataCaptureOptions> {
+export class MetadataCapture extends BaseCapture<
+  BrowserMetadata,
+  MetadataCaptureOptions
+> {
   private readonly browserPatterns: readonly BrowserPattern[] = [
     { pattern: 'Edg', name: 'Edge' }, // Check Edge before Chrome
     { pattern: 'Chrome', exclude: 'Edge', name: 'Chrome' },
@@ -59,7 +62,9 @@ export class MetadataCapture extends BaseCapture<BrowserMetadata, MetadataCaptur
       // Sanitize sensitive data if sanitizer is enabled
       if (this.sanitizer) {
         metadata.url = this.sanitizer.sanitize(metadata.url) as string;
-        metadata.userAgent = this.sanitizer.sanitize(metadata.userAgent) as string;
+        metadata.userAgent = this.sanitizer.sanitize(
+          metadata.userAgent
+        ) as string;
       }
 
       return metadata;

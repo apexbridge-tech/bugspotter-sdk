@@ -65,7 +65,8 @@ export class FloatingButton {
       position: options.position ?? DEFAULT_BUTTON_OPTIONS.position,
       icon: options.icon ?? DEFAULT_BUTTON_OPTIONS.icon,
       customSvg: options.customSvg ?? DEFAULT_BUTTON_OPTIONS.customSvg,
-      backgroundColor: options.backgroundColor ?? DEFAULT_BUTTON_OPTIONS.backgroundColor,
+      backgroundColor:
+        options.backgroundColor ?? DEFAULT_BUTTON_OPTIONS.backgroundColor,
       size: options.size ?? DEFAULT_BUTTON_OPTIONS.size,
       offset: options.offset ?? DEFAULT_BUTTON_OPTIONS.offset,
       zIndex: options.zIndex ?? DEFAULT_BUTTON_OPTIONS.zIndex,
@@ -135,7 +136,10 @@ export class FloatingButton {
     `;
   }
 
-  private getPositionStyles(position: ButtonPosition, offset: { x: number; y: number }): string {
+  private getPositionStyles(
+    position: ButtonPosition,
+    offset: { x: number; y: number }
+  ): string {
     switch (position) {
       case 'bottom-right':
         return `bottom: ${offset.y}px; right: ${offset.x}px;`;

@@ -66,7 +66,10 @@ function dataToString(data: unknown): string {
  * @param config - Optional compression configuration
  * @returns Compressed data as Uint8Array
  */
-export async function compressData(data: unknown, config?: CompressionConfig): Promise<Uint8Array> {
+export async function compressData(
+  data: unknown,
+  config?: CompressionConfig
+): Promise<Uint8Array> {
   try {
     const jsonString = dataToString(data);
     const encoder = getTextEncoder();
@@ -147,7 +150,8 @@ function supportsWebP(): boolean {
 
   try {
     const canvas = document.createElement('canvas');
-    webpSupportCache = canvas.toDataURL('image/webp').indexOf('data:image/webp') === 0;
+    webpSupportCache =
+      canvas.toDataURL('image/webp').indexOf('data:image/webp') === 0;
   } catch {
     webpSupportCache = false;
   }
@@ -211,16 +215,23 @@ function calculateResizedDimensions(
  * @param config - Optional compression configuration
  * @returns Optimized base64 image string
  */
-export async function compressImage(base64: string, config?: CompressionConfig): Promise<string> {
+export async function compressImage(
+  base64: string,
+  config?: CompressionConfig
+): Promise<string> {
   try {
     if (!isBrowserEnvironment()) {
       return base64;
     }
 
-    const maxWidth = config?.imageMaxWidth ?? COMPRESSION_DEFAULTS.IMAGE_MAX_WIDTH;
-    const maxHeight = config?.imageMaxHeight ?? COMPRESSION_DEFAULTS.IMAGE_MAX_HEIGHT;
-    const webpQuality = config?.webpQuality ?? COMPRESSION_DEFAULTS.IMAGE_WEBP_QUALITY;
-    const jpegQuality = config?.jpegQuality ?? COMPRESSION_DEFAULTS.IMAGE_JPEG_QUALITY;
+    const maxWidth =
+      config?.imageMaxWidth ?? COMPRESSION_DEFAULTS.IMAGE_MAX_WIDTH;
+    const maxHeight =
+      config?.imageMaxHeight ?? COMPRESSION_DEFAULTS.IMAGE_MAX_HEIGHT;
+    const webpQuality =
+      config?.webpQuality ?? COMPRESSION_DEFAULTS.IMAGE_WEBP_QUALITY;
+    const jpegQuality =
+      config?.jpegQuality ?? COMPRESSION_DEFAULTS.IMAGE_JPEG_QUALITY;
     const timeout = COMPRESSION_DEFAULTS.IMAGE_LOAD_TIMEOUT;
 
     const img = await loadImage(base64, timeout);
@@ -266,7 +277,10 @@ export async function compressImage(base64: string, config?: CompressionConfig):
  * @param compressedSize - Compressed data size in bytes
  * @returns Compression ratio as percentage (0-100)
  */
-export function getCompressionRatio(originalSize: number, compressedSize: number): number {
+export function getCompressionRatio(
+  originalSize: number,
+  compressedSize: number
+): number {
   if (originalSize <= 0) {
     return 0;
   }

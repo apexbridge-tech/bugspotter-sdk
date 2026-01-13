@@ -1,7 +1,14 @@
 import { BaseCapture, type CaptureOptions } from './base-capture';
 import { CircularBuffer } from '../core/circular-buffer';
 
-type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
+type HttpMethod =
+  | 'GET'
+  | 'POST'
+  | 'PUT'
+  | 'PATCH'
+  | 'DELETE'
+  | 'HEAD'
+  | 'OPTIONS';
 
 // Extend XMLHttpRequest to include our custom tracking properties
 interface TrackedXMLHttpRequest extends XMLHttpRequest {
@@ -21,7 +28,10 @@ export interface NetworkCaptureOptions extends CaptureOptions {
   filterUrls?: (url: string) => boolean;
 }
 
-export class NetworkCapture extends BaseCapture<NetworkRequest[], NetworkCaptureOptions> {
+export class NetworkCapture extends BaseCapture<
+  NetworkRequest[],
+  NetworkCaptureOptions
+> {
   private buffer: CircularBuffer<NetworkRequest>;
   private filterUrls?: (url: string) => boolean;
   private originalFetch: typeof fetch;
@@ -51,7 +61,10 @@ export class NetworkCapture extends BaseCapture<NetworkRequest[], NetworkCapture
     return this.getRequests();
   }
 
-  private parseFetchArgs(args: Parameters<typeof fetch>): { url: string; method: HttpMethod } {
+  private parseFetchArgs(args: Parameters<typeof fetch>): {
+    url: string;
+    method: HttpMethod;
+  } {
     const [input, init] = args;
 
     let url: string;
@@ -144,7 +157,12 @@ export class NetworkCapture extends BaseCapture<NetworkRequest[], NetworkCapture
         const response = await originalFetch(...args);
         // Only log if response is valid (handles mocked data URLs that return undefined)
         if (response && typeof response.status === 'number') {
-          const request = this.createNetworkRequest(url, method, response.status, startTime);
+          const request = this.createNetworkRequest(
+            url,
+            method,
+            response.status,
+            startTime
+          );
           this.addRequest(request);
         }
         return response;
@@ -178,10 +196,15 @@ export class NetworkCapture extends BaseCapture<NetworkRequest[], NetworkCapture
       this._url = url.toString();
       this._startTime = Date.now();
       // Type assertion needed for rest params compatibility
-      return originalOpen.apply(this, [method, url, ...args] as Parameters<typeof originalOpen>);
+      return originalOpen.apply(this, [method, url, ...args] as Parameters<
+        typeof originalOpen
+      >);
     };
 
-    XMLHttpRequest.prototype.send = function (this: TrackedXMLHttpRequest, ...args: unknown[]) {
+    XMLHttpRequest.prototype.send = function (
+      this: TrackedXMLHttpRequest,
+      ...args: unknown[]
+    ) {
       const onLoad = () => {
         const request = createRequest(
           this._url || '',

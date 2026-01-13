@@ -94,7 +94,9 @@ const DEFAULT_OFFLINE_CONFIG: Required<OfflineConfig> = {
  */
 function generateAuthHeaders(config: AuthConfig): Record<string, string> {
   if (!config || !config.apiKey) {
-    throw new AuthenticationError('Authentication is required: API key must be provided');
+    throw new AuthenticationError(
+      'Authentication is required: API key must be provided'
+    );
   }
   return { 'X-API-Key': config.apiKey };
 }
@@ -123,7 +125,10 @@ class RetryHandler {
         const response = await operation();
 
         // Check if we should retry based on status code
-        if (shouldRetryStatus(response.status) && attempt < this.config.maxRetries) {
+        if (
+          shouldRetryStatus(response.status) &&
+          attempt < this.config.maxRetries
+        ) {
           const delay = this.calculateDelay(attempt, response);
           this.logger.warn(
             `Request failed with status ${response.status}, retrying in ${delay}ms (attempt ${attempt + 1}/${this.config.maxRetries})`
@@ -177,7 +182,8 @@ class RetryHandler {
     const exponentialDelay = this.config.baseDelay * Math.pow(2, attempt);
 
     // Add jitter: ±10% randomization
-    const jitter = exponentialDelay * JITTER_PERCENTAGE * (Math.random() * 2 - 1);
+    const jitter =
+      exponentialDelay * JITTER_PERCENTAGE * (Math.random() * 2 - 1);
     const delayWithJitter = exponentialDelay + jitter;
 
     // Cap at maxDelay
@@ -365,7 +371,8 @@ function isNetworkError(error: unknown): boolean {
     error.name === 'NetworkError' ||
     error.name === 'AbortError' ||
     // TypeError only if it mentions fetch or network
-    (error.name === 'TypeError' && (message.includes('fetch') || message.includes('network')))
+    (error.name === 'TypeError' &&
+      (message.includes('fetch') || message.includes('network')))
   );
 }
 

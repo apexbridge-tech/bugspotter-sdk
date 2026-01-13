@@ -181,7 +181,10 @@ export class BugReportModal {
 
     // Submit button click (manually trigger form submit for test compatibility)
     elements.submitButton.addEventListener('click', () => {
-      const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+      const submitEvent = new Event('submit', {
+        bubbles: true,
+        cancelable: true,
+      });
       elements.form.dispatchEvent(submitEvent);
     });
 
@@ -221,10 +224,13 @@ export class BugReportModal {
   private validateField(fieldName: keyof FormData): void {
     const elements = this.domCache.get();
     const value =
-      fieldName === 'title' ? elements.titleInput.value : elements.descriptionTextarea.value;
+      fieldName === 'title'
+        ? elements.titleInput.value
+        : elements.descriptionTextarea.value;
     const error = this.validator.validateField(fieldName, value);
 
-    const errorElement = fieldName === 'title' ? elements.titleError : elements.descriptionError;
+    const errorElement =
+      fieldName === 'title' ? elements.titleError : elements.descriptionError;
 
     if (error) {
       errorElement.textContent = error;
@@ -244,12 +250,14 @@ export class BugReportModal {
     const detections = sanitizer.detectPII(text);
 
     // Convert to PIIDetection array
-    this.piiDetections = Array.from(detections.entries()).map(([type, count]) => {
-      return {
-        type,
-        count,
-      };
-    });
+    this.piiDetections = Array.from(detections.entries()).map(
+      ([type, count]) => {
+        return {
+          type,
+          count,
+        };
+      }
+    );
 
     if (this.piiDetections.length > 0) {
       elements.piiSection.style.display = 'block';
@@ -344,7 +352,8 @@ export class BugReportModal {
     elements.submitError.style.display = 'none';
 
     // Disable submit button and show loading state
-    const originalButtonText = elements.submitButton.textContent || 'Submit Bug Report';
+    const originalButtonText =
+      elements.submitButton.textContent || 'Submit Bug Report';
     elements.submitButton.disabled = true;
     elements.submitButton.textContent = 'Preparing...';
     elements.submitButton.classList.add('loading');
@@ -363,7 +372,10 @@ export class BugReportModal {
     // Prepare screenshot with redactions
     let finalScreenshot = this.originalScreenshot;
 
-    if (this.redactionCanvas && this.redactionCanvas.getRedactions().length > 0) {
+    if (
+      this.redactionCanvas &&
+      this.redactionCanvas.getRedactions().length > 0
+    ) {
       try {
         finalScreenshot = await this.screenshotProcessor.mergeRedactions(
           this.originalScreenshot,
@@ -392,7 +404,8 @@ export class BugReportModal {
       getLogger().error('Error submitting bug report:', error);
 
       // Show error message in modal instead of blocking alert
-      elements.submitError.textContent = 'Failed to submit bug report. Please try again.';
+      elements.submitError.textContent =
+        'Failed to submit bug report. Please try again.';
       elements.submitError.style.display = 'block';
 
       // Clear stale progress status for screen readers

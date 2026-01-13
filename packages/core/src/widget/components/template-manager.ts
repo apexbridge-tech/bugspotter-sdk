@@ -20,9 +20,11 @@ export class TemplateManager {
   constructor(config: TemplateConfig = {}) {
     this.config = {
       title: config.title || 'Report a Bug',
-      titlePlaceholder: config.titlePlaceholder || 'Brief description of the issue',
+      titlePlaceholder:
+        config.titlePlaceholder || 'Brief description of the issue',
       descriptionPlaceholder:
-        config.descriptionPlaceholder || 'Detailed description of what happened...',
+        config.descriptionPlaceholder ||
+        'Detailed description of what happened...',
       submitButtonText: config.submitButtonText || 'Submit Bug Report',
       cancelButtonText: config.cancelButtonText || 'Cancel',
       showScreenshot: config.showScreenshot !== false,

@@ -54,7 +54,11 @@ function getErrorSignature(err: unknown): string {
 /**
  * Create a fingerprint from bug report data
  */
-function createFingerprint(title: string, description: string, errorDetails?: unknown): string {
+function createFingerprint(
+  title: string,
+  description: string,
+  errorDetails?: unknown
+): string {
   // Normalize strings (trim, lowercase)
   const normalizedTitle = title.trim().toLowerCase();
   const normalizedDesc = description.trim().toLowerCase();
@@ -91,7 +95,8 @@ export class BugReportDeduplicator {
   constructor(config: DeduplicationConfig = {}) {
     this.config = {
       windowMs: config.windowMs !== undefined ? config.windowMs : 60000, // 1 minute default
-      maxCacheSize: config.maxCacheSize !== undefined ? config.maxCacheSize : 100,
+      maxCacheSize:
+        config.maxCacheSize !== undefined ? config.maxCacheSize : 100,
       enabled: config.enabled !== undefined ? config.enabled : true,
     };
 
@@ -110,7 +115,11 @@ export class BugReportDeduplicator {
   /**
    * Check if a submission is currently in progress for a specific report
    */
-  isInProgress(title: string, description: string, errorDetails?: unknown): boolean {
+  isInProgress(
+    title: string,
+    description: string,
+    errorDetails?: unknown
+  ): boolean {
     const fingerprint = createFingerprint(title, description, errorDetails);
     return this.submittingFingerprints.has(fingerprint);
   }
@@ -118,7 +127,11 @@ export class BugReportDeduplicator {
   /**
    * Mark submission as in progress for a specific report
    */
-  markInProgress(title: string, description: string, errorDetails?: unknown): void {
+  markInProgress(
+    title: string,
+    description: string,
+    errorDetails?: unknown
+  ): void {
     const fingerprint = createFingerprint(title, description, errorDetails);
     this.submittingFingerprints.add(fingerprint);
   }
@@ -126,7 +139,11 @@ export class BugReportDeduplicator {
   /**
    * Mark submission as complete for a specific report
    */
-  markComplete(title: string, description: string, errorDetails?: unknown): void {
+  markComplete(
+    title: string,
+    description: string,
+    errorDetails?: unknown
+  ): void {
     const fingerprint = createFingerprint(title, description, errorDetails);
     this.submittingFingerprints.delete(fingerprint);
   }
@@ -135,7 +152,11 @@ export class BugReportDeduplicator {
    * Check if a bug report is a duplicate of a recently submitted one
    * @returns true if duplicate, false if not
    */
-  isDuplicate(title: string, description: string, errorDetails?: unknown): boolean {
+  isDuplicate(
+    title: string,
+    description: string,
+    errorDetails?: unknown
+  ): boolean {
     if (!this.config.enabled) {
       return false;
     }
@@ -144,7 +165,9 @@ export class BugReportDeduplicator {
 
     // Check if this specific report is already being submitted (double-click prevention)
     if (this.submittingFingerprints.has(fingerprint)) {
-      logger.warn('Duplicate submission blocked: this report is already in progress');
+      logger.warn(
+        'Duplicate submission blocked: this report is already in progress'
+      );
       return true;
     }
 
@@ -167,7 +190,11 @@ export class BugReportDeduplicator {
   /**
    * Record a bug report submission
    */
-  recordSubmission(title: string, description: string, errorDetails?: unknown): void {
+  recordSubmission(
+    title: string,
+    description: string,
+    errorDetails?: unknown
+  ): void {
     if (!this.config.enabled) {
       return;
     }

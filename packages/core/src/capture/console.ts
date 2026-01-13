@@ -2,7 +2,13 @@ import { BaseCapture, type CaptureOptions } from './base-capture';
 import { CircularBuffer } from '../core/circular-buffer';
 
 type ConsoleLevel = 'log' | 'warn' | 'error' | 'info' | 'debug';
-const CONSOLE_METHODS: readonly ConsoleLevel[] = ['log', 'warn', 'error', 'info', 'debug'] as const;
+const CONSOLE_METHODS: readonly ConsoleLevel[] = [
+  'log',
+  'warn',
+  'error',
+  'info',
+  'debug',
+] as const;
 
 /**
  * Prefix used for SDK internal log messages
@@ -16,10 +22,14 @@ export interface ConsoleCaptureOptions extends CaptureOptions {
   levels?: readonly ConsoleLevel[];
 }
 
-export class ConsoleCapture extends BaseCapture<LogEntry[], ConsoleCaptureOptions> {
+export class ConsoleCapture extends BaseCapture<
+  LogEntry[],
+  ConsoleCaptureOptions
+> {
   private buffer: CircularBuffer<LogEntry>;
   private captureStackTrace: boolean;
-  private originalMethods: Map<string, (...args: unknown[]) => void> = new Map();
+  private originalMethods: Map<string, (...args: unknown[]) => void> =
+    new Map();
 
   constructor(options: ConsoleCaptureOptions = {}) {
     super(options);
@@ -39,7 +49,9 @@ export class ConsoleCapture extends BaseCapture<LogEntry[], ConsoleCaptureOption
     }
 
     // Sanitize args if sanitizer is enabled
-    const sanitizedArgs = this.sanitizer ? this.sanitizer.sanitizeConsoleArgs(args) : args;
+    const sanitizedArgs = this.sanitizer
+      ? this.sanitizer.sanitizeConsoleArgs(args)
+      : args;
 
     return sanitizedArgs
       .map((arg) => {
@@ -61,7 +73,11 @@ export class ConsoleCapture extends BaseCapture<LogEntry[], ConsoleCaptureOption
       .join(' ');
   }
 
-  private createLogEntry(method: ConsoleLevel, args: unknown[], message?: string): LogEntry {
+  private createLogEntry(
+    method: ConsoleLevel,
+    args: unknown[],
+    message?: string
+  ): LogEntry {
     const log: LogEntry = {
       level: method,
       message: message ?? this.formatMessage(args),
@@ -70,7 +86,10 @@ export class ConsoleCapture extends BaseCapture<LogEntry[], ConsoleCaptureOption
 
     if (this.captureStackTrace && method === 'error') {
       const stack = this.captureStack();
-      log.stack = this.sanitizer && stack ? (this.sanitizer.sanitize(stack) as string) : stack;
+      log.stack =
+        this.sanitizer && stack
+          ? (this.sanitizer.sanitize(stack) as string)
+          : stack;
     }
 
     return log;
@@ -102,7 +121,9 @@ export class ConsoleCapture extends BaseCapture<LogEntry[], ConsoleCaptureOption
     return message.startsWith(SDK_LOG_PREFIX);
   }
 
-  private interceptConsole(levels: readonly ConsoleLevel[] = CONSOLE_METHODS): void {
+  private interceptConsole(
+    levels: readonly ConsoleLevel[] = CONSOLE_METHODS
+  ): void {
     levels.forEach((method) => {
       try {
         const original = console[method];

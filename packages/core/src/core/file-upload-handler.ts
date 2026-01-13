@@ -66,9 +66,14 @@ export class FileUploadHandler {
     const files: FileToUpload[] = [];
 
     // Prepare screenshot
-    if (report._screenshotPreview && report._screenshotPreview.startsWith('data:image/')) {
+    if (
+      report._screenshotPreview &&
+      report._screenshotPreview.startsWith('data:image/')
+    ) {
       const screenshotUrl = this.getPresignedUrl('screenshot', presignedUrls);
-      const screenshotBlob = await this.dataUrlToBlob(report._screenshotPreview);
+      const screenshotBlob = await this.dataUrlToBlob(
+        report._screenshotPreview
+      );
 
       files.push({
         type: 'screenshot',
@@ -82,7 +87,9 @@ export class FileUploadHandler {
     if (report.replay && report.replay.length > 0) {
       const replayUrl = this.getPresignedUrl('replay', presignedUrls);
       const compressed = await compressData(report.replay);
-      const replayBlob = new Blob([compressed as BlobPart], { type: 'application/gzip' });
+      const replayBlob = new Blob([compressed as BlobPart], {
+        type: 'application/gzip',
+      });
 
       files.push({
         type: 'replay',
@@ -103,7 +110,10 @@ export class FileUploadHandler {
   private async uploadToStorage(files: FileToUpload[]): Promise<void> {
     const uploadPromises = files.map(async (file) => {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), FileUploadHandler.UPLOAD_TIMEOUT_MS);
+      const timeoutId = setTimeout(
+        () => controller.abort(),
+        FileUploadHandler.UPLOAD_TIMEOUT_MS
+      );
 
       try {
         // Do NOT add Content-Type header - it's already included in the presigned URL signature
@@ -138,19 +148,25 @@ export class FileUploadHandler {
   /**
    * Confirm uploads with backend (parallel execution)
    */
-  private async confirmUploads(files: FileToUpload[], bugId: string): Promise<void> {
+  private async confirmUploads(
+    files: FileToUpload[],
+    bugId: string
+  ): Promise<void> {
     const confirmPromises = files.map(async (file) => {
       try {
-        const response = await fetch(`${this.apiEndpoint}/api/v1/reports/${bugId}/confirm-upload`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-API-Key': this.apiKey,
-          },
-          body: JSON.stringify({
-            fileType: file.type,
-          }),
-        });
+        const response = await fetch(
+          `${this.apiEndpoint}/api/v1/reports/${bugId}/confirm-upload`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-API-Key': this.apiKey,
+            },
+            body: JSON.stringify({
+              fileType: file.type,
+            }),
+          }
+        );
         return { success: response.ok, type: file.type };
       } catch (error) {
         logger.error(`Confirmation failed for ${file.type}:`, error);
@@ -179,7 +195,9 @@ export class FileUploadHandler {
   ): PresignedUrlData {
     const url = presignedUrls[type];
     if (!url) {
-      throw new Error(`${this.formatFileType(type)} presigned URL not provided by server`);
+      throw new Error(
+        `${this.formatFileType(type)} presigned URL not provided by server`
+      );
     }
     return url;
   }

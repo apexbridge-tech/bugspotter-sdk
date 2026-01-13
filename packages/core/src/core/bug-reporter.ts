@@ -44,13 +44,21 @@ function isBugReportResponse(obj: unknown): obj is BugReportResponse {
   // When success is true, data.id must exist
   if (response.success) {
     const data = response.data as Record<string, unknown> | undefined;
-    if (!data || typeof data !== 'object' || !('id' in data) || typeof data.id !== 'string') {
+    if (
+      !data ||
+      typeof data !== 'object' ||
+      !('id' in data) ||
+      typeof data.id !== 'string'
+    ) {
       return false;
     }
 
     // If presignedUrls exists, it must be an object
     if ('presignedUrls' in data && data.presignedUrls !== undefined) {
-      if (typeof data.presignedUrls !== 'object' || data.presignedUrls === null) {
+      if (
+        typeof data.presignedUrls !== 'object' ||
+        data.presignedUrls === null
+      ) {
         return false;
       }
     }
@@ -82,14 +90,17 @@ export interface ReportFileAnalysis {
  * Extract error stacks from console logs
  */
 function extractErrorStacks(report: BugReport): string[] {
-  const errorLogs = report.console?.filter((log) => log.level === 'error') ?? [];
+  const errorLogs =
+    report.console?.filter((log) => log.level === 'error') ?? [];
   return errorLogs.map((log) => log.stack ?? log.message);
 }
 
 /**
  * Create deduplication context from bug report payload
  */
-function createDeduplicationContext(payload: BugReportPayload): DeduplicationContext {
+function createDeduplicationContext(
+  payload: BugReportPayload
+): DeduplicationContext {
   return {
     title: payload.title,
     description: payload.description || '',
@@ -168,7 +179,9 @@ export class BugReporter {
    * Validate submission and extract deduplication context
    * @private
    */
-  private validateAndExtractErrors(payload: BugReportPayload): DeduplicationContext {
+  private validateAndExtractErrors(
+    payload: BugReportPayload
+  ): DeduplicationContext {
     validateAuthConfig({
       endpoint: this.config.endpoint,
       auth: this.config.auth,
@@ -183,7 +196,9 @@ export class BugReporter {
         dedupContext.errorStacks
       )
     ) {
-      const waitSeconds = Math.ceil((this.config.deduplication?.windowMs || 60000) / 1000);
+      const waitSeconds = Math.ceil(
+        (this.config.deduplication?.windowMs || 60000) / 1000
+      );
       logger.warn('Duplicate bug report blocked', {
         title: dedupContext.title.substring(0, TITLE_PREVIEW_LENGTH),
         waitSeconds,
@@ -262,7 +277,9 @@ export class BugReporter {
       success: result.success,
       bugId: bugData.id,
       hasPresignedUrls: !!bugData.presignedUrls,
-      presignedUrlKeys: bugData.presignedUrls ? Object.keys(bugData.presignedUrls) : [],
+      presignedUrlKeys: bugData.presignedUrls
+        ? Object.keys(bugData.presignedUrls)
+        : [],
     });
 
     return bugData;
@@ -284,7 +301,9 @@ export class BugReporter {
     const fileAnalysis = analyzeReportFiles(report);
 
     if (!fileAnalysis.hasScreenshot && !fileAnalysis.hasReplay) {
-      logger.debug('No files to upload, bug report created successfully', { bugId });
+      logger.debug('No files to upload, bug report created successfully', {
+        bugId,
+      });
       this.deduplicator.recordSubmission(
         dedupContext.title,
         dedupContext.description,
@@ -294,21 +313,31 @@ export class BugReporter {
     }
 
     if (!bugReportData!.presignedUrls) {
-      logger.error('Presigned URLs not returned despite requesting file uploads', {
-        bugId,
-        hasScreenshot: fileAnalysis.hasScreenshot,
-        hasReplay: fileAnalysis.hasReplay,
-      });
+      logger.error(
+        'Presigned URLs not returned despite requesting file uploads',
+        {
+          bugId,
+          hasScreenshot: fileAnalysis.hasScreenshot,
+          hasReplay: fileAnalysis.hasReplay,
+        }
+      );
       throw new Error(
         'Server did not provide presigned URLs for file uploads. Check backend configuration.'
       );
     }
 
     const apiEndpoint = getApiBaseUrl(this.config.endpoint!);
-    const uploadHandler = new FileUploadHandler(apiEndpoint, this.config.auth.apiKey);
+    const uploadHandler = new FileUploadHandler(
+      apiEndpoint,
+      this.config.auth.apiKey
+    );
 
     try {
-      await uploadHandler.uploadFiles(bugId, report, bugReportData!.presignedUrls);
+      await uploadHandler.uploadFiles(
+        bugId,
+        report,
+        bugReportData!.presignedUrls
+      );
       logger.debug('File uploads completed successfully', { bugId });
       this.deduplicator.recordSubmission(
         dedupContext.title,
@@ -316,9 +345,15 @@ export class BugReporter {
         dedupContext.errorStacks
       );
     } catch (error) {
-      logger.error('File upload failed', { bugId, error: formatSubmissionError('Upload', error) });
+      logger.error('File upload failed', {
+        bugId,
+        error: formatSubmissionError('Upload', error),
+      });
       throw new Error(
-        formatSubmissionError(`Bug report created (ID: ${bugId}) but file upload failed`, error)
+        formatSubmissionError(
+          `Bug report created (ID: ${bugId}) but file upload failed`,
+          error
+        )
       );
     }
   }

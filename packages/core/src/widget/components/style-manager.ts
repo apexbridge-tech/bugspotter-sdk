@@ -66,7 +66,8 @@ export class StyleManager {
       dangerColor: config.dangerColor || '#dc3545',
       borderRadius: config.borderRadius || '4px',
       fontFamily:
-        config.fontFamily || '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        config.fontFamily ||
+        '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       zIndex: config.zIndex || 999999,
     };
   }

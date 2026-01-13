@@ -99,7 +99,9 @@ export class PIIDetectionDisplay {
   /**
    * Group PII detections by type
    */
-  private groupByType(piiDetections: PIIDetection[]): Record<string, PIIDetection[]> {
+  private groupByType(
+    piiDetections: PIIDetection[]
+  ): Record<string, PIIDetection[]> {
     const grouped: Record<string, PIIDetection[]> = {};
 
     for (const detection of piiDetections) {

@@ -260,9 +260,9 @@ export class Sanitizer {
   /**
    * Sanitize error - KISS: uses generic sanitize with type safety
    */
-  public sanitizeError<T extends { message?: string; stack?: string; [key: string]: unknown }>(
-    error: T
-  ): T {
+  public sanitizeError<
+    T extends { message?: string; stack?: string; [key: string]: unknown },
+  >(error: T): T {
     const guarded = this.guardDisabled(error);
     if (guarded !== undefined) {
       return guarded;

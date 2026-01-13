@@ -70,7 +70,10 @@ export class CircularBuffer<T extends eventWithTime = eventWithTime> {
     }
 
     // Preserve full snapshot even if it's older than cutoff
-    if (this.lastFullSnapshotIndex >= 0 && this.lastFullSnapshotIndex < firstValidIndex) {
+    if (
+      this.lastFullSnapshotIndex >= 0 &&
+      this.lastFullSnapshotIndex < firstValidIndex
+    ) {
       firstValidIndex = this.lastFullSnapshotIndex;
     }
 

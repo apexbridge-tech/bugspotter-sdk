@@ -99,7 +99,11 @@ export class ScreenshotProcessor {
   /**
    * Resize an image to maximum dimensions while maintaining aspect ratio
    */
-  async resize(imageDataUrl: string, maxWidth: number, maxHeight: number): Promise<string> {
+  async resize(
+    imageDataUrl: string,
+    maxWidth: number,
+    maxHeight: number
+  ): Promise<string> {
     return new Promise((resolve, reject) => {
       const img = new Image();
 
@@ -187,7 +191,9 @@ export class ScreenshotProcessor {
   /**
    * Get image dimensions from data URL
    */
-  async getDimensions(imageDataUrl: string): Promise<{ width: number; height: number }> {
+  async getDimensions(
+    imageDataUrl: string
+  ): Promise<{ width: number; height: number }> {
     return new Promise((resolve, reject) => {
       const img = new Image();
 

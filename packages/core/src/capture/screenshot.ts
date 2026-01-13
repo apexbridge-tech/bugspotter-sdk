@@ -22,13 +22,19 @@ const DEFAULT_SCREENSHOT_OPTIONS = {
   errorPlaceholder: 'SCREENSHOT_FAILED',
 } as const;
 
-export class ScreenshotCapture extends BaseCapture<Promise<string>, ScreenshotCaptureOptions> {
+export class ScreenshotCapture extends BaseCapture<
+  Promise<string>,
+  ScreenshotCaptureOptions
+> {
   constructor(options: ScreenshotCaptureOptions = {}) {
     super(options);
   }
 
   protected getErrorPlaceholder(): string {
-    return this.options.errorPlaceholder ?? DEFAULT_SCREENSHOT_OPTIONS.errorPlaceholder;
+    return (
+      this.options.errorPlaceholder ??
+      DEFAULT_SCREENSHOT_OPTIONS.errorPlaceholder
+    );
   }
 
   private shouldIncludeNode(node: Node): boolean {
@@ -38,7 +44,8 @@ export class ScreenshotCapture extends BaseCapture<Promise<string>, ScreenshotCa
 
     const element = node as Element;
     const excludeAttr =
-      this.options.excludeAttribute || DEFAULT_SCREENSHOT_OPTIONS.excludeAttribute;
+      this.options.excludeAttribute ||
+      DEFAULT_SCREENSHOT_OPTIONS.excludeAttribute;
 
     return !element.hasAttribute(excludeAttr);
   }
@@ -48,7 +55,9 @@ export class ScreenshotCapture extends BaseCapture<Promise<string>, ScreenshotCa
       quality: this.options.quality ?? DEFAULT_SCREENSHOT_OPTIONS.quality,
       cacheBust: this.options.cacheBust ?? DEFAULT_SCREENSHOT_OPTIONS.cacheBust,
       pixelRatio: this.options.pixelRatio ?? window.devicePixelRatio,
-      backgroundColor: this.options.backgroundColor ?? DEFAULT_SCREENSHOT_OPTIONS.backgroundColor,
+      backgroundColor:
+        this.options.backgroundColor ??
+        DEFAULT_SCREENSHOT_OPTIONS.backgroundColor,
       ...(this.options.width && { width: this.options.width }),
       ...(this.options.height && { height: this.options.height }),
       filter: (node: Node) => {
@@ -59,7 +68,8 @@ export class ScreenshotCapture extends BaseCapture<Promise<string>, ScreenshotCa
 
   async capture(targetElement?: HTMLElement): Promise<string> {
     try {
-      const element = targetElement || this.options.targetElement || document.body;
+      const element =
+        targetElement || this.options.targetElement || document.body;
 
       const options = this.buildCaptureOptions();
       const dataUrl = await toPng(element, options);

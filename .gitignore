@@ -4,6 +4,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+examples/*/node_modules
 
 # Lock files (keep pnpm-lock.yaml in root, ignore in packages)
 packages/*/pnpm-lock.yaml

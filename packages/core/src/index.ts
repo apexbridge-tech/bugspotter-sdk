@@ -44,20 +44,33 @@ function mergeReplayConfig(
 ): BugSpotterConfig['replay'] {
   return {
     ...userConfig,
-    duration: userConfig?.duration ?? backendSettings?.duration ?? DEFAULT_REPLAY_DURATION_SECONDS,
-    inlineStylesheet: userConfig?.inlineStylesheet ?? backendSettings?.inline_stylesheets ?? true,
-    inlineImages: userConfig?.inlineImages ?? backendSettings?.inline_images ?? false,
-    collectFonts: userConfig?.collectFonts ?? backendSettings?.collect_fonts ?? false,
-    recordCanvas: userConfig?.recordCanvas ?? backendSettings?.record_canvas ?? false,
+    duration:
+      userConfig?.duration ??
+      backendSettings?.duration ??
+      DEFAULT_REPLAY_DURATION_SECONDS,
+    inlineStylesheet:
+      userConfig?.inlineStylesheet ??
+      backendSettings?.inline_stylesheets ??
+      true,
+    inlineImages:
+      userConfig?.inlineImages ?? backendSettings?.inline_images ?? false,
+    collectFonts:
+      userConfig?.collectFonts ?? backendSettings?.collect_fonts ?? false,
+    recordCanvas:
+      userConfig?.recordCanvas ?? backendSettings?.record_canvas ?? false,
     recordCrossOriginIframes:
-      userConfig?.recordCrossOriginIframes ?? backendSettings?.record_cross_origin_iframes ?? false,
+      userConfig?.recordCrossOriginIframes ??
+      backendSettings?.record_cross_origin_iframes ??
+      false,
     sampling: {
       mousemove:
         userConfig?.sampling?.mousemove ??
         backendSettings?.sampling_mousemove ??
         DEFAULT_MOUSEMOVE_SAMPLING,
       scroll:
-        userConfig?.sampling?.scroll ?? backendSettings?.sampling_scroll ?? DEFAULT_SCROLL_SAMPLING,
+        userConfig?.sampling?.scroll ??
+        backendSettings?.sampling_scroll ??
+        DEFAULT_SCROLL_SAMPLING,
     },
   };
 }
@@ -110,10 +123,14 @@ async function fetchReplaySettings(
       headers['x-api-key'] = apiKey;
     }
 
-    const response = await fetch(`${apiBaseUrl}/api/v1/settings/replay`, { headers });
+    const response = await fetch(`${apiBaseUrl}/api/v1/settings/replay`, {
+      headers,
+    });
 
     if (!response.ok) {
-      logger.warn(`Failed to fetch replay settings: ${response.status}. Using defaults.`);
+      logger.warn(
+        `Failed to fetch replay settings: ${response.status}. Using defaults.`
+      );
       return defaults;
     }
 
@@ -126,17 +143,23 @@ async function fetchReplaySettings(
 
     return {
       duration: result.data.duration ?? defaults.duration,
-      inline_stylesheets: result.data.inline_stylesheets ?? defaults.inline_stylesheets,
+      inline_stylesheets:
+        result.data.inline_stylesheets ?? defaults.inline_stylesheets,
       inline_images: result.data.inline_images ?? defaults.inline_images,
       collect_fonts: result.data.collect_fonts ?? defaults.collect_fonts,
       record_canvas: result.data.record_canvas ?? defaults.record_canvas,
       record_cross_origin_iframes:
-        result.data.record_cross_origin_iframes ?? defaults.record_cross_origin_iframes,
-      sampling_mousemove: result.data.sampling_mousemove ?? defaults.sampling_mousemove,
+        result.data.record_cross_origin_iframes ??
+        defaults.record_cross_origin_iframes,
+      sampling_mousemove:
+        result.data.sampling_mousemove ?? defaults.sampling_mousemove,
       sampling_scroll: result.data.sampling_scroll ?? defaults.sampling_scroll,
     };
   } catch (error) {
-    logger.warn('Failed to fetch replay settings from backend. Using defaults.', error);
+    logger.warn(
+      'Failed to fetch replay settings from backend. Using defaults.',
+      error
+    );
     return defaults;
   }
 }
@@ -202,7 +225,9 @@ export class BugSpotter {
 
     // If initialization is already in progress, wait for it
     if (BugSpotter.initPromise) {
-      logger.warn('BugSpotter.init() called while initialization in progress. Waiting...');
+      logger.warn(
+        'BugSpotter.init() called while initialization in progress. Waiting...'
+      );
       return BugSpotter.initPromise;
     }
 
@@ -222,7 +247,9 @@ export class BugSpotter {
    * Internal factory method to create a new BugSpotter instance
    * Fetches replay settings from backend before initialization
    */
-  private static async createInstance(config: BugSpotterConfig): Promise<BugSpotter> {
+  private static async createInstance(
+    config: BugSpotterConfig
+  ): Promise<BugSpotter> {
     // Fetch replay quality settings from backend if replay is enabled
     let backendSettings: ReplayQualitySettings | null = null;
     const replayEnabled = config.replay?.enabled ?? true;
@@ -233,7 +260,10 @@ export class BugSpotter {
           'Endpoint provided but no API key configured. Skipping backend settings fetch.'
         );
       } else {
-        backendSettings = await fetchReplaySettings(config.endpoint, config.auth.apiKey);
+        backendSettings = await fetchReplaySettings(
+          config.endpoint,
+          config.auth.apiKey
+        );
       }
     }
 
@@ -369,7 +399,9 @@ export interface BugSpotterConfig {
       | 'kazakhstan'
       | 'gdpr'
       | 'pci'
-      | Array<'email' | 'phone' | 'creditcard' | 'ssn' | 'iin' | 'ip' | 'custom'>;
+      | Array<
+          'email' | 'phone' | 'creditcard' | 'ssn' | 'iin' | 'ip' | 'custom'
+        >;
     /** Custom regex patterns for PII detection */
     customPatterns?: Array<{
       name: string;
@@ -434,8 +466,16 @@ export {
 } from './core/compress';
 
 // Export transport and authentication
-export { submitWithAuth, getAuthHeaders, clearOfflineQueue } from './core/transport';
-export type { AuthConfig, TransportOptions, RetryConfig } from './core/transport';
+export {
+  submitWithAuth,
+  getAuthHeaders,
+  clearOfflineQueue,
+} from './core/transport';
+export type {
+  AuthConfig,
+  TransportOptions,
+  RetryConfig,
+} from './core/transport';
 export type { OfflineConfig } from './core/offline-queue';
 export type { Logger, LogLevel, LoggerConfig } from './utils/logger';
 export { getLogger, configureLogger, createLogger } from './utils/logger';
@@ -452,10 +492,18 @@ export {
 
 // Export sanitization utilities
 export { createSanitizer, Sanitizer } from './utils/sanitize';
-export type { PIIPattern, CustomPattern, SanitizeConfig } from './utils/sanitize';
+export type {
+  PIIPattern,
+  CustomPattern,
+  SanitizeConfig,
+} from './utils/sanitize';
 
 // Export URL helpers
-export { getApiBaseUrl, stripEndpointSuffix, InvalidEndpointError } from './utils/url-helpers';
+export {
+  getApiBaseUrl,
+  stripEndpointSuffix,
+  InvalidEndpointError,
+} from './utils/url-helpers';
 
 // Export config validation
 export { validateAuthConfig } from './utils/config-validator';
@@ -478,7 +526,11 @@ export type { PIIPatternName, PatternDefinition } from './utils/sanitize';
 export { FloatingButton } from './widget/button';
 export type { FloatingButtonOptions } from './widget/button';
 export { BugReportModal } from './widget/modal';
-export type { BugReportData, BugReportModalOptions, PIIDetection } from './widget/modal';
+export type {
+  BugReportData,
+  BugReportModalOptions,
+  PIIDetection,
+} from './widget/modal';
 
 // Re-export rrweb types for convenience
 export type { eventWithTime } from '@rrweb/types';

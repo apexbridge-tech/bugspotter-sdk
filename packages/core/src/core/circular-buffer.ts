@@ -37,7 +37,10 @@ export class CircularBuffer<T> {
       return [...this.items];
     }
     // Return items in chronological order when buffer is full
-    return [...this.items.slice(this.index), ...this.items.slice(0, this.index)];
+    return [
+      ...this.items.slice(this.index),
+      ...this.items.slice(0, this.index),
+    ];
   }
 
   /**

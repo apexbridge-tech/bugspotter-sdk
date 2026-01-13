@@ -51,7 +51,10 @@ export class CaptureManager {
     this.console = new ConsoleCapture({ sanitizer: config.sanitizer });
 
     // Configure network capture to filter SDK API calls
-    const networkOptions: { sanitizer?: Sanitizer; filterUrls?: (url: string) => boolean } = {
+    const networkOptions: {
+      sanitizer?: Sanitizer;
+      filterUrls?: (url: string) => boolean;
+    } = {
       sanitizer: config.sanitizer,
     };
     if (config.apiEndpoint) {

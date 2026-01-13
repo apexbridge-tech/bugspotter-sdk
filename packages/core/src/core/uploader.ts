@@ -67,7 +67,10 @@ export class DirectUploader {
    * @param onProgress - Optional progress callback
    * @returns Upload result with storage key
    */
-  async uploadAttachment(file: File, onProgress?: UploadProgressCallback): Promise<UploadResult> {
+  async uploadAttachment(
+    file: File,
+    onProgress?: UploadProgressCallback
+  ): Promise<UploadResult> {
     return this.uploadFile(file, 'attachment', file.name, onProgress);
   }
 
@@ -85,7 +88,10 @@ export class DirectUploader {
   ): Promise<UploadResult> {
     try {
       // Step 1: Get presigned upload URL
-      const presignedUrlResponse = await this.requestPresignedUrl(fileType, filename);
+      const presignedUrlResponse = await this.requestPresignedUrl(
+        fileType,
+        filename
+      );
 
       if (!presignedUrlResponse.success) {
         return {
@@ -97,7 +103,11 @@ export class DirectUploader {
       const { uploadUrl, storageKey } = presignedUrlResponse.data!;
 
       // Step 2: Upload file to storage using presigned URL
-      const uploadSuccess = await this.uploadToStorage(uploadUrl, file, onProgress);
+      const uploadSuccess = await this.uploadToStorage(
+        uploadUrl,
+        file,
+        onProgress
+      );
 
       if (!uploadSuccess) {
         return {
@@ -140,19 +150,22 @@ export class DirectUploader {
     error?: string;
   }> {
     try {
-      const response = await fetch(`${this.config.apiEndpoint}/api/v1/uploads/presigned-url`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': this.config.apiKey,
-        },
-        body: JSON.stringify({
-          projectId: this.config.projectId,
-          bugId: this.config.bugId,
-          fileType,
-          filename,
-        }),
-      });
+      const response = await fetch(
+        `${this.config.apiEndpoint}/api/v1/uploads/presigned-url`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': this.config.apiKey,
+          },
+          body: JSON.stringify({
+            projectId: this.config.projectId,
+            bugId: this.config.bugId,
+            fileType,
+            filename,
+          }),
+        }
+      );
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -245,7 +258,9 @@ export class DirectUploader {
   /**
    * Confirm successful upload with the API
    */
-  private async confirmUpload(fileType: 'screenshot' | 'replay' | 'attachment'): Promise<boolean> {
+  private async confirmUpload(
+    fileType: 'screenshot' | 'replay' | 'attachment'
+  ): Promise<boolean> {
     try {
       const response = await fetch(
         `${this.config.apiEndpoint}/api/v1/reports/${this.config.bugId}/confirm-upload`,

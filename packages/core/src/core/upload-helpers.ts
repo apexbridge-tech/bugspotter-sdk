@@ -17,14 +17,18 @@ export async function compressReplayEvents(events: unknown[]): Promise<Blob> {
 
   // Check if CompressionStream is supported (Chrome 80+, Firefox 113+, Safari 16.4+)
   if (typeof CompressionStream === 'undefined') {
-    console.warn('CompressionStream not supported, uploading uncompressed replay data');
+    console.warn(
+      'CompressionStream not supported, uploading uncompressed replay data'
+    );
     return new Blob([data], { type: 'application/json' });
   }
 
   try {
     // Use modern streaming API: Blob → ReadableStream → CompressionStream → Response → Blob
     const blob = new Blob([data]);
-    const compressedStream = blob.stream().pipeThrough(new CompressionStream('gzip'));
+    const compressedStream = blob
+      .stream()
+      .pipeThrough(new CompressionStream('gzip'));
     return await new Response(compressedStream, {
       headers: { 'Content-Type': 'application/gzip' },
     }).blob();

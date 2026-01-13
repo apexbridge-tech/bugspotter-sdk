@@ -225,7 +225,12 @@ export class RedactionCanvas {
     const currentY = (e.clientY - rect.top) * scaleY;
 
     this.redraw();
-    this.drawRect(this.startX, this.startY, currentX - this.startX, currentY - this.startY);
+    this.drawRect(
+      this.startX,
+      this.startY,
+      currentX - this.startX,
+      currentY - this.startY
+    );
   }
 
   private onMouseUp(e: MouseEvent): void {

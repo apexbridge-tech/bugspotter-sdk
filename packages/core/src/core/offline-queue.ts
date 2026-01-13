@@ -96,7 +96,11 @@ export class OfflineQueue {
   private storage: StorageAdapter;
   private requestCounter: number = 0;
 
-  constructor(config: OfflineConfig, logger?: Logger, storage?: StorageAdapter) {
+  constructor(
+    config: OfflineConfig,
+    logger?: Logger,
+    storage?: StorageAdapter
+  ) {
     this.config = { ...DEFAULT_OFFLINE_CONFIG, ...config };
     this.logger = logger || getLogger();
     this.storage = storage || new LocalStorageAdapter();
@@ -105,7 +109,11 @@ export class OfflineQueue {
   /**
    * Queue a request for offline retry
    */
-  enqueue(endpoint: string, body: BodyInit, headers: Record<string, string>): void {
+  enqueue(
+    endpoint: string,
+    body: BodyInit,
+    headers: Record<string, string>
+  ): void {
     try {
       const serializedBody = this.serializeBody(body);
       if (!serializedBody || !this.validateItemSize(serializedBody)) {
@@ -125,7 +133,9 @@ export class OfflineQueue {
       queue.push(this.createQueuedRequest(endpoint, serializedBody, headers));
       this.saveQueue(queue);
 
-      this.logger.log(`Request queued for offline retry (queue size: ${queue.length})`);
+      this.logger.log(
+        `Request queued for offline retry (queue size: ${queue.length})`
+      );
     } catch (error) {
       this.logger.error('Failed to queue request for offline retry:', error);
     }
@@ -173,7 +183,9 @@ export class OfflineQueue {
         });
 
         if (response.ok) {
-          this.logger.log(`Successfully sent queued request (id: ${request.id})`);
+          this.logger.log(
+            `Successfully sent queued request (id: ${request.id})`
+          );
           successfulIds.push(request.id);
         } else if (retryableStatusCodes.includes(response.status)) {
           // Keep in queue for next attempt
@@ -271,7 +283,9 @@ export class OfflineQueue {
   private validateItemSize(body: string): boolean {
     const sizeInBytes = new Blob([body]).size;
     if (sizeInBytes > MAX_ITEM_SIZE_BYTES) {
-      this.logger.warn(`Request body too large (${sizeInBytes} bytes), skipping queue`);
+      this.logger.warn(
+        `Request body too large (${sizeInBytes} bytes), skipping queue`
+      );
       return false;
     }
     return true;
@@ -287,7 +301,10 @@ export class OfflineQueue {
       return JSON.parse(stored) as QueuedRequest[];
     } catch (error) {
       // Log corrupted data and clear it to prevent repeated errors
-      this.logger.warn('Failed to parse offline queue data, clearing corrupted queue:', error);
+      this.logger.warn(
+        'Failed to parse offline queue data, clearing corrupted queue:',
+        error
+      );
       this.clear();
       return [];
     }
@@ -327,7 +344,11 @@ export class OfflineQueue {
 
     // Check error message as fallback (Firefox, Chrome variants)
     const message = error.message.toLowerCase();
-    return message.includes('quota') || message.includes('storage') || message.includes('exceeded');
+    return (
+      message.includes('quota') ||
+      message.includes('storage') ||
+      message.includes('exceeded')
+    );
   }
 
   /**
@@ -337,7 +358,9 @@ export class OfflineQueue {
     try {
       const trimmedQueue = queue.slice(Math.floor(queue.length / 2));
       this.storage.setItem(QUEUE_STORAGE_KEY, JSON.stringify(trimmedQueue));
-      this.logger.log(`Trimmed offline queue to ${trimmedQueue.length} items due to quota`);
+      this.logger.log(
+        `Trimmed offline queue to ${trimmedQueue.length} items due to quota`
+      );
     } catch {
       // If still failing, clear everything
       this.logger.error('Failed to save even after trimming, clearing queue');
@@ -360,7 +383,8 @@ export class OfflineQueue {
     } else {
       // Fallback to Math.random for environments without crypto
       randomPart =
-        Math.random().toString(36).substring(2, 9) + Math.random().toString(36).substring(2, 9);
+        Math.random().toString(36).substring(2, 9) +
+        Math.random().toString(36).substring(2, 9);
     }
 
     return `req_${Date.now()}_${this.requestCounter}_${randomPart}`;

@@ -15,9 +15,10 @@ export interface CaptureOptions {
  * Base class for all capture implementations
  * Provides common functionality like error handling and sanitization
  */
-export abstract class BaseCapture<TResult, TOptions extends CaptureOptions = CaptureOptions>
-  implements CaptureLifecycle
-{
+export abstract class BaseCapture<
+  TResult,
+  TOptions extends CaptureOptions = CaptureOptions,
+> implements CaptureLifecycle {
   protected readonly sanitizer?: Sanitizer;
   protected readonly options: TOptions;
 

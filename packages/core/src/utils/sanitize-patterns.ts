@@ -40,13 +40,18 @@ export const DEFAULT_PATTERNS: Record<PIIPatternName, PatternDefinition> = {
     name: 'email',
     regex: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g,
     description: 'Email addresses',
-    examples: ['user@example.com', 'john.doe+tag@company.co.uk', 'test_user@sub.domain.com'],
+    examples: [
+      'user@example.com',
+      'john.doe+tag@company.co.uk',
+      'test_user@sub.domain.com',
+    ],
     priority: 1, // Highest priority - most specific
   },
 
   creditcard: {
     name: 'creditcard',
-    regex: /\b(?:\d{4}[-\s]){3}\d{4}\b|\b\d{4}[-\s]\d{6}[-\s]\d{5}\b|\b\d{13,19}\b/g,
+    regex:
+      /\b(?:\d{4}[-\s]){3}\d{4}\b|\b\d{4}[-\s]\d{6}[-\s]\d{5}\b|\b\d{13,19}\b/g,
     description: 'Credit card numbers (Visa, MC, Amex, Discover, etc.)',
     examples: [
       '4532-1488-0343-6467',
@@ -78,7 +83,11 @@ export const DEFAULT_PATTERNS: Record<PIIPatternName, PatternDefinition> = {
     regex:
       /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b|(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b/g,
     description: 'IPv4 and IPv6 addresses',
-    examples: ['192.168.1.100', '127.0.0.1', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'],
+    examples: [
+      '192.168.1.100',
+      '127.0.0.1',
+      '2001:0db8:85a3:0000:0000:8a2e:0370:7334',
+    ],
     priority: 5,
   },
 
@@ -129,7 +138,11 @@ export const DEFAULT_PATTERNS: Record<PIIPatternName, PatternDefinition> = {
     regex:
       /(?:password|passwd|pwd)[\s:=]+[^\s]{6,}|(?:password|passwd|pwd)["']?\s*[:=]\s*["']?[^\s"']{6,}/gi,
     description: 'Password fields in text (password=..., pwd:...)',
-    examples: ['password: MySecret123!', 'passwd=SecurePass456', 'pwd: "MyP@ssw0rd"'],
+    examples: [
+      'password: MySecret123!',
+      'passwd=SecurePass456',
+      'pwd: "MyP@ssw0rd"',
+    ],
     priority: 9,
   },
 };
@@ -149,7 +162,9 @@ export const PATTERN_CATEGORIES = {
 /**
  * Get patterns sorted by priority
  */
-export function getPatternsByPriority(patterns: PatternDefinition[]): PatternDefinition[] {
+export function getPatternsByPriority(
+  patterns: PatternDefinition[]
+): PatternDefinition[] {
   return [...patterns].sort((a, b) => {
     return a.priority - b.priority;
   });
@@ -315,7 +330,9 @@ export function validatePattern(pattern: PatternDefinition): {
       const duration = Date.now() - start;
 
       if (duration > 100) {
-        errors.push(`Pattern regex may cause performance issues (took ${duration}ms on test)`);
+        errors.push(
+          `Pattern regex may cause performance issues (took ${duration}ms on test)`
+        );
       }
     } catch (error) {
       errors.push(`Pattern regex error: ${(error as Error).message}`);
@@ -335,7 +352,9 @@ export function validatePattern(pattern: PatternDefinition): {
 /**
  * Merge pattern configurations
  */
-export function mergePatternConfigs(...configs: PatternDefinition[][]): PatternDefinition[] {
+export function mergePatternConfigs(
+  ...configs: PatternDefinition[][]
+): PatternDefinition[] {
   const merged = new Map<string, PatternDefinition>();
 
   configs.forEach((config) => {

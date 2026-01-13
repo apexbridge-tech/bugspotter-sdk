@@ -49,20 +49,38 @@ export class DOMElementCache {
       form,
       titleInput: this.getRequiredElement('#title', form) as HTMLInputElement,
       titleError: this.getRequiredElement('#title-error', form),
-      descriptionTextarea: this.getRequiredElement('#description', form) as HTMLTextAreaElement,
+      descriptionTextarea: this.getRequiredElement(
+        '#description',
+        form
+      ) as HTMLTextAreaElement,
       descriptionError: this.getRequiredElement('#description-error', form),
-      screenshotImg: this.getOptionalElement('#screenshot', modal) as HTMLImageElement | undefined,
+      screenshotImg: this.getOptionalElement('#screenshot', modal) as
+        | HTMLImageElement
+        | undefined,
       redactionCanvas: this.getOptionalElement('#redaction-canvas', modal) as
         | HTMLCanvasElement
         | undefined,
-      redactButton: this.getOptionalElement('#btn-redact', modal) as HTMLButtonElement | undefined,
-      clearButton: this.getOptionalElement('#btn-clear', modal) as HTMLButtonElement | undefined,
+      redactButton: this.getOptionalElement('#btn-redact', modal) as
+        | HTMLButtonElement
+        | undefined,
+      clearButton: this.getOptionalElement('#btn-clear', modal) as
+        | HTMLButtonElement
+        | undefined,
       piiSection: this.getRequiredElement('#pii-section', modal),
       piiContent: this.getRequiredElement('#pii-content', modal),
-      piiConfirmCheckbox: this.getRequiredElement('#pii-confirm', modal) as HTMLInputElement,
+      piiConfirmCheckbox: this.getRequiredElement(
+        '#pii-confirm',
+        modal
+      ) as HTMLInputElement,
       submitError: this.getRequiredElement('#submit-error', modal),
-      cancelButton: this.getRequiredElement('#btn-cancel', modal) as HTMLButtonElement,
-      submitButton: this.getRequiredElement('#btn-submit', modal) as HTMLButtonElement,
+      cancelButton: this.getRequiredElement(
+        '#btn-cancel',
+        modal
+      ) as HTMLButtonElement,
+      submitButton: this.getRequiredElement(
+        '#btn-submit',
+        modal
+      ) as HTMLButtonElement,
       progressStatus: this.getRequiredElement('#progress-status', modal),
     };
 
@@ -74,7 +92,9 @@ export class DOMElementCache {
    */
   get(): ModalElements {
     if (!this.elements) {
-      throw new Error('DOMElementCache not initialized. Call initialize() first.');
+      throw new Error(
+        'DOMElementCache not initialized. Call initialize() first.'
+      );
     }
     return this.elements;
   }

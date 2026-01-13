@@ -63,7 +63,8 @@ export class FormValidator {
 
     // Validate PII confirmation if PII detected
     if (data.piiDetected && !data.piiConfirmed) {
-      errors.piiConfirmation = 'Please confirm you have reviewed sensitive information';
+      errors.piiConfirmation =
+        'Please confirm you have reviewed sensitive information';
     }
 
     return {

@@ -99,7 +99,7 @@
     "ts-loader": "^9.5.1",
     "tslib": "^2.8.1",
     "typescript": "^5.3.3",
-    "vitest": "^3.2.4",
+    "vitest": "^4.0.17",
     "webpack": "^5.90.0",
     "webpack-cli": "^5.1.4"
   }

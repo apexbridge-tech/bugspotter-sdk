@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BugSpotter } from '@bugspotter/core';
+import { BugSpotter } from '@bugspotter/sdk';
 
 let bugSpotter: BugSpotter | null = null;
 

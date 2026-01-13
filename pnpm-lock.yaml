@@ -10,7 +10,7 @@ importers:
 
   examples/react:
     dependencies:
-      '@bugspotter/core':
+      '@bugspotter/sdk':
         specifier: workspace:*
         version: link:../../packages/core
       react:
@@ -38,7 +38,7 @@ importers:
 
   examples/vanilla:
     dependencies:
-      '@bugspotter/core':
+      '@bugspotter/sdk':
         specifier: workspace:*
         version: link:../../packages/core
     devDependencies:

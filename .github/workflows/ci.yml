@@ -42,10 +42,10 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run ESLint
-        run: pnpm --filter @bugspotter/core lint
+        run: pnpm --filter @bugspotter/sdk lint
 
       - name: Check formatting
-        run: pnpm --filter @bugspotter/core format:check
+        run: pnpm --filter @bugspotter/sdk format:check
 
   test:
     name: Test (Node ${{ matrix.node-version }})
@@ -82,7 +82,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run unit tests
-        run: pnpm --filter @bugspotter/core test
+        run: pnpm --filter @bugspotter/sdk test
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v3
@@ -124,13 +124,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install Playwright browsers
-        run: pnpm --filter @bugspotter/core exec playwright install --with-deps
+        run: pnpm --filter @bugspotter/sdk exec playwright install --with-deps
 
       - name: Build core package
-        run: pnpm --filter @bugspotter/core build
+        run: pnpm --filter @bugspotter/sdk build
 
       - name: Run E2E tests
-        run: pnpm --filter @bugspotter/core test:e2e
+        run: pnpm --filter @bugspotter/sdk test:e2e
 
       - name: Upload E2E test artifacts
         if: failure()
@@ -172,7 +172,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build core package
-        run: pnpm --filter @bugspotter/core build
+        run: pnpm --filter @bugspotter/sdk build
 
       - name: Check bundle size
         run: |
@@ -218,7 +218,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build core package
-        run: pnpm --filter @bugspotter/core build
+        run: pnpm --filter @bugspotter/sdk build
 
       - name: Build example (${{ matrix.example }})
         run: pnpm --filter @bugspotter/example-${{ matrix.example }} build
@@ -242,13 +242,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Generate version file
-        run: pnpm --filter @bugspotter/core generate-version
+        run: pnpm --filter @bugspotter/sdk generate-version
 
       - name: Type check core package
-        run: pnpm --filter @bugspotter/core exec tsc --noEmit
+        run: pnpm --filter @bugspotter/sdk exec tsc --noEmit
 
       - name: Build core package for examples
-        run: pnpm --filter @bugspotter/core build
+        run: pnpm --filter @bugspotter/sdk build
 
       - name: Type check examples
         run: |

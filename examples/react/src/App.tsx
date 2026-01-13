@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { BugSpotter } from '@bugspotter/core';
 
-let bugSpotter: BugSpotter;
+let bugSpotter: BugSpotter | null = null;
 
 function App() {
   const [isInitialized, setIsInitialized] = useState(false);
@@ -13,60 +13,58 @@ function App() {
 
   const initializeBugSpotter = async () => {
     try {
-      bugSpotter = new BugSpotter({
-        apiKey: 'demo-api-key',
-        endpoint: 'https://demo.bugspotter.com', // Replace with your endpoint
-        sessionReplay: true,
-        enableScreenshots: true,
-        enableConsoleCapture: true,
-        onReady: () => {
-          setStatus('BugSpotter initialized and ready');
-          setIsInitialized(true);
+      // Use BugSpotter.init() - it's a static method
+      bugSpotter = await BugSpotter.init({
+        auth: {
+          type: 'api-key',
+          apiKey: 'demo-api-key-replace-with-yours',
+          projectId: 'proj-12345678-1234-1234-1234-123456789abc', // Replace with your project ID
         },
-        onError: (error: Error) => {
-          setStatus(`BugSpotter error: ${error.message}`);
-        }
+        endpoint: 'https://demo.bugspotter.com/api/v1/reports', // Replace with your endpoint
+        showWidget: true,
+        widgetOptions: {
+          position: 'bottom-right',
+          icon: '🐛',
+        },
       });
 
-      await bugSpotter.init();
+      setStatus('BugSpotter initialized and ready');
+      setIsInitialized(true);
     } catch (error) {
       setStatus(`Failed to initialize BugSpotter: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
   const simulateError = () => {
+    console.error('Test error logged to console');
     throw new Error('This is a simulated error for testing BugSpotter!');
   };
 
-  const reportManualBug = async () => {
+  const captureReport = async () => {
     if (!bugSpotter) return;
 
     try {
-      const reportId = await bugSpotter.reportBug({
-        title: 'Manual Bug Report',
-        description: 'This is a manually reported bug from the React example',
-        severity: 'medium',
-        tags: ['manual', 'react-example'],
-        customData: {
-          component: 'App',
-          timestamp: new Date().toISOString(),
-          userAction: 'Manual report button clicked'
-        }
-      });
-      setStatus(`Bug reported successfully! Report ID: ${reportId}`);
+      console.log('User action: Capturing bug report');
+      const report = await bugSpotter.capture();
+      setStatus(`Report captured! Console logs: ${report.console.length}, Network requests: ${report.network.length}`);
     } catch (error) {
-      setStatus(`Failed to report bug: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setStatus(`Failed to capture report: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
-  const captureScreenshot = async () => {
+  const submitReport = async () => {
     if (!bugSpotter) return;
 
     try {
-      const screenshot = await bugSpotter.captureScreenshot();
-      setStatus(`Screenshot captured: ${screenshot.length} bytes`);
+      const report = await bugSpotter.capture();
+      await bugSpotter.submit({
+        title: 'Manual Bug Report from React',
+        description: 'This is a manually reported bug from the React example',
+        report,
+      });
+      setStatus('Bug report submitted successfully!');
     } catch (error) {
-      setStatus(`Failed to capture screenshot: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setStatus(`Failed to submit report: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -82,42 +80,43 @@ function App() {
       <div>
         <h3>Demo Actions</h3>
         <button 
-          onClick={reportManualBug} 
+          onClick={captureReport} 
           disabled={!isInitialized}
         >
-          Report Manual Bug
+          Capture Report (Local)
         </button>
         
         <button 
-          onClick={captureScreenshot} 
+          onClick={submitReport} 
           disabled={!isInitialized}
         >
-          Capture Screenshot
+          Submit Bug Report
         </button>
         
         <button 
           className="danger" 
           onClick={simulateError}
         >
-          Simulate Error (Will be auto-reported)
+          Simulate Error
         </button>
       </div>
 
       <div className="error-demo">
-        <h3>Error Boundary Test</h3>
-        <p>Click the "Simulate Error" button to test automatic error reporting.</p>
-        <p>BugSpotter will automatically capture the error, take a screenshot, and send a bug report.</p>
+        <h3>Usage Notes</h3>
+        <p>The widget in the bottom-right corner allows users to report bugs interactively.</p>
+        <p>Click "Capture Report" to see what data is collected (console logs, network, metadata).</p>
+        <p>Click "Submit Bug Report" to send a report to your backend.</p>
       </div>
 
       <div>
         <h3>Features Demonstrated</h3>
         <ul>
-          <li>✅ Automatic initialization</li>
-          <li>✅ Manual bug reporting</li>
-          <li>✅ Screenshot capture</li>
+          <li>✅ SDK initialization with BugSpotter.init()</li>
+          <li>✅ Automatic widget display</li>
+          <li>✅ Console log capture</li>
+          <li>✅ Network request tracking</li>
           <li>✅ Session replay (automatic)</li>
-          <li>✅ Error boundary integration</li>
-          <li>✅ Custom metadata</li>
+          <li>✅ Manual report submission</li>
         </ul>
       </div>
     </div>

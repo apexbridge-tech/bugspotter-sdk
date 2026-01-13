@@ -1,22 +1,23 @@
-name: Release
+name: CDN Deployment
 
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to deploy (e.g., 0.3.1)'
+        required: true
+        type: string
 
 env:
   NODE_VERSION: '22'
 
 jobs:
-  release:
-    name: Release and Publish
+  cdn-deploy:
+    name: Deploy to CDN
     runs-on: ubuntu-latest
     environment: production
     permissions:
-      contents: write
-      packages: write
-      id-token: write
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,7 +26,6 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
-          registry-url: 'https://registry.npmjs.org'
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -33,44 +33,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run tests
-        run: pnpm --filter @bugspotter/sdk test
-
       - name: Build package
         run: pnpm --filter @bugspotter/sdk build
-
-      - name: Extract version from tag
-        id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-
-      - name: Create Release Notes
-        id: release_notes
-        run: |
-          echo "## Release ${{ steps.version.outputs.VERSION }}" > release_notes.md
-          echo "" >> release_notes.md
-          echo "### Changes" >> release_notes.md
-          echo "" >> release_notes.md
-          # Extract changes from CHANGELOG.md for this version
-          sed -n "/## \[${{ steps.version.outputs.VERSION }}\]/,/## \[/p" packages/core/CHANGELOG.md | head -n -1 >> release_notes.md
-
-      - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ steps.version.outputs.VERSION }}
-          body_path: release_notes.md
-          draft: false
-          prerelease: ${{ contains(steps.version.outputs.VERSION, '-') }}
-
-      - name: Publish to npm
-        continue-on-error: true
-        run: |
-          cd packages/core
-          npm publish --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Prepare CDN assets
         run: |
@@ -78,13 +42,19 @@ jobs:
           mkdir -p cdn-deploy
           cd packages/core/dist
 
+          # Verify build artifacts exist
+          if [ ! -f "bugspotter.min.js" ]; then
+            echo "❌ Error: bugspotter.min.js not found!"
+            exit 1
+          fi
+
           # Copy UMD bundle (main file)
-          cp bugspotter.min.js ../../../cdn-deploy/bugspotter-${{ steps.version.outputs.VERSION }}.min.js
+          cp bugspotter.min.js ../../../cdn-deploy/bugspotter-${{ inputs.version }}.min.js
           cp bugspotter.min.js ../../../cdn-deploy/bugspotter-latest.min.js
 
           # Copy source maps if they exist (both versioned and latest)
           if [ -f "bugspotter.min.js.map" ]; then
-            cp bugspotter.min.js.map ../../../cdn-deploy/bugspotter-${{ steps.version.outputs.VERSION }}.min.js.map
+            cp bugspotter.min.js.map ../../../cdn-deploy/bugspotter-${{ inputs.version }}.min.js.map
             cp bugspotter.min.js.map ../../../cdn-deploy/bugspotter-latest.min.js.map
           fi
 
@@ -115,10 +85,10 @@ jobs:
             --content-type "application/javascript" \
             --info "cache-control=public, max-age=31536000, immutable" \
             ${B2_BUCKET_NAME} \
-            cdn-deploy/bugspotter-${{ steps.version.outputs.VERSION }}.min.js \
-            sdk/bugspotter-${{ steps.version.outputs.VERSION }}.min.js
+            cdn-deploy/bugspotter-${{ inputs.version }}.min.js \
+            sdk/bugspotter-${{ inputs.version }}.min.js
 
-          echo "✅ Uploaded versioned file: sdk/bugspotter-${{ steps.version.outputs.VERSION }}.min.js"
+          echo "✅ Uploaded versioned file: sdk/bugspotter-${{ inputs.version }}.min.js"
 
           # Upload latest file with short cache
           b2 file upload \
@@ -131,15 +101,15 @@ jobs:
           echo "✅ Uploaded latest file: sdk/bugspotter-latest.min.js"
 
           # Upload versioned source map if exists
-          if [ -f "cdn-deploy/bugspotter-${{ steps.version.outputs.VERSION }}.min.js.map" ]; then
+          if [ -f "cdn-deploy/bugspotter-${{ inputs.version }}.min.js.map" ]; then
             b2 file upload \
               --content-type "application/json" \
               --info "cache-control=public, max-age=31536000, immutable" \
               ${B2_BUCKET_NAME} \
-              cdn-deploy/bugspotter-${{ steps.version.outputs.VERSION }}.min.js.map \
-              sdk/bugspotter-${{ steps.version.outputs.VERSION }}.min.js.map
+              cdn-deploy/bugspotter-${{ inputs.version }}.min.js.map \
+              sdk/bugspotter-${{ inputs.version }}.min.js.map
             
-            echo "✅ Uploaded versioned source map: sdk/bugspotter-${{ steps.version.outputs.VERSION }}.min.js.map"
+            echo "✅ Uploaded versioned source map: sdk/bugspotter-${{ inputs.version }}.min.js.map"
           fi
 
           # Upload latest source map if exists
@@ -182,11 +152,5 @@ jobs:
 
           echo ""
           echo "🌐 CDN URLs:"
-          echo "   Versioned: ${CDN_URL}/sdk/bugspotter-${{ steps.version.outputs.VERSION }}.min.js"
+          echo "   Versioned: ${CDN_URL}/sdk/bugspotter-${{ inputs.version }}.min.js"
           echo "   Latest:    ${CDN_URL}/sdk/bugspotter-latest.min.js"
-
-      - name: Upload build artifacts to release
-        uses: actions/upload-artifact@v6
-        with:
-          name: release-build-${{ steps.version.outputs.VERSION }}
-          path: packages/core/dist/

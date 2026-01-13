@@ -8,7 +8,6 @@ on:
 
 env:
   NODE_VERSION: '22'
-  PNPM_VERSION: '9'
 
 jobs:
   lint-and-format:
@@ -24,9 +23,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: ${{ env.PNPM_VERSION }}
+        uses: pnpm/action-setup@v4
 
       - name: Get pnpm store directory
         shell: bash
@@ -66,9 +63,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: ${{ env.PNPM_VERSION }}
+        uses: pnpm/action-setup@v4
 
       - name: Get pnpm store directory
         shell: bash
@@ -110,9 +105,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: ${{ env.PNPM_VERSION }}
+        uses: pnpm/action-setup@v4
 
       - name: Get pnpm store directory
         shell: bash
@@ -160,9 +153,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: ${{ env.PNPM_VERSION }}
+        uses: pnpm/action-setup@v4
 
       - name: Get pnpm store directory
         shell: bash
@@ -221,9 +212,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: ${{ env.PNPM_VERSION }}
+        uses: pnpm/action-setup@v4
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -247,9 +236,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: ${{ env.PNPM_VERSION }}
+        uses: pnpm/action-setup@v4
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

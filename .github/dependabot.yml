@@ -1,0 +1,96 @@
+version: 2
+updates:
+  # Enable version updates for npm (core package)
+  - package-ecosystem: "npm"
+    directory: "/packages/core"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "apexbridge-tech"
+    assignees:
+      - "apexbridge-tech"
+    labels:
+      - "dependencies"
+      - "core"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+
+  # Root workspace dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "apexbridge-tech"
+    assignees:
+      - "apexbridge-tech"
+    labels:
+      - "dependencies"
+      - "workspace"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+
+  # React example dependencies
+  - package-ecosystem: "npm"
+    directory: "/examples/react"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "apexbridge-tech"
+    assignees:
+      - "apexbridge-tech"
+    labels:
+      - "dependencies"
+      - "examples"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+
+  # Vanilla example dependencies
+  - package-ecosystem: "npm"
+    directory: "/examples/vanilla"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "apexbridge-tech"
+    assignees:
+      - "apexbridge-tech"
+    labels:
+      - "dependencies"
+      - "examples"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "10:00"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "apexbridge-tech"
+    assignees:
+      - "apexbridge-tech"
+    labels:
+      - "dependencies"
+      - "ci/cd"
+    commit-message:
+      prefix: "chore(ci)"
+      include: "scope"

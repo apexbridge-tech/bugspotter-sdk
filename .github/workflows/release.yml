@@ -6,13 +6,13 @@ on:
       - 'v*'
 
 env:
-  NODE_VERSION: '18'
-  PNPM_VERSION: '8'
+  NODE_VERSION: '22'
 
 jobs:
   release:
     name: Release and Publish
     runs-on: ubuntu-latest
+    environment: production
     permissions:
       contents: write
       packages: write
@@ -29,8 +29,6 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -44,11 +42,6 @@ jobs:
       - name: Extract version from tag
         id: version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-
-      - name: Update package version
-        run: |
-          cd packages/core
-          npm version ${{ steps.version.outputs.VERSION }} --no-git-tag-version
 
       - name: Create Release Notes
         id: release_notes
@@ -77,6 +70,117 @@ jobs:
           npm publish --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Prepare CDN assets
+        run: |
+          mkdir -p cdn-deploy
+          cd packages/core/dist
+
+          # Copy UMD bundle (main file)
+          cp bugspotter.min.js ../../../cdn-deploy/bugspotter-${{ steps.version.outputs.VERSION }}.min.js
+          cp bugspotter.min.js ../../../cdn-deploy/bugspotter-latest.min.js
+
+          # Copy source maps if they exist (both versioned and latest)
+          if [ -f "bugspotter.min.js.map" ]; then
+            cp bugspotter.min.js.map ../../../cdn-deploy/bugspotter-${{ steps.version.outputs.VERSION }}.min.js.map
+            cp bugspotter.min.js.map ../../../cdn-deploy/bugspotter-latest.min.js.map
+          fi
+
+          echo "✅ Prepared CDN assets"
+          ls -lh ../../../cdn-deploy/
+
+      - name: Deploy to Backblaze B2 + BunnyCDN
+        env:
+          B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
+          B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
+          B2_BUCKET_NAME: ${{ secrets.B2_BUCKET_NAME }}
+          B2_ENDPOINT: ${{ secrets.B2_ENDPOINT }}
+          CDN_URL: ${{ secrets.CDN_URL }}
+          BUNNY_API_KEY: ${{ secrets.BUNNY_API_KEY }}
+          BUNNY_PULL_ZONE_ID: ${{ secrets.BUNNY_PULL_ZONE_ID }}
+        run: |
+          # Install B2 CLI
+          python3 -m pip install --upgrade b2
+
+          # Authorize B2 account
+          b2 account authorize ${B2_APPLICATION_KEY_ID} ${B2_APPLICATION_KEY}
+
+          echo "📦 Uploading to Backblaze B2 bucket: ${B2_BUCKET_NAME}"
+
+          # Upload versioned file with long cache
+          b2 file upload \
+            --content-type "application/javascript" \
+            --info "cache-control=public, max-age=31536000, immutable" \
+            ${B2_BUCKET_NAME} \
+            cdn-deploy/bugspotter-${{ steps.version.outputs.VERSION }}.min.js \
+            sdk/bugspotter-${{ steps.version.outputs.VERSION }}.min.js
+
+          echo "✅ Uploaded versioned file: sdk/bugspotter-${{ steps.version.outputs.VERSION }}.min.js"
+
+          # Upload latest file with short cache
+          b2 file upload \
+            --content-type "application/javascript" \
+            --info "cache-control=public, max-age=300" \
+            ${B2_BUCKET_NAME} \
+            cdn-deploy/bugspotter-latest.min.js \
+            sdk/bugspotter-latest.min.js
+
+          echo "✅ Uploaded latest file: sdk/bugspotter-latest.min.js"
+
+          # Upload versioned source map if exists
+          if [ -f "cdn-deploy/bugspotter-${{ steps.version.outputs.VERSION }}.min.js.map" ]; then
+            b2 file upload \
+              --content-type "application/json" \
+              --info "cache-control=public, max-age=31536000, immutable" \
+              ${B2_BUCKET_NAME} \
+              cdn-deploy/bugspotter-${{ steps.version.outputs.VERSION }}.min.js.map \
+              sdk/bugspotter-${{ steps.version.outputs.VERSION }}.min.js.map
+            
+            echo "✅ Uploaded versioned source map: sdk/bugspotter-${{ steps.version.outputs.VERSION }}.min.js.map"
+          fi
+
+          # Upload latest source map if exists
+          if [ -f "cdn-deploy/bugspotter-latest.min.js.map" ]; then
+            b2 file upload \
+              --content-type "application/json" \
+              --info "cache-control=public, max-age=300" \
+              ${B2_BUCKET_NAME} \
+              cdn-deploy/bugspotter-latest.min.js.map \
+              sdk/bugspotter-latest.min.js.map
+            
+            echo "✅ Uploaded latest source map: sdk/bugspotter-latest.min.js.map"
+          fi
+
+          echo ""
+          echo "✅ Deployed to Backblaze B2"
+
+          # Purge BunnyCDN cache for latest files (JS + source map)
+          if [ -n "${BUNNY_API_KEY}" ]; then
+            echo ""
+            echo "🔄 Purging BunnyCDN cache..."
+            
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+              -X POST "https://api.bunny.net/pullzone/${BUNNY_PULL_ZONE_ID}/purgeCache" \
+              -H "AccessKey: ${BUNNY_API_KEY}" \
+              -H "Content-Type: application/json" \
+              -d '{
+                "Files": [
+                  "/sdk/bugspotter-latest.min.js",
+                  "/sdk/bugspotter-latest.min.js.map"
+                ]
+              }')
+            
+            if [ "$HTTP_CODE" -eq 204 ] || [ "$HTTP_CODE" -eq 200 ]; then
+              echo "✅ BunnyCDN cache purged (HTTP $HTTP_CODE)"
+            else
+              echo "⚠️  Warning: BunnyCDN cache purge returned HTTP $HTTP_CODE"
+            fi
+          fi
+
+          echo ""
+          echo "🌐 CDN URLs:"
+          echo "   Versioned: ${CDN_URL}/sdk/bugspotter-${{ steps.version.outputs.VERSION }}.min.js"
+          echo "   Latest:    ${CDN_URL}/sdk/bugspotter-latest.min.js"
 
       - name: Upload build artifacts to release
         uses: actions/upload-artifact@v6

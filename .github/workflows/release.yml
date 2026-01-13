@@ -73,6 +73,7 @@ jobs:
 
       - name: Prepare CDN assets
         run: |
+          set -e
           mkdir -p cdn-deploy
           cd packages/core/dist
 
@@ -99,6 +100,7 @@ jobs:
           BUNNY_API_KEY: ${{ secrets.BUNNY_API_KEY }}
           BUNNY_PULL_ZONE_ID: ${{ secrets.BUNNY_PULL_ZONE_ID }}
         run: |
+          set -e
           # Install B2 CLI
           python3 -m pip install --upgrade b2
 

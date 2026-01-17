@@ -42,10 +42,10 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run ESLint
-        run: pnpm --filter @bugspotter/sdk lint
+        run: pnpm lint
 
       - name: Check formatting
-        run: pnpm --filter @bugspotter/sdk format:check
+        run: pnpm format:check
 
   test:
     name: Test (Node ${{ matrix.node-version }})
@@ -82,12 +82,12 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run unit tests
-        run: pnpm --filter @bugspotter/sdk test
+        run: pnpm test
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v3
         with:
-          file: ./packages/core/coverage/lcov.info
+          file: ./coverage/lcov.info
           flags: unittests
           name: codecov-umbrella
           fail_ci_if_error: false
@@ -124,20 +124,20 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install Playwright browsers
-        run: pnpm --filter @bugspotter/sdk exec playwright install --with-deps
+        run: pnpm exec playwright install --with-deps
 
       - name: Build core package
-        run: pnpm --filter @bugspotter/sdk build
+        run: pnpm build
 
       - name: Run E2E tests
-        run: pnpm --filter @bugspotter/sdk test:e2e
+        run: pnpm test:e2e
 
       - name: Upload E2E test artifacts
         if: failure()
         uses: actions/upload-artifact@v6
         with:
           name: e2e-test-results
-          path: packages/core/test-results/
+          path: test-results/
           retention-days: 7
 
   build:
@@ -172,7 +172,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build core package
-        run: pnpm --filter @bugspotter/sdk build
+        run: pnpm build
 
       - name: Check bundle size
         run: |
@@ -180,7 +180,7 @@ jobs:
           echo "| File | Size | Gzipped |" >> $GITHUB_STEP_SUMMARY
           echo "| ---- | ---- | ------- |" >> $GITHUB_STEP_SUMMARY
           
-          cd packages/core/dist
+          cd dist
           for file in *.js; do
             if [ -f "$file" ]; then
               size=$(stat -c%s "$file" | numfmt --to=iec-i --suffix=B)
@@ -193,7 +193,7 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: build-artifacts
-          path: packages/core/dist/
+          path: dist/
           retention-days: 7
 
   test-examples:
@@ -218,10 +218,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build core package
-        run: pnpm --filter @bugspotter/sdk build
+        run: pnpm build
+
+      - name: Install example dependencies
+        run: cd examples/${{ matrix.example }} && pnpm install --frozen-lockfile
 
       - name: Build example (${{ matrix.example }})
-        run: pnpm --filter @bugspotter/example-${{ matrix.example }} build
+        run: cd examples/${{ matrix.example }} && pnpm build
 
   type-check:
     name: TypeScript Type Check
@@ -242,15 +245,15 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Generate version file
-        run: pnpm --filter @bugspotter/sdk generate-version
+        run: pnpm generate-version
 
       - name: Type check core package
-        run: pnpm --filter @bugspotter/sdk exec tsc --noEmit
+        run: tsc --noEmit
 
       - name: Build core package for examples
-        run: pnpm --filter @bugspotter/sdk build
+        run: pnpm build
 
       - name: Type check examples
         run: |
-          pnpm --filter @bugspotter/example-react exec tsc --noEmit
+          cd examples/react && pnpm install --frozen-lockfile && tsc --noEmit
           # Vanilla example uses JS, so no type checking needed

@@ -34,13 +34,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build package
-        run: pnpm --filter @bugspotter/sdk build
+        run: pnpm build
 
       - name: Prepare CDN assets
         run: |
           set -e
           mkdir -p cdn-deploy
-          cd packages/core/dist
+          cd dist
 
           # Verify build artifacts exist
           if [ ! -f "bugspotter.min.js" ]; then

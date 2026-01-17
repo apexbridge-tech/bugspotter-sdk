@@ -170,14 +170,12 @@ class RetryHandler {
    */
   private calculateDelay(attempt: number, response?: Response): number {
     // Check for Retry-After header
-    if (response?.headers?.has?.('Retry-After')) {
-      const retryAfter = response.headers.get('Retry-After');
-      if (retryAfter) {
-        const retryAfterSeconds = parseInt(retryAfter, 10);
+    const retryAfter = response?.headers?.get?.('Retry-After');
+    if (retryAfter) {
+      const retryAfterSeconds = parseInt(retryAfter, 10);
 
-        if (!isNaN(retryAfterSeconds)) {
-          return Math.min(retryAfterSeconds * 1000, this.config.maxDelay);
-        }
+      if (!isNaN(retryAfterSeconds)) {
+        return Math.min(retryAfterSeconds * 1000, this.config.maxDelay);
       }
     }
 

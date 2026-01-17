@@ -84,7 +84,7 @@ export class InsecureEndpointError extends Error {
  * Uses the URL API for robust parsing.
  *
  * @param endpoint The endpoint URL to check
- * @returns boolean True if the endpoint uses HTTPS
+ * @returns True if the endpoint uses HTTPS
  */
 export function isSecureEndpoint(endpoint: string): boolean {
   if (!endpoint) return false;
@@ -94,20 +94,11 @@ export function isSecureEndpoint(endpoint: string): boolean {
     // 1. Production must use HTTPS
     // 2. Development allowed on localhost/127.0.0.1 via HTTP
 
-    // Check for HTTPS
-    if (url.protocol === 'https:') {
-      return true;
-    }
-
-    // Check for localhost exception
-    if (
-      url.protocol === 'http:' &&
-      (url.hostname === 'localhost' || url.hostname === '127.0.0.1')
-    ) {
-      return true;
-    }
-
-    return false;
+    return (
+      url.protocol === 'https:' ||
+      (url.protocol === 'http:' &&
+        (url.hostname === 'localhost' || url.hostname === '127.0.0.1'))
+    );
   } catch {
     // If it's not a valid URL, it's definitely not a secure endpoint
     return false;

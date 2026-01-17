@@ -125,7 +125,7 @@ const SAFE_SVG_ATTRIBUTES = new Set([
   'stop-color',
   'stop-opacity',
   'clip-path',
-  'mask-id',
+  'mask', // Used to reference mask definitions: mask="url(#maskId)"
 ]);
 
 /**
@@ -138,9 +138,11 @@ const isDangerousAttributeValue = (value: string): boolean => {
   // Dangerous protocol checks
   if (lowerValue.includes('javascript:')) return true;
   if (lowerValue.includes('vbscript:')) return true;
-  if (lowerValue.includes('data:text/html')) return true;
-  if (lowerValue.includes('data:') && lowerValue.includes('script'))
-    return true;
+
+  // SECURITY: Block ALL data: URIs by default
+  // data:text/html, data:application/javascript, data:image/svg+xml can all execute scripts
+  // Even data:text/javascript or data URIs with embedded scripts are dangerous
+  if (lowerValue.includes('data:')) return true;
 
   // CSS-based attack patterns
   if (lowerValue.includes('expression(')) return true; // IE CSS expressions

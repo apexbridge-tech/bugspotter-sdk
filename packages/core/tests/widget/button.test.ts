@@ -338,6 +338,35 @@ describe('FloatingButton', () => {
       expect(rect?.hasAttribute('fill')).toBe(false);
     });
 
+    it('should block data:application/javascript URIs', () => {
+      const maliciousSVG =
+        '<svg><rect fill="data:application/javascript,alert(\'XSS\')"/></svg>';
+      floatingButton = new FloatingButton({ customSvg: maliciousSVG });
+
+      const buttons = document.querySelectorAll('button');
+      const button = buttons[buttons.length - 1] as HTMLButtonElement;
+      const rect = button.querySelector('rect');
+
+      expect(rect).toBeDefined();
+      // fill attribute should be removed due to data: URI
+      expect(rect?.hasAttribute('fill')).toBe(false);
+    });
+
+    it('should block data:image/svg+xml URIs (can contain scripts)', () => {
+      const maliciousSVG =
+        '<svg><text fill="data:image/svg+xml,payload">Safe Text</text></svg>';
+      floatingButton = new FloatingButton({ customSvg: maliciousSVG });
+
+      const buttons = document.querySelectorAll('button');
+      const button = buttons[buttons.length - 1] as HTMLButtonElement;
+      const text = button.querySelector('text');
+
+      expect(text).toBeDefined();
+      expect(text?.textContent).toBe('Safe Text');
+      // fill attribute should be removed due to data: URI
+      expect(text?.hasAttribute('fill')).toBe(false);
+    });
+
     it('should block CSS expression() attacks', () => {
       const maliciousSVG =
         '<svg><rect fill="expression(alert(\'XSS\'))"/></svg>';

@@ -201,6 +201,7 @@ class RetryHandler {
 async function processQueueInBackground(
   offlineConfig: Required<OfflineConfig>,
   retryConfig: Required<RetryConfig>,
+  auth: AuthConfig,
   logger: Logger
 ): Promise<void> {
   if (!offlineConfig.enabled) {
@@ -208,20 +209,24 @@ async function processQueueInBackground(
   }
 
   const queue = new OfflineQueue(offlineConfig, logger);
-  queue.process(retryConfig.retryOn).catch((error: unknown) => {
-    logger.warn('Failed to process offline queue:', error);
-  });
+  const authHeaders = generateAuthHeaders(auth);
+  queue
+    .processWithAuth(retryConfig.retryOn, authHeaders)
+    .catch((error: unknown) => {
+      logger.warn('Failed to process offline queue:', error);
+    });
 }
 
 /**
  * Handle offline failure by queueing request
+ * SECURITY: Does not pass auth headers to queue - they will be regenerated when processing
  */
 async function handleOfflineFailure(
   error: unknown,
   endpoint: string,
   body: BodyInit,
   contentHeaders: Record<string, string>,
-  auth: AuthConfig,
+  _auth: AuthConfig,
   offlineConfig: Required<OfflineConfig>,
   logger: Logger
 ): Promise<void> {
@@ -231,8 +236,8 @@ async function handleOfflineFailure(
 
   logger.warn('Network error detected, queueing request for offline retry');
   const queue = new OfflineQueue(offlineConfig, logger);
-  const authHeaders = generateAuthHeaders(auth);
-  await queue.enqueue(endpoint, body, { ...contentHeaders, ...authHeaders });
+  // SECURITY: Only pass content headers, not auth headers - auth will be regenerated when processing
+  await queue.enqueue(endpoint, body, contentHeaders);
 }
 
 // ============================================================================
@@ -268,7 +273,7 @@ export async function submitWithAuth(
   const offlineConfig = { ...DEFAULT_OFFLINE_CONFIG, ...options.offline };
 
   // Process offline queue on each request (run in background without awaiting)
-  processQueueInBackground(offlineConfig, retryConfig, logger);
+  processQueueInBackground(offlineConfig, retryConfig, options.auth, logger);
 
   try {
     // Send with retry logic

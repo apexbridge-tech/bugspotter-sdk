@@ -20,6 +20,10 @@ export function validateAuthConfig(context: ValidationContext): void {
     throw new Error('No endpoint configured for bug report submission');
   }
 
+  if (!context.endpoint.startsWith('https://')) {
+    throw new Error('HTTPS is required for bug report submission');
+  }
+
   if (!context.auth) {
     throw new Error('API key authentication is required');
   }

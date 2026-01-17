@@ -268,6 +268,11 @@ export async function submitWithAuth(
   contentHeaders: Record<string, string> = {},
   options: TransportOptions
 ): Promise<Response> {
+  // Security: Enforce HTTPS
+  if (!endpoint.startsWith('https://')) {
+    throw new Error('HTTPS is required for all requests');
+  }
+
   const logger = options.logger || getLogger();
   const retryConfig = { ...DEFAULT_RETRY_CONFIG, ...options.retry };
   const offlineConfig = { ...DEFAULT_OFFLINE_CONFIG, ...options.offline };
@@ -315,6 +320,10 @@ async function makeRequest(
   contentHeaders: Record<string, string>,
   auth: AuthConfig
 ): Promise<Response> {
+  if (!endpoint.startsWith('https://')) {
+    throw new Error('HTTPS is required for all requests');
+  }
+
   const authHeaders = generateAuthHeaders(auth);
   const headers = { ...contentHeaders, ...authHeaders };
 

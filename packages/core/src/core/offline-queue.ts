@@ -206,6 +206,14 @@ export class OfflineQueue {
       }
 
       try {
+        // Security: Enforce HTTPS for queued items (prevents processing legacy http requests)
+        if (!request.endpoint.startsWith('https://')) {
+          this.logger.warn(
+            `Dropping queued request with insecure endpoint: ${request.endpoint} (id: ${request.id})`
+          );
+          continue;
+        }
+
         // Merge auth headers with stored headers (auth headers take precedence)
         const headers = { ...request.headers, ...authHeaders };
 

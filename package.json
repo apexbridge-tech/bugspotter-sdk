@@ -1,19 +1,29 @@
 {
   "name": "@bugspotter/sdk",
-  "version": "0.3.1", 
+  "version": "0.3.1",
   "description": "BugSpotter SDK - Browser bug reporting with session replay",
   "type": "module",
   "scripts": {
     "build": "pnpm --filter @bugspotter/sdk build",
     "dev": "pnpm --filter @bugspotter/sdk dev",
     "test": "pnpm --filter @bugspotter/sdk test",
-    "test:watch": "pnpm --filter @bugspotter/sdk test:watch", 
+    "test:watch": "pnpm --filter @bugspotter/sdk test:watch",
     "test:e2e": "pnpm --filter @bugspotter/sdk test:e2e",
     "test:coverage": "pnpm --filter @bugspotter/sdk test:coverage",
     "lint": "pnpm --filter @bugspotter/sdk lint",
     "lint:fix": "pnpm --filter @bugspotter/sdk lint:fix",
     "format": "pnpm --filter @bugspotter/sdk format",
-    "format:check": "pnpm --filter @bugspotter/sdk format:check"
+    "format:check": "pnpm --filter @bugspotter/sdk format:check",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "packages/core/**/*.{ts,tsx}": [
+      "pnpm --filter @bugspotter/sdk lint:fix",
+      "prettier --write"
+    ],
+    "packages/**/*.{json,md}": [
+      "prettier --write"
+    ]
   },
   "engines": {
     "node": ">=18.0.0",
@@ -29,5 +39,9 @@
   "workspaces": [
     "packages/*",
     "examples/*"
-  ]
+  ],
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7"
+  }
 }

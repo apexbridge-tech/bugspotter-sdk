@@ -71,10 +71,10 @@ const SAFE_SVG_TAGS = new Set([
   'symbol',
   'defs',
   'marker',
-  'lineargradient', // lowercase to match sanitizer normalization
-  'radialgradient', // lowercase to match sanitizer normalization
+  'lineargradient', // lowercase to match toLowerCase() normalization at line 302 (parser preserves camelCase)
+  'radialgradient', // lowercase to match toLowerCase() normalization at line 302 (parser preserves camelCase)
   'stop',
-  'clippath', // lowercase to match sanitizer normalization
+  'clippath', // lowercase to match toLowerCase() normalization at line 302 (parser preserves camelCase)
   'mask',
   // SECURITY: 'image' deliberately excluded - requires href/xlink:href attributes which pose XSS risks
   // and are not in the attribute whitelist, making <image> non-functional anyway
@@ -105,7 +105,7 @@ const SAFE_SVG_ATTRIBUTES = new Set([
   'y2',
   'width',
   'height',
-  'viewbox', // lowercase to match sanitizer normalization
+  'viewbox', // lowercase to match toLowerCase() normalization at line 275 (parser preserves camelCase)
   'xmlns',
   'fill',
   'stroke',
@@ -128,20 +128,26 @@ const SAFE_SVG_ATTRIBUTES = new Set([
   'mask-id',
 ]);
 
-const DANGEROUS_ATTRIBUTE_PATTERNS = [
-  /javascript:/i,
-  /data:text\/html/i,
-  /data:.*script/i,
-  /vbscript:/i,
-  // CSS-based attack patterns
-  /expression\s*\(/i, // IE CSS expressions
-  /url\s*\(/i, // CSS url() - can contain javascript:/data: URIs
-  /@import/i, // CSS imports
-  /-moz-binding/i, // Firefox XBL binding attacks
-];
-
+/**
+ * Check if an attribute value contains dangerous patterns
+ * Uses simple string matching instead of regex for better performance and clarity
+ */
 const isDangerousAttributeValue = (value: string): boolean => {
-  return DANGEROUS_ATTRIBUTE_PATTERNS.some((pattern) => pattern.test(value));
+  const lowerValue = value.toLowerCase();
+
+  // Dangerous protocol checks
+  if (lowerValue.includes('javascript:')) return true;
+  if (lowerValue.includes('vbscript:')) return true;
+  if (lowerValue.includes('data:text/html')) return true;
+  if (lowerValue.includes('data:') && lowerValue.includes('script'))
+    return true;
+
+  // CSS-based attack patterns
+  if (lowerValue.includes('expression(')) return true; // IE CSS expressions
+  if (lowerValue.includes('@import')) return true; // CSS imports
+  if (lowerValue.includes('-moz-binding')) return true; // Firefox XBL binding
+
+  return false;
 };
 
 export class FloatingButton {

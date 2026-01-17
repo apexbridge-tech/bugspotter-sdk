@@ -527,6 +527,11 @@ describe('FloatingButton', () => {
       expect(gradient).toBeDefined();
       expect(gradient?.getAttribute('id')).toBe('grad1');
       expect(gradient?.querySelectorAll('stop').length).toBe(2);
+
+      // CRITICAL: Verify that fill="url(#grad1)" is preserved on the rect
+      const rect = button.querySelector('rect');
+      expect(rect).toBeDefined();
+      expect(rect?.getAttribute('fill')).toBe('url(#grad1)');
     });
 
     it('should preserve radialGradient elements', () => {
@@ -541,6 +546,11 @@ describe('FloatingButton', () => {
       expect(gradient).toBeDefined();
       expect(gradient?.getAttribute('id')).toBe('grad2');
       expect(gradient?.querySelectorAll('stop').length).toBe(2);
+
+      // CRITICAL: Verify that fill="url(#grad2)" is preserved on the circle
+      const circle = button.querySelector('circle');
+      expect(circle).toBeDefined();
+      expect(circle?.getAttribute('fill')).toBe('url(#grad2)');
     });
 
     it('should preserve clipPath elements', () => {
@@ -555,6 +565,11 @@ describe('FloatingButton', () => {
       expect(clipPath).toBeDefined();
       expect(clipPath?.getAttribute('id')).toBe('clip1');
       expect(clipPath?.querySelector('circle')).toBeDefined();
+
+      // CRITICAL: Verify that clip-path="url(#clip1)" is preserved on the rect
+      const rect = button.querySelector('rect');
+      expect(rect).toBeDefined();
+      expect(rect?.getAttribute('clip-path')).toBe('url(#clip1)');
     });
 
     it('should remove style attribute from elements', () => {

@@ -60,9 +60,10 @@ describe('OfflineQueue', () => {
       );
 
       const stored = storage.getItem('bugspotter_offline_queue');
-      expect(stored).toBeTruthy();
+      expect(stored).not.toBeNull();
+      if (!stored) throw new Error('Storage should not be null');
 
-      const queueData = JSON.parse(stored!);
+      const queueData = JSON.parse(stored);
       expect(queueData).toHaveLength(1);
       expect(queueData[0].headers['Content-Type']).toBe('application/json');
       expect(queueData[0].headers['X-API-Key']).toBeUndefined();
@@ -81,7 +82,10 @@ describe('OfflineQueue', () => {
       );
 
       const stored = storage.getItem('bugspotter_offline_queue');
-      const queueData = JSON.parse(stored!);
+      expect(stored).not.toBeNull();
+      if (!stored) throw new Error('Storage should not be null');
+
+      const queueData = JSON.parse(stored);
       expect(queueData[0].headers['Authorization']).toBeUndefined();
       expect(queueData[0].headers['authorization']).toBeUndefined();
     });
@@ -99,7 +103,10 @@ describe('OfflineQueue', () => {
       );
 
       const stored = storage.getItem('bugspotter_offline_queue');
-      const queueData = JSON.parse(stored!);
+      expect(stored).not.toBeNull();
+      if (!stored) throw new Error('Storage should not be null');
+
+      const queueData = JSON.parse(stored);
       expect(queueData[0].headers['X-Auth-Token']).toBeUndefined();
       expect(queueData[0].headers['x-auth-token']).toBeUndefined();
     });
@@ -117,7 +124,10 @@ describe('OfflineQueue', () => {
       );
 
       const stored = storage.getItem('bugspotter_offline_queue');
-      const queueData = JSON.parse(stored!);
+      expect(stored).not.toBeNull();
+      if (!stored) throw new Error('Storage should not be null');
+
+      const queueData = JSON.parse(stored);
       expect(queueData[0].headers['X-Access-Token']).toBeUndefined();
       expect(queueData[0].headers['x-access-token']).toBeUndefined();
     });
@@ -135,7 +145,10 @@ describe('OfflineQueue', () => {
       );
 
       const stored = storage.getItem('bugspotter_offline_queue');
-      const queueData = JSON.parse(stored!);
+      expect(stored).not.toBeNull();
+      if (!stored) throw new Error('Storage should not be null');
+
+      const queueData = JSON.parse(stored);
       expect(queueData[0].headers['Cookie']).toBeUndefined();
       expect(queueData[0].headers['cookie']).toBeUndefined();
     });
@@ -153,7 +166,10 @@ describe('OfflineQueue', () => {
       );
 
       const stored = storage.getItem('bugspotter_offline_queue');
-      const queueData = JSON.parse(stored!);
+      expect(stored).not.toBeNull();
+      if (!stored) throw new Error('Storage should not be null');
+
+      const queueData = JSON.parse(stored);
       expect(queueData[0].headers['Set-Cookie']).toBeUndefined();
       expect(queueData[0].headers['set-cookie']).toBeUndefined();
     });
@@ -178,7 +194,10 @@ describe('OfflineQueue', () => {
       );
 
       const stored = storage.getItem('bugspotter_offline_queue');
-      const queueData = JSON.parse(stored!);
+      expect(stored).not.toBeNull();
+      if (!stored) throw new Error('Storage should not be null');
+
+      const queueData = JSON.parse(stored);
       const headers = queueData[0].headers;
 
       // Safe headers should be preserved
@@ -224,7 +243,10 @@ describe('OfflineQueue', () => {
       );
 
       const stored = storage.getItem('bugspotter_offline_queue');
-      const queueData = JSON.parse(stored!);
+      expect(stored).not.toBeNull();
+      if (!stored) throw new Error('Storage should not be null');
+
+      const queueData = JSON.parse(stored);
 
       // All variations should be stripped
       expect(queueData[0].headers['x-api-key']).toBeUndefined();
@@ -288,8 +310,11 @@ describe('OfflineQueue', () => {
         } as Response)
       );
 
-      // Should not throw error with empty auth headers
-      await expect(queue.processWithAuth([], {})).resolves.not.toThrow();
+      // Process with empty auth headers
+      await queue.processWithAuth([], {});
+
+      // Verify queue was successfully processed and is now empty
+      expect(queue.size()).toBe(0);
     });
   });
 
@@ -313,8 +338,11 @@ describe('OfflineQueue', () => {
         } as Response)
       );
 
-      // Old process() method should still work
-      await expect(queue.process([])).resolves.not.toThrow();
+      // Old process() method should still work and process the queue
+      await queue.process([]);
+
+      // Verify queue was successfully processed and is now empty
+      expect(queue.size()).toBe(0);
     });
   });
 });

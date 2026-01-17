@@ -214,10 +214,17 @@ export class FloatingButton {
    */
   private setSafeHTMLContent(element: HTMLElement, htmlContent: string): void {
     try {
+      if (
+        typeof window === 'undefined' ||
+        typeof window.DOMParser === 'undefined'
+      ) {
+        element.textContent = htmlContent;
+        return;
+      }
+
       // SECURITY: Use DOMParser with image/svg+xml MIME type for strict SVG parsing
       // This prevents HTML-specific parsing quirks from being exploited
-      // eslint-disable-next-line no-undef
-      const parser = new DOMParser();
+      const parser = new window.DOMParser();
       const doc = parser.parseFromString(htmlContent, 'image/svg+xml');
 
       // Check for parse errors

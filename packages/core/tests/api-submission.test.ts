@@ -27,7 +27,10 @@ describe('API Submission', () => {
       // Handle data URLs (for screenshot/replay blob conversion)
       if (typeof url === 'string' && url.startsWith('data:')) {
         const base64Data = url.split(',')[1];
-        const binaryString = atob(base64Data);
+        // eslint-disable-next-line no-undef
+        const binaryString = Buffer.from(base64Data, 'base64').toString(
+          'binary'
+        );
         const bytes = new Uint8Array(binaryString.length);
         for (let i = 0; i < binaryString.length; i++) {
           bytes[i] = binaryString.charCodeAt(i);
@@ -92,7 +95,11 @@ describe('API Submission', () => {
         });
 
       const bugSpotter = await BugSpotter.init({
-        auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
+        auth: {
+          type: 'api-key',
+          apiKey: TEST_API_KEY,
+          projectId: TEST_PROJECT_ID,
+        },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
         replay: { enabled: false },
@@ -189,7 +196,11 @@ describe('API Submission', () => {
         });
 
       const bugSpotter = await BugSpotter.init({
-        auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
+        auth: {
+          type: 'api-key',
+          apiKey: TEST_API_KEY,
+          projectId: TEST_PROJECT_ID,
+        },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
         replay: { enabled: false },
@@ -262,7 +273,11 @@ describe('API Submission', () => {
         });
 
       const bugSpotter = await BugSpotter.init({
-        auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
+        auth: {
+          type: 'api-key',
+          apiKey: TEST_API_KEY,
+          projectId: TEST_PROJECT_ID,
+        },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
         replay: { enabled: true }, // Enable replay!
@@ -274,7 +289,11 @@ describe('API Submission', () => {
 
       const report = await bugSpotter.capture();
       report._screenshotPreview = 'data:image/png;base64,iVBORw0KGgo=';
-      const payload = { title: 'Test with Replay', description: 'Test', report };
+      const payload = {
+        title: 'Test with Replay',
+        description: 'Test',
+        report,
+      };
 
       await expect(bugSpotter.submit(payload)).resolves.not.toThrow();
 
@@ -292,7 +311,11 @@ describe('API Submission', () => {
       });
 
       const bugSpotter = await BugSpotter.init({
-        auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
+        auth: {
+          type: 'api-key',
+          apiKey: TEST_API_KEY,
+          projectId: TEST_PROJECT_ID,
+        },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
         replay: { enabled: false },
@@ -313,7 +336,11 @@ describe('API Submission', () => {
   describe('Error handling', () => {
     it('should throw error if no endpoint is configured', async () => {
       const bugSpotter = await BugSpotter.init({
-        auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
+        auth: {
+          type: 'api-key',
+          apiKey: TEST_API_KEY,
+          projectId: TEST_PROJECT_ID,
+        },
         showWidget: false,
         replay: { enabled: false },
       });
@@ -339,7 +366,11 @@ describe('API Submission', () => {
       });
 
       const bugSpotter = await BugSpotter.init({
-        auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
+        auth: {
+          type: 'api-key',
+          apiKey: TEST_API_KEY,
+          projectId: TEST_PROJECT_ID,
+        },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
         replay: { enabled: false },
@@ -379,7 +410,11 @@ describe('API Submission', () => {
         });
 
       const bugSpotter = await BugSpotter.init({
-        auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
+        auth: {
+          type: 'api-key',
+          apiKey: TEST_API_KEY,
+          projectId: TEST_PROJECT_ID,
+        },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
       });
@@ -410,7 +445,11 @@ describe('API Submission', () => {
       fetchMock.mockRejectedValueOnce(new Error('Network error'));
 
       const bugSpotter = await BugSpotter.init({
-        auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
+        auth: {
+          type: 'api-key',
+          apiKey: TEST_API_KEY,
+          projectId: TEST_PROJECT_ID,
+        },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
         retry: { maxRetries: 0 }, // Disable retries for this test
@@ -433,7 +472,11 @@ describe('API Submission', () => {
       });
 
       const bugSpotter = await BugSpotter.init({
-        auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
+        auth: {
+          type: 'api-key',
+          apiKey: TEST_API_KEY,
+          projectId: TEST_PROJECT_ID,
+        },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
         replay: { enabled: false },
@@ -442,7 +485,9 @@ describe('API Submission', () => {
       const report = await bugSpotter.capture();
       const payload = { title: 'Test', description: 'Test', report };
 
-      await expect(bugSpotter.submit(payload)).rejects.toThrow('Failed to submit bug report: 403');
+      await expect(bugSpotter.submit(payload)).rejects.toThrow(
+        'Failed to submit bug report: 403'
+      );
     });
 
     it('should handle timeout errors', async () => {
@@ -469,7 +514,11 @@ describe('API Submission', () => {
       });
 
       const bugSpotter = await BugSpotter.init({
-        auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
+        auth: {
+          type: 'api-key',
+          apiKey: TEST_API_KEY,
+          projectId: TEST_PROJECT_ID,
+        },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
         retry: { maxRetries: 0 }, // Disable retries for this test
@@ -478,7 +527,9 @@ describe('API Submission', () => {
       const report = await bugSpotter.capture();
       const payload = { title: 'Test', description: 'Test', report };
 
-      await expect(bugSpotter.submit(payload)).rejects.toThrow('Request timeout');
+      await expect(bugSpotter.submit(payload)).rejects.toThrow(
+        'Request timeout'
+      );
     });
   });
 
@@ -514,7 +565,11 @@ describe('API Submission', () => {
         });
 
       const bugSpotter = await BugSpotter.init({
-        auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
+        auth: {
+          type: 'api-key',
+          apiKey: TEST_API_KEY,
+          projectId: TEST_PROJECT_ID,
+        },
         endpoint: 'https://api.example.com/bugs',
         showWidget: false,
         replay: { enabled: false },
@@ -546,7 +601,10 @@ describe('API Submission', () => {
       if (!(requestBody instanceof Blob)) {
         const sentBody = JSON.parse(requestBody);
         expect(sentBody).toHaveProperty('title', 'Complete Test Bug');
-        expect(sentBody).toHaveProperty('description', 'This is a detailed description');
+        expect(sentBody).toHaveProperty(
+          'description',
+          'This is a detailed description'
+        );
         expect(sentBody).toHaveProperty('report');
         expect(sentBody.report).toHaveProperty('console');
         expect(sentBody.report).toHaveProperty('metadata');
@@ -558,7 +616,7 @@ describe('API Submission', () => {
     it('should work with different endpoint URLs', async () => {
       const endpoints = [
         'https://api.bugspotter.com/reports',
-        'http://localhost:3000/api/bugs',
+        'https://localhost:3000/api/bugs',
         'https://custom-domain.io/v1/bug-reports',
       ];
 
@@ -593,7 +651,11 @@ describe('API Submission', () => {
           });
 
         const bugSpotter = await BugSpotter.init({
-          auth: { type: 'api-key', apiKey: TEST_API_KEY, projectId: TEST_PROJECT_ID },
+          auth: {
+            type: 'api-key',
+            apiKey: TEST_API_KEY,
+            projectId: TEST_PROJECT_ID,
+          },
           endpoint,
           showWidget: false,
           replay: { enabled: false },

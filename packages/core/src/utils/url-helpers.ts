@@ -66,3 +66,34 @@ export function getApiBaseUrl(endpoint: string): string {
     );
   }
 }
+
+/**
+ * specific error for insecure endpoints
+ */
+export class InsecureEndpointError extends Error {
+  constructor(public readonly endpoint: string) {
+    super(
+      `Secure HTTPS connection required. Attempted to connect to insecure endpoint: "${endpoint}"`
+    );
+    this.name = 'InsecureEndpointError';
+  }
+}
+
+/**
+ * Checks if the endpoint uses the secure HTTPS protocol.
+ * Uses the URL API for robust parsing.
+ *
+ * @param endpoint The endpoint URL to check
+ * @returns boolean True if the endpoint uses HTTPS
+ */
+export function isSecureEndpoint(endpoint: string): boolean {
+  if (!endpoint) return false;
+  try {
+    const url = new URL(endpoint.trim());
+    // URL.protocol includes the colon (e.g., 'https:')
+    return url.protocol === 'https:';
+  } catch {
+    // If it's not a valid URL, it's definitely not a secure endpoint
+    return false;
+  }
+}

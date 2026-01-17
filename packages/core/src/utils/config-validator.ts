@@ -4,6 +4,7 @@
  */
 
 import type { AuthConfig } from '../core/transport';
+import { isSecureEndpoint, InsecureEndpointError } from './url-helpers';
 import type { DeduplicationConfig } from './deduplicator';
 
 export interface ValidationContext {
@@ -18,6 +19,12 @@ export interface ValidationContext {
 export function validateAuthConfig(context: ValidationContext): void {
   if (!context.endpoint) {
     throw new Error('No endpoint configured for bug report submission');
+  }
+
+  // SECURITY: Ensure endpoint uses HTTPS
+  // This prevents credentials and sensitive data from being sent over plain HTTP
+  if (!isSecureEndpoint(context.endpoint)) {
+    throw new InsecureEndpointError(context.endpoint);
   }
 
   if (!context.auth) {

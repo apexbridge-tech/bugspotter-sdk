@@ -3,6 +3,7 @@
  */
 
 import { getLogger, type Logger } from '../utils/logger';
+import { isSecureEndpoint } from '../utils/url-helpers';
 
 // ============================================================================
 // STORAGE ADAPTER
@@ -206,6 +207,16 @@ export class OfflineQueue {
       }
 
       try {
+        // SECURITY: Verify endpoint is secure (HTTPS) before sending
+        // This prevents downgrade attacks and ensures data confidentiality
+        if (!isSecureEndpoint(request.endpoint)) {
+          this.logger.error(
+            `Refusing to send offline request to insecure endpoint: ${request.endpoint}`
+          );
+          // Don't retry insecure requests
+          continue;
+        }
+
         // Merge auth headers with stored headers (auth headers take precedence)
         const headers = { ...request.headers, ...authHeaders };
 

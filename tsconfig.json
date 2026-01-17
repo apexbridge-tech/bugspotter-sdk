@@ -1,6 +1,13 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
+    // Target and module
+    "target": "ES2015",
+    "module": "ESNext",
+    "lib": ["ES2015", "DOM"],
+    "downlevelIteration": true,
+    "moduleResolution": "node",
+
     // Strict type checking
     "strict": true,
     "strictNullChecks": true,

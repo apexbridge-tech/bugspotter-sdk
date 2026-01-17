@@ -220,9 +220,6 @@ jobs:
       - name: Build core package
         run: pnpm build
 
-      - name: Install example dependencies
-        run: cd examples/${{ matrix.example }} && pnpm install --frozen-lockfile
-
       - name: Build example (${{ matrix.example }})
         run: cd examples/${{ matrix.example }} && pnpm build
 
@@ -254,6 +251,4 @@ jobs:
         run: pnpm build
 
       - name: Type check examples
-        run: |
-          cd examples/react && pnpm install --frozen-lockfile && tsc --noEmit
-          # Vanilla example uses JS, so no type checking needed
+        run: cd examples/react && tsc --noEmit

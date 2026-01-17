@@ -108,6 +108,7 @@ export class OfflineQueue {
 
   /**
    * Queue a request for offline retry
+   * SECURITY: Strips sensitive authentication headers before storage
    */
   enqueue(
     endpoint: string,
@@ -130,7 +131,11 @@ export class OfflineQueue {
         queue.shift();
       }
 
-      queue.push(this.createQueuedRequest(endpoint, serializedBody, headers));
+      // SECURITY: Strip sensitive headers before storing in localStorage
+      const sanitizedHeaders = this.stripSensitiveHeaders(headers);
+      queue.push(
+        this.createQueuedRequest(endpoint, serializedBody, sanitizedHeaders)
+      );
       this.saveQueue(queue);
 
       this.logger.log(
@@ -143,8 +148,21 @@ export class OfflineQueue {
 
   /**
    * Process offline queue
+   * @deprecated Use processWithAuth() instead to properly handle authentication
    */
   async process(retryableStatusCodes: number[]): Promise<void> {
+    return this.processWithAuth(retryableStatusCodes, {});
+  }
+
+  /**
+   * Process offline queue with authentication headers
+   * @param retryableStatusCodes - HTTP status codes that should be retried
+   * @param authHeaders - Authentication headers to merge with stored headers
+   */
+  async processWithAuth(
+    retryableStatusCodes: number[],
+    authHeaders: Record<string, string>
+  ): Promise<void> {
     const queue = this.getQueue();
 
     if (queue.length === 0) {
@@ -175,10 +193,13 @@ export class OfflineQueue {
       }
 
       try {
+        // Merge auth headers with stored headers (auth headers take precedence)
+        const headers = { ...request.headers, ...authHeaders };
+
         // Attempt to send
         const response = await fetch(request.endpoint, {
           method: 'POST',
-          headers: request.headers,
+          headers,
           body: request.body,
         });
 
@@ -242,6 +263,29 @@ export class OfflineQueue {
   // ============================================================================
   // PRIVATE METHODS
   // ============================================================================
+
+  /**
+   * Strip sensitive authentication headers before storing in localStorage
+   * SECURITY: Prevents API keys and tokens from being stored in plain text
+   */
+  private stripSensitiveHeaders(
+    headers: Record<string, string>
+  ): Record<string, string> {
+    const sensitiveHeaders = [
+      'authorization',
+      'x-api-key',
+      'x-auth-token',
+      'x-access-token',
+      'cookie',
+      'set-cookie',
+    ];
+
+    return Object.fromEntries(
+      Object.entries(headers).filter(
+        ([key]) => !sensitiveHeaders.includes(key.toLowerCase())
+      )
+    );
+  }
 
   /**
    * Serialize body to string format

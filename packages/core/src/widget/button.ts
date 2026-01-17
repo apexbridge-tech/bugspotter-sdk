@@ -71,10 +71,10 @@ const SAFE_SVG_TAGS = new Set([
   'symbol',
   'defs',
   'marker',
-  'lineargradient', // lowercase to match toLowerCase() normalization at line 302 (parser preserves camelCase)
-  'radialgradient', // lowercase to match toLowerCase() normalization at line 302 (parser preserves camelCase)
+  'lineargradient', // lowercase to match tagName.toLowerCase() in sanitizeSVGElement (parser preserves camelCase)
+  'radialgradient', // lowercase to match tagName.toLowerCase() in sanitizeSVGElement (parser preserves camelCase)
   'stop',
-  'clippath', // lowercase to match toLowerCase() normalization at line 302 (parser preserves camelCase)
+  'clippath', // lowercase to match tagName.toLowerCase() in sanitizeSVGElement (parser preserves camelCase)
   'mask',
   // SECURITY: 'image' deliberately excluded - requires href/xlink:href attributes which pose XSS risks
   // and are not in the attribute whitelist, making <image> non-functional anyway
@@ -105,7 +105,7 @@ const SAFE_SVG_ATTRIBUTES = new Set([
   'y2',
   'width',
   'height',
-  'viewbox', // lowercase to match toLowerCase() normalization at line 275 (parser preserves camelCase)
+  'viewbox', // lowercase to match attrName.toLowerCase() in sanitizeSVGElement (parser preserves camelCase)
   'xmlns',
   'fill',
   'stroke',

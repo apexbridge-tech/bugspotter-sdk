@@ -80,9 +80,16 @@ export default [
   },
   {
     files: ['**/*.test.{ts,js}', '**/*.spec.{ts,js}'],
+    languageOptions: {
+      globals: {
+        global: 'readonly',
+        Headers: 'readonly',
+      },
+    },
     rules: {
       'no-console': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
+      'no-undef': 'off',
     },
   },
   prettierConfig,

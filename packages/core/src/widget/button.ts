@@ -119,27 +119,22 @@ export class FloatingButton {
       const temp = document.createElement('div');
       temp.innerHTML = htmlContent;
 
-      // Validate and sanitize SVG elements
-      const svgElements = temp.querySelectorAll(
-        'svg, path, circle, rect, line, polyline, polygon, g, text, tspan, use, defs, symbol, linearGradient, radialGradient, stop'
-      );
-
       if (temp.firstChild && temp.firstChild.nodeType === 1) {
         const firstElement = temp.firstChild as Element;
 
-        // Only allow SVG and related elements
-        if (
-          firstElement.tagName.toLowerCase() === 'svg' ||
-          svgElements.length > 0
-        ) {
-          // Remove potentially dangerous attributes and event handlers
-          this.sanitizeSVGElement(temp);
-          // Clear the target element and append sanitized content
-          element.innerHTML = '';
-          while (temp.firstChild) {
-            element.appendChild(temp.firstChild);
+        // SECURITY: Root element MUST be SVG - prevents wrapper element injection
+        // Reject structures like <div><svg>...</svg></div>
+        if (firstElement.tagName.toLowerCase() === 'svg') {
+          // SECURITY: Only proceed if there's exactly one root element
+          // This prevents attacks like: <svg></svg><script>alert('XSS')</script>
+          if (temp.children.length === 1) {
+            // Remove potentially dangerous attributes and event handlers
+            this.sanitizeSVGElement(firstElement);
+            // Clear the target element and append only the validated SVG element
+            element.innerHTML = '';
+            element.appendChild(firstElement);
+            return;
           }
-          return;
         }
       }
 
@@ -152,30 +147,131 @@ export class FloatingButton {
   }
 
   /**
-   * Recursively sanitize SVG elements by removing dangerous attributes
+   * Recursively sanitize SVG elements by removing dangerous tags and attributes
+   * Uses whitelists to ensure only safe SVG content is preserved
    */
-  private sanitizeSVGElement(element: Element | Document): void {
-    const dangerous = [
-      'on',
-      'script',
-      'onerror',
-      'onload',
-      'onclick',
-      'onmouseover',
+  private sanitizeSVGElement(element: Element): void {
+    // Whitelist of safe SVG tags
+    const safeSvgTags = new Set([
+      'svg',
+      'g',
+      'path',
+      'circle',
+      'rect',
+      'line',
+      'polyline',
+      'polygon',
+      'ellipse',
+      'text',
+      'tspan',
+      'use',
+      'symbol',
+      'defs',
+      'marker',
+      'linearGradient',
+      'radialGradient',
+      'stop',
+      'clipPath',
+      'mask',
+      'image',
+      'foreignObject',
+    ]);
+
+    // Whitelist of safe attributes for SVG elements
+    const safeAttributes = new Set([
+      'id',
+      'class',
+      'style',
+      'd',
+      'cx',
+      'cy',
+      'r',
+      'rx',
+      'ry',
+      'x',
+      'y',
+      'x1',
+      'y1',
+      'x2',
+      'y2',
+      'width',
+      'height',
+      'viewBox',
+      'xmlns',
+      'fill',
+      'stroke',
+      'stroke-width',
+      'stroke-linecap',
+      'stroke-linejoin',
+      'opacity',
+      'fill-opacity',
+      'stroke-opacity',
+      'transform',
+      'points',
+      'text-anchor',
+      'font-size',
+      'font-family',
+      'font-weight',
+      'offset',
+      'stop-color',
+      'stop-opacity',
+      'clip-path',
+      'mask-id',
+    ]);
+
+    // Dangerous attribute value patterns (javascript: URLs, etc.)
+    const dangerousPatterns = [
+      /javascript:/i,
+      /data:text\/html/i,
+      /data:.*script/i,
+      /vbscript:/i,
     ];
-    const children = Array.from(element.children || []);
 
-    children.forEach((child) => {
-      // Remove dangerous event attributes
-      Array.from(child.attributes || []).forEach((attr) => {
-        if (dangerous.some((d) => attr.name.toLowerCase().startsWith(d))) {
-          child.removeAttribute(attr.name);
+    const isDangerousValue = (value: string): boolean => {
+      return dangerousPatterns.some((pattern) => pattern.test(value));
+    };
+
+    // Process all elements in the tree
+    const elementsToProcess = [element];
+    const processedElements = new WeakSet<Element>();
+
+    while (elementsToProcess.length > 0) {
+      const current = elementsToProcess.pop();
+      if (!current || processedElements.has(current)) continue;
+      processedElements.add(current);
+
+      const children = Array.from(current.children || []);
+
+      children.forEach((child) => {
+        const tagName = child.tagName.toLowerCase();
+
+        // SECURITY: Remove tags not in whitelist (blocks <script>, <style>, <iframe>, etc.)
+        if (!safeSvgTags.has(tagName)) {
+          child.remove();
+          return;
         }
-      });
 
-      // Recursively sanitize children
-      this.sanitizeSVGElement(child);
-    });
+        // Remove dangerous attributes and those with unsafe values
+        Array.from(child.attributes || []).forEach((attr) => {
+          const attrName = attr.name.toLowerCase();
+
+          // Only keep whitelisted attributes
+          if (!safeAttributes.has(attrName)) {
+            child.removeAttribute(attr.name);
+            return;
+          }
+
+          // Check attribute values for dangerous patterns
+          if (isDangerousValue(attr.value)) {
+            child.removeAttribute(attr.name);
+            return;
+          }
+        });
+
+        // Add to processing queue for recursive sanitization
+        elementsToProcess.push(child);
+      });
+    }
   }
 
   private getButtonStyles(): string {

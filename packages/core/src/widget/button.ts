@@ -90,9 +90,11 @@ export class FloatingButton {
 
     // Set button content (SVG or text)
     if (this.options.customSvg) {
-      btn.innerHTML = this.options.customSvg;
+      // Safely inject custom SVG by parsing and validating it
+      this.setSafeHTMLContent(btn, this.options.customSvg);
     } else if (this.options.icon === 'svg') {
-      btn.innerHTML = DEFAULT_SVG_ICON;
+      // Safely inject default SVG
+      this.setSafeHTMLContent(btn, DEFAULT_SVG_ICON);
     } else {
       btn.textContent = this.options.icon;
     }
@@ -105,6 +107,75 @@ export class FloatingButton {
     this.addHoverEffects(btn);
 
     return btn;
+  }
+
+  /**
+   * Safely inject HTML content by parsing and validating SVG elements
+   * Prevents XSS attacks by only allowing safe SVG elements and attributes
+   */
+  private setSafeHTMLContent(element: HTMLElement, htmlContent: string): void {
+    try {
+      // Create a temporary container to parse the HTML
+      const temp = document.createElement('div');
+      temp.innerHTML = htmlContent;
+
+      // Validate and sanitize SVG elements
+      const svgElements = temp.querySelectorAll(
+        'svg, path, circle, rect, line, polyline, polygon, g, text, tspan, use, defs, symbol, linearGradient, radialGradient, stop'
+      );
+
+      if (temp.firstChild && temp.firstChild.nodeType === 1) {
+        const firstElement = temp.firstChild as Element;
+
+        // Only allow SVG and related elements
+        if (
+          firstElement.tagName.toLowerCase() === 'svg' ||
+          svgElements.length > 0
+        ) {
+          // Remove potentially dangerous attributes and event handlers
+          this.sanitizeSVGElement(temp);
+          // Clear the target element and append sanitized content
+          element.innerHTML = '';
+          while (temp.firstChild) {
+            element.appendChild(temp.firstChild);
+          }
+          return;
+        }
+      }
+
+      // If not valid SVG, fall back to text content to prevent XSS
+      element.textContent = htmlContent;
+    } catch {
+      // On any error, use text content for safety
+      element.textContent = htmlContent;
+    }
+  }
+
+  /**
+   * Recursively sanitize SVG elements by removing dangerous attributes
+   */
+  private sanitizeSVGElement(element: Element | Document): void {
+    const dangerous = [
+      'on',
+      'script',
+      'onerror',
+      'onload',
+      'onclick',
+      'onmouseover',
+    ];
+    const children = Array.from(element.children || []);
+
+    children.forEach((child) => {
+      // Remove dangerous event attributes
+      Array.from(child.attributes || []).forEach((attr) => {
+        if (dangerous.some((d) => attr.name.toLowerCase().startsWith(d))) {
+          child.removeAttribute(attr.name);
+        }
+      });
+
+      // Recursively sanitize children
+      this.sanitizeSVGElement(child);
+    });
   }
 
   private getButtonStyles(): string {
@@ -201,7 +272,7 @@ export class FloatingButton {
   setIcon(icon: string): void {
     this.options.icon = icon;
     if (icon === 'svg') {
-      this.button.innerHTML = DEFAULT_SVG_ICON;
+      this.setSafeHTMLContent(this.button, DEFAULT_SVG_ICON);
     } else {
       this.button.textContent = icon;
     }

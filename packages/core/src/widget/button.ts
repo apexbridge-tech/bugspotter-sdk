@@ -53,6 +53,105 @@ const BUTTON_STYLES = {
   },
 } as const;
 
+// SVG sanitization whitelists (module-level for performance)
+const SAFE_SVG_TAGS = new Set([
+  'svg',
+  'g',
+  'path',
+  'circle',
+  'rect',
+  'line',
+  'polyline',
+  'polygon',
+  'ellipse',
+  'text',
+  'tspan',
+  // SECURITY: 'use' deliberately excluded - requires href/xlink:href attributes which pose XSS risks
+  // and are not in the attribute whitelist, making <use> non-functional anyway
+  'symbol',
+  'defs',
+  'marker',
+  'lineargradient', // lowercase to match toLowerCase() normalization at line 302 (parser preserves camelCase)
+  'radialgradient', // lowercase to match toLowerCase() normalization at line 302 (parser preserves camelCase)
+  'stop',
+  'clippath', // lowercase to match toLowerCase() normalization at line 302 (parser preserves camelCase)
+  'mask',
+  // SECURITY: 'image' deliberately excluded - requires href/xlink:href attributes which pose XSS risks
+  // and are not in the attribute whitelist, making <image> non-functional anyway
+  // SECURITY: foreignObject deliberately excluded - allows embedding arbitrary HTML/XML
+  // and can bypass SVG sanitization (e.g., <foreignObject><body><script>...</script></body></foreignObject>)
+]);
+
+const SAFE_SVG_ATTRIBUTES = new Set([
+  'id',
+  'class',
+  // SECURITY: 'style' deliberately excluded - can enable CSS-based attacks:
+  // - expression() in older browsers
+  // - url() with javascript:/data: URIs
+  // - @import with malicious stylesheets
+  // - CSS data exfiltration
+  // Use specific styling attributes (fill, stroke, opacity, etc.) instead
+  'd',
+  'cx',
+  'cy',
+  'r',
+  'rx',
+  'ry',
+  'x',
+  'y',
+  'x1',
+  'y1',
+  'x2',
+  'y2',
+  'width',
+  'height',
+  'viewbox', // lowercase to match toLowerCase() normalization at line 275 (parser preserves camelCase)
+  'xmlns',
+  'fill',
+  'stroke',
+  'stroke-width',
+  'stroke-linecap',
+  'stroke-linejoin',
+  'opacity',
+  'fill-opacity',
+  'stroke-opacity',
+  'transform',
+  'points',
+  'text-anchor',
+  'font-size',
+  'font-family',
+  'font-weight',
+  'offset',
+  'stop-color',
+  'stop-opacity',
+  'clip-path',
+  'mask', // Used to reference mask definitions: mask="url(#maskId)"
+]);
+
+/**
+ * Check if an attribute value contains dangerous patterns
+ * Uses simple string matching instead of regex for better performance and clarity
+ */
+const isDangerousAttributeValue = (value: string): boolean => {
+  const lowerValue = value.toLowerCase();
+
+  // Dangerous protocol checks
+  if (lowerValue.includes('javascript:')) return true;
+  if (lowerValue.includes('vbscript:')) return true;
+
+  // SECURITY: Block ALL data: URIs by default
+  // data:text/html, data:application/javascript, data:image/svg+xml can all execute scripts
+  // Even data:text/javascript or data URIs with embedded scripts are dangerous
+  if (lowerValue.includes('data:')) return true;
+
+  // CSS-based attack patterns
+  if (lowerValue.includes('expression(')) return true; // IE CSS expressions
+  if (lowerValue.includes('@import')) return true; // CSS imports
+  if (lowerValue.includes('-moz-binding')) return true; // Firefox XBL binding
+
+  return false;
+};
+
 export class FloatingButton {
   private button: HTMLButtonElement;
   private options: Required<Omit<FloatingButtonOptions, 'customSvg'>> & {
@@ -90,9 +189,11 @@ export class FloatingButton {
 
     // Set button content (SVG or text)
     if (this.options.customSvg) {
-      btn.innerHTML = this.options.customSvg;
+      // Safely inject custom SVG by parsing and validating it
+      this.setSafeHTMLContent(btn, this.options.customSvg);
     } else if (this.options.icon === 'svg') {
-      btn.innerHTML = DEFAULT_SVG_ICON;
+      // Safely inject default SVG
+      this.setSafeHTMLContent(btn, DEFAULT_SVG_ICON);
     } else {
       btn.textContent = this.options.icon;
     }
@@ -105,6 +206,114 @@ export class FloatingButton {
     this.addHoverEffects(btn);
 
     return btn;
+  }
+
+  /**
+   * Safely inject HTML content by parsing and validating SVG elements
+   * Prevents XSS attacks by only allowing safe SVG elements and attributes
+   */
+  private setSafeHTMLContent(element: HTMLElement, htmlContent: string): void {
+    try {
+      // SECURITY: Use DOMParser with image/svg+xml MIME type for strict SVG parsing
+      // This prevents HTML-specific parsing quirks from being exploited
+      // eslint-disable-next-line no-undef
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlContent, 'image/svg+xml');
+
+      // Check for parse errors
+      const parserError = doc.querySelector('parsererror');
+      if (parserError) {
+        element.textContent = htmlContent;
+        return;
+      }
+
+      if (
+        doc.documentElement &&
+        doc.documentElement.nodeType === Node.ELEMENT_NODE
+      ) {
+        const rootElement = doc.documentElement as Element;
+
+        // SECURITY: Root element MUST be SVG - prevents wrapper element injection
+        // Reject structures like <div><svg>...</svg></div>
+        if (rootElement.tagName.toLowerCase() === 'svg') {
+          // SECURITY: Only proceed if there's exactly one root element
+          // This prevents attacks like: <svg></svg><script>alert('XSS')</script>
+          if (doc.children.length === 1) {
+            // Remove potentially dangerous attributes and event handlers
+            this.sanitizeSVGElement(rootElement);
+            // Clear the target element and append only the validated SVG element
+            element.innerHTML = '';
+            element.appendChild(rootElement);
+            return;
+          }
+        }
+      }
+
+      // If not valid SVG, fall back to text content to prevent XSS
+      element.textContent = htmlContent;
+    } catch (error) {
+      // On any error, use text content for safety
+      // eslint-disable-next-line no-console
+      console.warn('[BugSpotter] Failed to inject custom SVG content:', error);
+      element.textContent = htmlContent;
+    }
+  }
+
+  /**
+   * Recursively sanitize SVG elements by removing dangerous tags and attributes
+   * Uses whitelists to ensure only safe SVG content is preserved
+   */
+  private sanitizeSVGElement(element: Element): void {
+    // Process all elements in the tree
+    const elementsToProcess = [element];
+    const processedElements = new WeakSet<Element>();
+
+    while (elementsToProcess.length > 0) {
+      const current = elementsToProcess.pop();
+      if (!current || processedElements.has(current)) continue;
+      processedElements.add(current);
+
+      // SECURITY: First, sanitize the current element's attributes (including root)
+      // This prevents attacks like <svg onload="alert('XSS')">
+      Array.from(current.attributes || []).forEach((attr) => {
+        const attrName = attr.name.toLowerCase();
+
+        // SECURITY: Explicitly reject all event handler attributes (on*)
+        // This provides defense-in-depth and prevents accidental whitelisting
+        if (attrName.startsWith('on')) {
+          current.removeAttribute(attr.name);
+          return;
+        }
+
+        // Only keep whitelisted attributes
+        if (!SAFE_SVG_ATTRIBUTES.has(attrName)) {
+          current.removeAttribute(attr.name);
+          return;
+        }
+
+        // Check attribute values for dangerous patterns
+        if (isDangerousAttributeValue(attr.value)) {
+          current.removeAttribute(attr.name);
+          return;
+        }
+      });
+
+      // Then, process children elements
+      const children = Array.from(current.children || []);
+
+      children.forEach((child) => {
+        const tagName = child.tagName.toLowerCase();
+
+        // SECURITY: Remove tags not in whitelist (blocks <script>, <style>, <iframe>, etc.)
+        if (!SAFE_SVG_TAGS.has(tagName)) {
+          child.remove();
+          return;
+        }
+
+        // Add to processing queue for recursive sanitization
+        elementsToProcess.push(child);
+      });
+    }
   }
 
   private getButtonStyles(): string {
@@ -201,7 +410,7 @@ export class FloatingButton {
   setIcon(icon: string): void {
     this.options.icon = icon;
     if (icon === 'svg') {
-      this.button.innerHTML = DEFAULT_SVG_ICON;
+      this.setSafeHTMLContent(this.button, DEFAULT_SVG_ICON);
     } else {
       this.button.textContent = icon;
     }

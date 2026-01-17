@@ -524,10 +524,13 @@ describe('Retry and Offline Queue', () => {
         );
         expect(queue[0].headers).not.toHaveProperty('X-API-Key');
 
-        // Clear mock and set up to capture the request made during queue processing
-        let capturedHeaders: Headers | undefined;
-        fetchMock.mockImplementation((_url, options) => {
-          capturedHeaders = new Headers(options?.headers);
+        // Clear mock and set up to capture all requests
+        const capturedRequests: Array<{ url: string; headers: Headers }> = [];
+        fetchMock.mockImplementation((url, options) => {
+          capturedRequests.push({
+            url: url as string,
+            headers: new Headers(options?.headers),
+          });
           return Promise.resolve({
             ok: true,
             status: 200,
@@ -549,8 +552,12 @@ describe('Retry and Offline Queue', () => {
         });
 
         // Verify auth header was regenerated when processing queued request
-        expect(capturedHeaders).toBeDefined();
-        expect(capturedHeaders?.get('X-API-Key')).toBe(TEST_AUTH.apiKey);
+        // Find the queued request by URL
+        const queuedRequest = capturedRequests.find((req) =>
+          req.url.includes('/bugs/auth-test')
+        );
+        expect(queuedRequest).toBeDefined();
+        expect(queuedRequest?.headers.get('X-API-Key')).toBe(TEST_AUTH.apiKey);
 
         // Queue should be empty (successfully processed)
         const storedAfter = localStorage.getItem('bugspotter_offline_queue');

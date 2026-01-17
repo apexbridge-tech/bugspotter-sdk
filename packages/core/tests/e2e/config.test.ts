@@ -5,7 +5,10 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { BugSpotter } from '../../src/index';
-import { CONFIG_PRESETS, MOCK_BACKEND_RESPONSES } from '../fixtures/e2e-fixtures';
+import {
+  CONFIG_PRESETS,
+  MOCK_BACKEND_RESPONSES,
+} from '../fixtures/e2e-fixtures';
 import { createFetchMock } from '../utils/fetch-mock-helpers';
 
 describe('E2E Configuration Tests', () => {
@@ -74,7 +77,10 @@ describe('E2E Configuration Tests', () => {
 
       await bugspotter.submit(payload);
 
-      expect(fetchMock).toHaveBeenCalledWith('https://api.bugspotter.io/bugs', expect.any(Object));
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://api.bugspotter.io/bugs',
+        expect.any(Object)
+      );
     });
 
     it('should work with self-hosted endpoint', async () => {
@@ -110,7 +116,10 @@ describe('E2E Configuration Tests', () => {
 
       await bugspotter.submit(payload);
 
-      expect(fetchMock).toHaveBeenCalledWith('http://localhost:4000/api/bugs', expect.any(Object));
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://localhost:4000/api/bugs',
+        expect.any(Object)
+      );
     });
 
     it('should work with custom domain', async () => {

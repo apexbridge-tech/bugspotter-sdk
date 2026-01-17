@@ -3,6 +3,7 @@
  */
 
 import { getLogger, type Logger } from '../utils/logger';
+import { isSecureEndpoint } from '../utils/url-helpers';
 
 // ============================================================================
 // STORAGE ADAPTER
@@ -185,6 +186,7 @@ export class OfflineQueue {
     this.logger.log(`Processing offline queue (${queue.length} requests)`);
 
     const successfulIds: string[] = [];
+    const rejectedIds: string[] = [];
     const failedRequests: QueuedRequest[] = [];
 
     for (const request of queue) {
@@ -206,6 +208,17 @@ export class OfflineQueue {
       }
 
       try {
+        // SECURITY: Verify endpoint is secure (HTTPS) before sending
+        // This prevents downgrade attacks and ensures data confidentiality
+        if (!isSecureEndpoint(request.endpoint)) {
+          this.logger.error(
+            `Refusing to send offline request to insecure endpoint: ${request.endpoint}`
+          );
+          rejectedIds.push(request.id);
+          // Don't retry insecure requests
+          continue;
+        }
+
         // Merge auth headers with stored headers (auth headers take precedence)
         const headers = { ...request.headers, ...authHeaders };
 
@@ -248,9 +261,13 @@ export class OfflineQueue {
     // Update queue (remove successful and expired, keep failed)
     this.saveQueue(failedRequests);
 
-    if (successfulIds.length > 0 || failedRequests.length < queue.length) {
+    if (
+      successfulIds.length > 0 ||
+      rejectedIds.length > 0 ||
+      failedRequests.length < queue.length
+    ) {
       this.logger.log(
-        `Offline queue processed: ${successfulIds.length} successful, ${failedRequests.length} remaining`
+        `Offline queue processed: ${successfulIds.length} successful, ${rejectedIds.length} rejected (insecure), ${failedRequests.length} remaining`
       );
     }
   }

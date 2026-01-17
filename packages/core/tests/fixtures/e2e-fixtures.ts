@@ -125,7 +125,8 @@ export const E2E_NETWORK_REQUESTS = [
     duration: 150,
     timestamp: Date.now(),
     headers: {
-      Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.abc',
+      Authorization:
+        'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.abc',
       'X-API-Key': 'test_key_fake_1234567890abcdef',
     },
   },
@@ -159,7 +160,8 @@ export const E2E_NETWORK_REQUESTS = [
     status: 500,
     duration: 50,
     timestamp: Date.now() + 3000,
-    error: 'Internal Server Error: Database connection failed for user_id=12345 at IP 10.0.0.42',
+    error:
+      'Internal Server Error: Database connection failed for user_id=12345 at IP 10.0.0.42',
   },
 ];
 
@@ -325,11 +327,13 @@ export const CONFIG_PRESETS = {
       apiKey: 'test-api-key-12345',
       projectId: 'proj-12345678-1234-1234-1234-123456789abc',
     },
-    endpoint: 'http://localhost:4000/api/bugs',
+    endpoint: 'https://localhost:4000/api/bugs',
     showWidget: false,
     sanitize: {
       enabled: true,
-      patterns: ['email', 'phone', 'creditcard'] as Array<'email' | 'phone' | 'creditcard'>,
+      patterns: ['email', 'phone', 'creditcard'] as Array<
+        'email' | 'phone' | 'creditcard'
+      >,
     },
   },
   noAuth: {

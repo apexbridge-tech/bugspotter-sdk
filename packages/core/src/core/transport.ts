@@ -5,6 +5,7 @@
 
 import { getLogger, type Logger } from '../utils/logger';
 import { OfflineQueue, type OfflineConfig } from './offline-queue';
+import { isSecureEndpoint, InsecureEndpointError } from '../utils/url-helpers';
 
 // ============================================================================
 // CONSTANTS
@@ -169,8 +170,8 @@ class RetryHandler {
    */
   private calculateDelay(attempt: number, response?: Response): number {
     // Check for Retry-After header
-    if (response?.headers?.has?.('Retry-After')) {
-      const retryAfter = response.headers.get('Retry-After')!;
+    const retryAfter = response?.headers?.get?.('Retry-After');
+    if (retryAfter) {
       const retryAfterSeconds = parseInt(retryAfter, 10);
 
       if (!isNaN(retryAfterSeconds)) {
@@ -272,6 +273,11 @@ export async function submitWithAuth(
   const retryConfig = { ...DEFAULT_RETRY_CONFIG, ...options.retry };
   const offlineConfig = { ...DEFAULT_OFFLINE_CONFIG, ...options.offline };
 
+  // Security: Enforce HTTPS
+  if (!isSecureEndpoint(endpoint)) {
+    throw new InsecureEndpointError(endpoint);
+  }
+
   // Process offline queue on each request (run in background without awaiting)
   processQueueInBackground(offlineConfig, retryConfig, options.auth, logger);
 
@@ -315,6 +321,10 @@ async function makeRequest(
   contentHeaders: Record<string, string>,
   auth: AuthConfig
 ): Promise<Response> {
+  if (!isSecureEndpoint(endpoint)) {
+    throw new InsecureEndpointError(endpoint);
+  }
+
   const authHeaders = generateAuthHeaders(auth);
   const headers = { ...contentHeaders, ...authHeaders };
 

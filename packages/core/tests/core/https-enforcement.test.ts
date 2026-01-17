@@ -11,6 +11,7 @@ const TEST_AUTH: AuthConfig = {
 };
 
 const INSECURE_ENDPOINT = 'http://api.example.com/bugs';
+const LOCALHOST_ENDPOINT = 'http://localhost:3000/bugs';
 const SECURE_ENDPOINT = 'https://api.example.com/bugs';
 
 describe('HTTPS Enforcement', () => {
@@ -28,6 +29,15 @@ describe('HTTPS Enforcement', () => {
       expect(() =>
         validateAuthConfig({
           endpoint: SECURE_ENDPOINT,
+          auth: TEST_AUTH,
+        })
+      ).not.toThrow();
+    });
+
+    it('should not throw for localhost http endpoint (dev exception)', () => {
+      expect(() =>
+        validateAuthConfig({
+          endpoint: LOCALHOST_ENDPOINT,
           auth: TEST_AUTH,
         })
       ).not.toThrow();

@@ -316,6 +316,59 @@ describe('OfflineQueue', () => {
       // Verify queue was successfully processed and is now empty
       expect(queue.size()).toBe(0);
     });
+
+    it('should reject and remove insecure endpoints', async () => {
+      const mockLogger = {
+        log: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+      } as any;
+
+      const queue = new OfflineQueue(config, mockLogger, storage);
+
+      // Enqueue insecure endpoint
+      queue.enqueue(
+        'http://insecure-api.com/test',
+        JSON.stringify({ data: 'test' }),
+        { 'Content-Type': 'application/json' }
+      );
+
+      // Enqueue secure endpoint
+      queue.enqueue(
+        'https://secure-api.com/test',
+        JSON.stringify({ data: 'test' }),
+        { 'Content-Type': 'application/json' }
+      );
+
+      // Mock fetch
+      global.fetch = vi.fn((url) => {
+        if (url.toString().includes('https')) {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            headers: new Headers(),
+          } as Response);
+        }
+        return Promise.reject(new Error('Should not be called'));
+      });
+
+      await queue.processWithAuth([], {});
+
+      // Queue should be empty (secure processed, insecure rejected)
+      expect(queue.size()).toBe(0);
+
+      // Verify rejection logging
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'Refusing to send offline request to insecure endpoint'
+        )
+      );
+
+      // Verify summary log mentions rejected requests
+      expect(mockLogger.log).toHaveBeenCalledWith(
+        expect.stringContaining('1 rejected (insecure)')
+      );
+    });
   });
 
   describe('Backward Compatibility', () => {

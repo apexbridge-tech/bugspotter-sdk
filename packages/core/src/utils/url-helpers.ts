@@ -90,8 +90,24 @@ export function isSecureEndpoint(endpoint: string): boolean {
   if (!endpoint) return false;
   try {
     const url = new URL(endpoint.trim());
-    // URL.protocol includes the colon (e.g., 'https:')
-    return url.protocol === 'https:';
+    // STRICT SECURITY:
+    // 1. Production must use HTTPS
+    // 2. Development allowed on localhost/127.0.0.1 via HTTP
+
+    // Check for HTTPS
+    if (url.protocol === 'https:') {
+      return true;
+    }
+
+    // Check for localhost exception
+    if (
+      url.protocol === 'http:' &&
+      (url.hostname === 'localhost' || url.hostname === '127.0.0.1')
+    ) {
+      return true;
+    }
+
+    return false;
   } catch {
     // If it's not a valid URL, it's definitely not a secure endpoint
     return false;

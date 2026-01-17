@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { Buffer } from 'node:buffer';
 import { BugSpotter } from '../src/index';
 import { TEST_SCREENSHOT_DATA_URL } from './fixtures/test-images';
 
@@ -27,7 +28,6 @@ describe('API Submission', () => {
       // Handle data URLs (for screenshot/replay blob conversion)
       if (typeof url === 'string' && url.startsWith('data:')) {
         const base64Data = url.split(',')[1];
-        // eslint-disable-next-line no-undef
         const binaryString = Buffer.from(base64Data, 'base64').toString(
           'binary'
         );

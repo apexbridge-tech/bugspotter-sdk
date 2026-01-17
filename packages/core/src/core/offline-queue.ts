@@ -186,6 +186,7 @@ export class OfflineQueue {
     this.logger.log(`Processing offline queue (${queue.length} requests)`);
 
     const successfulIds: string[] = [];
+    const rejectedIds: string[] = [];
     const failedRequests: QueuedRequest[] = [];
 
     for (const request of queue) {
@@ -213,6 +214,7 @@ export class OfflineQueue {
           this.logger.error(
             `Refusing to send offline request to insecure endpoint: ${request.endpoint}`
           );
+          rejectedIds.push(request.id);
           // Don't retry insecure requests
           continue;
         }
@@ -259,9 +261,13 @@ export class OfflineQueue {
     // Update queue (remove successful and expired, keep failed)
     this.saveQueue(failedRequests);
 
-    if (successfulIds.length > 0 || failedRequests.length < queue.length) {
+    if (
+      successfulIds.length > 0 ||
+      rejectedIds.length > 0 ||
+      failedRequests.length < queue.length
+    ) {
       this.logger.log(
-        `Offline queue processed: ${successfulIds.length} successful, ${failedRequests.length} remaining`
+        `Offline queue processed: ${successfulIds.length} successful, ${rejectedIds.length} rejected (insecure), ${failedRequests.length} remaining`
       );
     }
   }

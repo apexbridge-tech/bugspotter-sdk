@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { Buffer } from 'node:buffer';
 import { BugSpotter } from '../../src/index';
 import { TEST_SCREENSHOT_DATA_URL } from '../fixtures/test-images';
 
@@ -71,12 +72,8 @@ describe('SDK Presigned URL Upload Flow', () => {
       // Handle data URLs (for screenshot conversion)
       if (typeof url === 'string' && url.startsWith('data:')) {
         const base64Data = url.split(',')[1];
-        const binaryString = atob(base64Data);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
-        const blob = new Blob([bytes], { type: 'image/png' });
+        const buffer = Buffer.from(base64Data, 'base64');
+        const blob = new Blob([buffer], { type: 'image/png' });
         return Promise.resolve({
           ok: true,
           status: 200,
@@ -103,7 +100,7 @@ describe('SDK Presigned URL Upload Flow', () => {
         upload: {
           addEventListener: vi.fn(),
         },
-        addEventListener: vi.fn((event: string, callback: Function) => {
+        addEventListener: vi.fn((event: string, callback: () => void) => {
           // Auto-trigger load event for successful uploads
           if (event === 'load') {
             setTimeout(() => {
@@ -360,7 +357,8 @@ describe('SDK Presigned URL Upload Flow', () => {
       .mockResolvedValueOnce({
         ok: true,
         status: 201,
-        json: async () => mockCreateBugReportWithPresignedUrls({ replay: true }),
+        json: async () =>
+          mockCreateBugReportWithPresignedUrls({ replay: true }),
       })
       .mockResolvedValueOnce({
         ok: true,
@@ -740,7 +738,8 @@ describe('SDK Presigned URL Upload Flow', () => {
       fetchMock.mockResolvedValueOnce({
         ok: true,
         status: 201,
-        json: async () => mockCreateBugReportWithPresignedUrls({ screenshot: true }),
+        json: async () =>
+          mockCreateBugReportWithPresignedUrls({ screenshot: true }),
       });
 
       // Override global fetch to simulate S3 upload failure
@@ -749,12 +748,8 @@ describe('SDK Presigned URL Upload Flow', () => {
         // Handle data URLs (for screenshot conversion)
         if (typeof url === 'string' && url.startsWith('data:')) {
           const base64Data = url.split(',')[1];
-          const binaryString = atob(base64Data);
-          const bytes = new Uint8Array(binaryString.length);
-          for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
-          }
-          const blob = new Blob([bytes], { type: 'image/png' });
+          const buffer = Buffer.from(base64Data, 'base64');
+          const blob = new Blob([buffer], { type: 'image/png' });
           return Promise.resolve({
             ok: true,
             status: 200,
@@ -762,7 +757,10 @@ describe('SDK Presigned URL Upload Flow', () => {
           });
         }
         // S3 upload fails
-        if (typeof url === 'string' && url.includes('s3.example.com/presigned')) {
+        if (
+          typeof url === 'string' &&
+          url.includes('s3.example.com/presigned')
+        ) {
           return Promise.resolve({
             ok: false,
             status: 500,

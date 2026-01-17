@@ -84,6 +84,10 @@ export default [
       globals: {
         global: 'readonly',
         Headers: 'readonly',
+        process: 'readonly',
+        ReadableStream: 'readonly',
+        WritableStream: 'readonly',
+        TransformStream: 'readonly',
       },
     },
     rules: {

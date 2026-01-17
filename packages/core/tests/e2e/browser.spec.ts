@@ -10,11 +10,25 @@ import path from 'path';
 import type { eventWithTime } from '@rrweb/types';
 
 // Use inline types instead of importing from @bugspotter/types to avoid circular dependency
-type ConsoleLog = { level: string; message: string; timestamp: number; stack?: string };
-type NetworkRequest = { url: string; method: string; status?: number; timestamp: number };
+type ConsoleLog = {
+  level: string;
+  message: string;
+  timestamp: number;
+  stack?: string;
+};
+type NetworkRequest = {
+  url: string;
+  method: string;
+  status?: number;
+  timestamp: number;
+};
 
-// eslint-disable-next-line no-undef
-const LARGE_DOM_FIXTURE = path.join(__dirname, '../fixtures/large-dom-e2e.html');
+// Use process.cwd() to resolve paths reliably in both ESM and CJS environments
+// Assumes test is run from package root (packages/core)
+const LARGE_DOM_FIXTURE = path.join(
+  process.cwd(),
+  'tests/fixtures/large-dom-e2e.html'
+);
 
 /**
  * Helper to inject BugSpotter SDK into the page
@@ -23,10 +37,8 @@ async function injectSDK(page: Page, config: Record<string, unknown> = {}) {
   // In a real scenario, you'd load the built SDK file
   // For now, we'll inject minimal SDK setup
   try {
-    // eslint-disable-next-line no-undef
     await page.addScriptTag({
-      // eslint-disable-next-line no-undef
-      path: path.join(__dirname, '../../dist/bugspotter.min.js'),
+      path: path.join(process.cwd(), 'dist/bugspotter.min.js'),
     });
   } catch {
     // If dist doesn't exist, this is a critical error
@@ -37,13 +49,12 @@ async function injectSDK(page: Page, config: Record<string, unknown> = {}) {
   }
 
   const isInitialized = await page.evaluate(async (cfg) => {
-    // @ts-expect-error - BugSpotter is injected
-    if (typeof BugSpotter === 'undefined') {
+    if (typeof (window as any).BugSpotter === 'undefined') {
       return false;
     }
-    // @ts-expect-error - Playwright types not fully compatible with test setup
-    // eslint-disable-next-line no-undef
-    window.bugspotterInstance = await BugSpotter.init(cfg);
+    (window as any).bugspotterInstance = await (window as any).BugSpotter.init(
+      cfg
+    );
     return true;
   }, config);
 
@@ -185,10 +196,15 @@ test.describe('BugSpotter SDK - Real Browser Tests', () => {
 
     // Make a fetch request
     await page.evaluate(async () => {
-      await fetch('https://jsonplaceholder.typicode.com/todos/1').catch((error) => {
-        // Expected: Network request may fail in test environment, but should still be captured
-        console.log('Network request failed (expected in test):', error.message);
-      });
+      await fetch('https://jsonplaceholder.typicode.com/todos/1').catch(
+        (error) => {
+          // Expected: Network request may fail in test environment, but should still be captured
+          console.log(
+            'Network request failed (expected in test):',
+            error.message
+          );
+        }
+      );
     });
 
     // Wait for network request to be captured by the SDK (poll via capture())
@@ -393,7 +409,9 @@ test.describe('BugSpotter SDK - Real Browser Tests', () => {
     const events = report.replay;
 
     // Should have at least one full snapshot (type 2)
-    const fullSnapshots = events.filter((event: eventWithTime) => event.type === 2);
+    const fullSnapshots = events.filter(
+      (event: eventWithTime) => event.type === 2
+    );
     expect(fullSnapshots.length).toBeGreaterThan(0);
 
     // Should have incremental snapshots (type 3 - mutations)
@@ -413,9 +431,10 @@ test.describe('BugSpotter SDK - Real Browser Tests', () => {
       const errors: string[] = [];
 
       // Import rrweb replayer - must be available for test to pass
-      // @ts-expect-error - rrweb types
-      if (typeof rrweb === 'undefined') {
-        throw new Error('rrweb.Replayer not available - cannot verify replay functionality');
+      if (typeof (window as any).rrweb === 'undefined') {
+        throw new Error(
+          'rrweb.Replayer not available - cannot verify replay functionality'
+        );
       }
 
       try {
@@ -435,9 +454,7 @@ test.describe('BugSpotter SDK - Real Browser Tests', () => {
           originalError.apply(console, args);
         };
 
-        // @ts-expect-error - rrweb types
-        // eslint-disable-next-line no-undef
-        const replayer = new rrweb.Replayer(replayEvents, {
+        const replayer = new (window as any).rrweb.Replayer(replayEvents, {
           root: replayContainer,
           skipInactive: true,
           speed: 10, // Fast replay for testing
@@ -582,7 +599,9 @@ test.describe('BugSpotter SDK - Real Browser Tests', () => {
   });
 
   test('should measure SDK performance in real browser', async ({ page }) => {
-    await page.setContent('<html><body><h1>Performance Test</h1></body></html>');
+    await page.setContent(
+      '<html><body><h1>Performance Test</h1></body></html>'
+    );
 
     // Inject SDK and initialize (measures full init time including SDK load)
     const initStart = Date.now();
@@ -643,7 +662,9 @@ test.describe('BugSpotter SDK - Real Browser Tests', () => {
 
 test.describe('Multi-Browser Compatibility', () => {
   test('should work in all browsers', async ({ page, browserName }) => {
-    await page.setContent('<html><body><h1>Browser Compatibility Test</h1></body></html>');
+    await page.setContent(
+      '<html><body><h1>Browser Compatibility Test</h1></body></html>'
+    );
     await injectSDK(page, { showWidget: false });
 
     const report = await page.evaluate(async () => {
@@ -657,7 +678,7 @@ test.describe('Multi-Browser Compatibility', () => {
 
     expect(report).toBeTruthy();
     expect(report.metadata.browser).toBeTruthy();
-    
+
     // Verify browser detection matches the actual browser
     if (browserName === 'chromium') {
       expect(report.metadata.browser).toContain('Chrome');

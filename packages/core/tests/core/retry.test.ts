@@ -526,7 +526,7 @@ describe('Retry and Offline Queue', () => {
 
         // Clear mock and set up to capture the request made during queue processing
         let capturedHeaders: Headers | undefined;
-        fetchMock.mockImplementation((url, options) => {
+        fetchMock.mockImplementation((_url, options) => {
           capturedHeaders = new Headers(options?.headers);
           return Promise.resolve({
             ok: true,

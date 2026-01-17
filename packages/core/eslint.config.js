@@ -89,7 +89,6 @@ export default [
     rules: {
       'no-console': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
-      'no-undef': 'off',
     },
   },
   prettierConfig,

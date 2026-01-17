@@ -86,6 +86,19 @@ const DEFAULT_OFFLINE_CONFIG: Required<OfflineConfig> = {
   maxQueueSize: 10,
 };
 
+/**
+ * Set of sensitive header names that should be stripped before localStorage storage
+ * SECURITY: Using Set for O(1) lookup performance
+ */
+const SENSITIVE_HEADERS = new Set([
+  'authorization',
+  'x-api-key',
+  'x-auth-token',
+  'x-access-token',
+  'cookie',
+  'set-cookie',
+]);
+
 // ============================================================================
 // OFFLINE QUEUE CLASS
 // ============================================================================
@@ -271,18 +284,9 @@ export class OfflineQueue {
   private stripSensitiveHeaders(
     headers: Record<string, string>
   ): Record<string, string> {
-    const sensitiveHeaders = [
-      'authorization',
-      'x-api-key',
-      'x-auth-token',
-      'x-access-token',
-      'cookie',
-      'set-cookie',
-    ];
-
     return Object.fromEntries(
       Object.entries(headers).filter(
-        ([key]) => !sensitiveHeaders.includes(key.toLowerCase())
+        ([key]) => !SENSITIVE_HEADERS.has(key.toLowerCase())
       )
     );
   }

@@ -248,7 +248,7 @@ describe('OfflineQueue', () => {
 
       // Mock fetch to capture headers
       let capturedHeaders: Record<string, string> = {};
-      global.fetch = vi.fn((url, options) => {
+      global.fetch = vi.fn((_url, options) => {
         if (options?.headers) {
           capturedHeaders = options.headers as Record<string, string>;
         }

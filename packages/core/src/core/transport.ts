@@ -226,7 +226,7 @@ async function handleOfflineFailure(
   endpoint: string,
   body: BodyInit,
   contentHeaders: Record<string, string>,
-  auth: AuthConfig,
+  _auth: AuthConfig,
   offlineConfig: Required<OfflineConfig>,
   logger: Logger
 ): Promise<void> {

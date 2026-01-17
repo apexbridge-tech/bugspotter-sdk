@@ -53,6 +53,80 @@ const BUTTON_STYLES = {
   },
 } as const;
 
+// SVG sanitization whitelists (module-level for performance)
+const SAFE_SVG_TAGS = new Set([
+  'svg',
+  'g',
+  'path',
+  'circle',
+  'rect',
+  'line',
+  'polyline',
+  'polygon',
+  'ellipse',
+  'text',
+  'tspan',
+  'use',
+  'symbol',
+  'defs',
+  'marker',
+  'linearGradient',
+  'radialGradient',
+  'stop',
+  'clipPath',
+  'mask',
+  'image',
+  'foreignObject',
+]);
+
+const SAFE_SVG_ATTRIBUTES = new Set([
+  'id',
+  'class',
+  'style',
+  'd',
+  'cx',
+  'cy',
+  'r',
+  'rx',
+  'ry',
+  'x',
+  'y',
+  'x1',
+  'y1',
+  'x2',
+  'y2',
+  'width',
+  'height',
+  'viewBox',
+  'xmlns',
+  'fill',
+  'stroke',
+  'stroke-width',
+  'stroke-linecap',
+  'stroke-linejoin',
+  'opacity',
+  'fill-opacity',
+  'stroke-opacity',
+  'transform',
+  'points',
+  'text-anchor',
+  'font-size',
+  'font-family',
+  'font-weight',
+  'offset',
+  'stop-color',
+  'stop-opacity',
+  'clip-path',
+  'mask-id',
+]);
+
+const DANGEROUS_ATTRIBUTE_PATTERNS = [
+  /javascript:/i,
+  /data:text\/html/i,
+  /data:.*script/i,
+  /vbscript:/i,
+];
+
 export class FloatingButton {
   private button: HTMLButtonElement;
   private options: Required<Omit<FloatingButtonOptions, 'customSvg'>> & {
@@ -119,7 +193,7 @@ export class FloatingButton {
       const temp = document.createElement('div');
       temp.innerHTML = htmlContent;
 
-      if (temp.firstChild && temp.firstChild.nodeType === 1) {
+      if (temp.firstChild && temp.firstChild.nodeType === Node.ELEMENT_NODE) {
         const firstElement = temp.firstChild as Element;
 
         // SECURITY: Root element MUST be SVG - prevents wrapper element injection
@@ -140,8 +214,10 @@ export class FloatingButton {
 
       // If not valid SVG, fall back to text content to prevent XSS
       element.textContent = htmlContent;
-    } catch {
+    } catch (error) {
       // On any error, use text content for safety
+      // eslint-disable-next-line no-console
+      console.warn('[BugSpotter] Failed to inject custom SVG content:', error);
       element.textContent = htmlContent;
     }
   }
@@ -151,84 +227,10 @@ export class FloatingButton {
    * Uses whitelists to ensure only safe SVG content is preserved
    */
   private sanitizeSVGElement(element: Element): void {
-    // Whitelist of safe SVG tags
-    const safeSvgTags = new Set([
-      'svg',
-      'g',
-      'path',
-      'circle',
-      'rect',
-      'line',
-      'polyline',
-      'polygon',
-      'ellipse',
-      'text',
-      'tspan',
-      'use',
-      'symbol',
-      'defs',
-      'marker',
-      'linearGradient',
-      'radialGradient',
-      'stop',
-      'clipPath',
-      'mask',
-      'image',
-      'foreignObject',
-    ]);
-
-    // Whitelist of safe attributes for SVG elements
-    const safeAttributes = new Set([
-      'id',
-      'class',
-      'style',
-      'd',
-      'cx',
-      'cy',
-      'r',
-      'rx',
-      'ry',
-      'x',
-      'y',
-      'x1',
-      'y1',
-      'x2',
-      'y2',
-      'width',
-      'height',
-      'viewBox',
-      'xmlns',
-      'fill',
-      'stroke',
-      'stroke-width',
-      'stroke-linecap',
-      'stroke-linejoin',
-      'opacity',
-      'fill-opacity',
-      'stroke-opacity',
-      'transform',
-      'points',
-      'text-anchor',
-      'font-size',
-      'font-family',
-      'font-weight',
-      'offset',
-      'stop-color',
-      'stop-opacity',
-      'clip-path',
-      'mask-id',
-    ]);
-
-    // Dangerous attribute value patterns (javascript: URLs, etc.)
-    const dangerousPatterns = [
-      /javascript:/i,
-      /data:text\/html/i,
-      /data:.*script/i,
-      /vbscript:/i,
-    ];
-
     const isDangerousValue = (value: string): boolean => {
-      return dangerousPatterns.some((pattern) => pattern.test(value));
+      return DANGEROUS_ATTRIBUTE_PATTERNS.some((pattern) =>
+        pattern.test(value)
+      );
     };
 
     // Process all elements in the tree
@@ -240,33 +242,35 @@ export class FloatingButton {
       if (!current || processedElements.has(current)) continue;
       processedElements.add(current);
 
+      // SECURITY: First, sanitize the current element's attributes (including root)
+      // This prevents attacks like <svg onload="alert('XSS')">
+      Array.from(current.attributes || []).forEach((attr) => {
+        const attrName = attr.name.toLowerCase();
+
+        // Only keep whitelisted attributes
+        if (!SAFE_SVG_ATTRIBUTES.has(attrName)) {
+          current.removeAttribute(attr.name);
+          return;
+        }
+
+        // Check attribute values for dangerous patterns
+        if (isDangerousValue(attr.value)) {
+          current.removeAttribute(attr.name);
+          return;
+        }
+      });
+
+      // Then, process children elements
       const children = Array.from(current.children || []);
 
       children.forEach((child) => {
         const tagName = child.tagName.toLowerCase();
 
         // SECURITY: Remove tags not in whitelist (blocks <script>, <style>, <iframe>, etc.)
-        if (!safeSvgTags.has(tagName)) {
+        if (!SAFE_SVG_TAGS.has(tagName)) {
           child.remove();
           return;
         }
-
-        // Remove dangerous attributes and those with unsafe values
-        Array.from(child.attributes || []).forEach((attr) => {
-          const attrName = attr.name.toLowerCase();
-
-          // Only keep whitelisted attributes
-          if (!safeAttributes.has(attrName)) {
-            child.removeAttribute(attr.name);
-            return;
-          }
-
-          // Check attribute values for dangerous patterns
-          if (isDangerousValue(attr.value)) {
-            child.removeAttribute(attr.name);
-            return;
-          }
-        });
 
         // Add to processing queue for recursive sanitization
         elementsToProcess.push(child);

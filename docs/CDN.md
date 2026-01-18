@@ -30,7 +30,7 @@ Add the SDK to your HTML file:
 **Example:**
 
 ```html
-<script src="https://cdn.bugspotter.io/sdk/bugspotter-0.1.0.min.js"></script>
+<script src="https://cdn.bugspotter.io/sdk/bugspotter-1.0.0.min.js"></script>
 ```
 
 ### Development (Latest)
@@ -49,8 +49,8 @@ For enhanced security, use SRI hashes to verify file integrity:
 
 ```html
 <script
-  src="https://cdn.bugspotter.io/sdk/bugspotter-0.1.0.min.js"
-  integrity="sha384-..."
+  src="https://cdn.bugspotter.io/sdk/bugspotter-1.0.0.min.js"
+  integrity="sha384-WmzRwRsJDYQTHnPU0mTuz+VqnCFn70GlSiGh6lsogKahPBEB48pTzfEEB71+uA7I"
   crossorigin="anonymous"
 ></script>
 ```
@@ -58,7 +58,7 @@ For enhanced security, use SRI hashes to verify file integrity:
 To generate SRI hash for a specific version:
 
 ```bash
-curl https://cdn.bugspotter.io/sdk/bugspotter-0.1.0.min.js | openssl dgst -sha384 -binary | openssl base64 -A
+curl https://cdn.bugspotter.io/sdk/bugspotter-1.0.0.min.js | openssl dgst -sha384 -binary | openssl base64 -A
 ```
 
 ## 📝 Complete Example
@@ -75,7 +75,7 @@ curl https://cdn.bugspotter.io/sdk/bugspotter-0.1.0.min.js | openssl dgst -sha38
     <button id="trigger-error">Trigger Test Error</button>
 
     <!-- Load BugSpotter SDK -->
-    <script src="https://cdn.bugspotter.io/sdk/bugspotter-0.1.0.min.js"></script>
+    <script src="https://cdn.bugspotter.io/sdk/bugspotter-1.0.0.min.js"></script>
 
     <script>
       // Initialize BugSpotter

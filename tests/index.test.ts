@@ -1,8 +1,27 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { BugSpotter } from '../src/index';
+import BugSpotterDefault from '../src/index';
 import type { BugSpotterConfig } from '../src/index';
 
 describe('BugSpotter', () => {
+  describe('Module Exports', () => {
+    it('should export BugSpotter as named export', () => {
+      expect(BugSpotter).toBeDefined();
+      expect(typeof BugSpotter.init).toBe('function');
+      expect(typeof BugSpotter.getInstance).toBe('function');
+    });
+
+    it('should export BugSpotter as default export', () => {
+      expect(BugSpotterDefault).toBeDefined();
+      expect(typeof BugSpotterDefault.init).toBe('function');
+      expect(typeof BugSpotterDefault.getInstance).toBe('function');
+    });
+
+    it('should have default export reference the same class as named export', () => {
+      expect(BugSpotterDefault).toBe(BugSpotter);
+    });
+  });
+
   beforeEach(() => {
     // Clear singleton instance before each test
     const instance = BugSpotter.getInstance();
@@ -496,12 +515,16 @@ describe('BugSpotter', () => {
         },
       });
 
-      const buttonBefore = document.querySelector('button[style*="position: fixed"]');
+      const buttonBefore = document.querySelector(
+        'button[style*="position: fixed"]'
+      );
       expect(buttonBefore).toBeTruthy();
 
       bugspotter.destroy();
 
-      const buttonAfter = document.querySelector('button[style*="position: fixed"]');
+      const buttonAfter = document.querySelector(
+        'button[style*="position: fixed"]'
+      );
       expect(buttonAfter).toBeNull();
     });
 
@@ -589,8 +612,18 @@ describe('BugSpotter', () => {
       // Mock bug report with error logs without stacks
       const mockReport = {
         console: [
-          { level: 'error', message: 'Simple error without stack', timestamp: Date.now(), stack: undefined },
-          { level: 'error', message: 'Another error', timestamp: Date.now(), stack: undefined },
+          {
+            level: 'error',
+            message: 'Simple error without stack',
+            timestamp: Date.now(),
+            stack: undefined,
+          },
+          {
+            level: 'error',
+            message: 'Another error',
+            timestamp: Date.now(),
+            stack: undefined,
+          },
         ],
         network: [],
         metadata: {} as any,
@@ -615,8 +648,18 @@ describe('BugSpotter', () => {
       // Mock bug report with only non-error logs
       const mockReport = {
         console: [
-          { level: 'log', message: 'Info log', timestamp: Date.now(), stack: undefined },
-          { level: 'warn', message: 'Warning log', timestamp: Date.now(), stack: undefined },
+          {
+            level: 'log',
+            message: 'Info log',
+            timestamp: Date.now(),
+            stack: undefined,
+          },
+          {
+            level: 'warn',
+            message: 'Warning log',
+            timestamp: Date.now(),
+            stack: undefined,
+          },
         ],
         network: [],
         metadata: {} as any,
@@ -635,11 +678,36 @@ describe('BugSpotter', () => {
       // Mock bug report with mixed log levels
       const mockReport = {
         console: [
-          { level: 'log', message: 'Regular log', timestamp: Date.now(), stack: undefined },
-          { level: 'warn', message: 'Warning log', timestamp: Date.now(), stack: undefined },
-          { level: 'error', message: 'Error log 1', stack: 'Stack 1', timestamp: Date.now() },
-          { level: 'info', message: 'Info log', timestamp: Date.now(), stack: undefined },
-          { level: 'error', message: 'Error log 2', stack: 'Stack 2', timestamp: Date.now() },
+          {
+            level: 'log',
+            message: 'Regular log',
+            timestamp: Date.now(),
+            stack: undefined,
+          },
+          {
+            level: 'warn',
+            message: 'Warning log',
+            timestamp: Date.now(),
+            stack: undefined,
+          },
+          {
+            level: 'error',
+            message: 'Error log 1',
+            stack: 'Stack 1',
+            timestamp: Date.now(),
+          },
+          {
+            level: 'info',
+            message: 'Info log',
+            timestamp: Date.now(),
+            stack: undefined,
+          },
+          {
+            level: 'error',
+            message: 'Error log 2',
+            stack: 'Stack 2',
+            timestamp: Date.now(),
+          },
         ],
         network: [],
         metadata: {} as any,
@@ -666,7 +734,8 @@ describe('BugSpotter', () => {
           {
             level: 'error',
             message: 'Error with stack',
-            stack: 'Error: Test error with detailed stack\n    at function1\n    at function2',
+            stack:
+              'Error: Test error with detailed stack\n    at function1\n    at function2',
             timestamp: Date.now(),
           },
         ],
@@ -709,7 +778,9 @@ describe('BugSpotter', () => {
 
       // Verify it produces an array of strings suitable for deduplication
       expect(Array.isArray(extractedStacks)).toBe(true);
-      expect(extractedStacks.every((stack) => typeof stack === 'string')).toBe(true);
+      expect(extractedStacks.every((stack) => typeof stack === 'string')).toBe(
+        true
+      );
 
       // All extracted stacks should be non-empty strings
       expect(extractedStacks.every((stack) => stack.length > 0)).toBe(true);
@@ -750,7 +821,9 @@ describe('BugSpotter', () => {
 
       // Check if screenshot is displayed in modal
       const shadow = (modalContainer as HTMLElement).shadowRoot;
-      const screenshot = shadow?.querySelector('#screenshot') as HTMLImageElement;
+      const screenshot = shadow?.querySelector(
+        '#screenshot'
+      ) as HTMLImageElement;
       expect(screenshot).toBeTruthy();
       expect(screenshot.src).toBeTruthy();
 
@@ -783,8 +856,12 @@ describe('BugSpotter', () => {
 
       const shadow = modalContainer.shadowRoot;
       const titleInput = shadow?.querySelector('#title') as HTMLInputElement;
-      const descriptionInput = shadow?.querySelector('#description') as HTMLTextAreaElement;
-      const submitButton = shadow?.querySelector('.submit') as HTMLButtonElement;
+      const descriptionInput = shadow?.querySelector(
+        '#description'
+      ) as HTMLTextAreaElement;
+      const submitButton = shadow?.querySelector(
+        '.submit'
+      ) as HTMLButtonElement;
 
       // Fill in the form
       titleInput.value = 'Test Bug Title';
@@ -814,9 +891,11 @@ describe('BugSpotter', () => {
 
     it('should not show modal when showWidget is false', async () => {
       // Count existing modals before test
-      const initialModalCount = Array.from(document.body.children).filter((el) => {
-        return el.shadowRoot?.querySelector('.overlay');
-      }).length;
+      const initialModalCount = Array.from(document.body.children).filter(
+        (el) => {
+          return el.shadowRoot?.querySelector('.overlay');
+        }
+      ).length;
 
       const bugspotter = await BugSpotter.init({
         auth: {
@@ -836,9 +915,11 @@ describe('BugSpotter', () => {
       });
 
       // Check that no new modal was created
-      const finalModalCount = Array.from(document.body.children).filter((el) => {
-        return el.shadowRoot?.querySelector('.overlay');
-      }).length;
+      const finalModalCount = Array.from(document.body.children).filter(
+        (el) => {
+          return el.shadowRoot?.querySelector('.overlay');
+        }
+      ).length;
       expect(finalModalCount).toBe(initialModalCount);
 
       bugspotter.destroy();

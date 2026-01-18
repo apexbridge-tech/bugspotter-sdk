@@ -563,3 +563,6 @@ export function sanitize(text: string): string {
   });
   return sanitizer.sanitize(text) as string;
 }
+
+// Default export for convenience
+export default BugSpotter;

@@ -69,6 +69,15 @@
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
+  "lint-staged": {
+    "*.{ts,js}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
+    ]
+  },
   "dependencies": {
     "@rrweb/types": "2.0.0-alpha.18",
     "html-to-image": "^1.11.13",
@@ -92,6 +101,7 @@
     "eslint-plugin-prettier": "^5.2.1",
     "happy-dom": "^20.0.2",
     "jsdom": "^24.1.0",
+    "lint-staged": "^15.2.11",
     "prettier": "^3.4.2",
     "rollup": "^4.55.1",
     "rollup-plugin-dts": "^6.3.0",

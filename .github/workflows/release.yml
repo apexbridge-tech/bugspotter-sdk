@@ -77,17 +77,17 @@ jobs:
           cd dist
 
           # Copy UMD bundle (main file)
-          cp bugspotter.min.js ../../../cdn-deploy/bugspotter-${{ steps.version.outputs.VERSION }}.min.js
-          cp bugspotter.min.js ../../../cdn-deploy/bugspotter-latest.min.js
+          cp bugspotter.min.js ../cdn-deploy/bugspotter-${{ steps.version.outputs.VERSION }}.min.js
+          cp bugspotter.min.js ../cdn-deploy/bugspotter-latest.min.js
 
           # Copy source maps if they exist (both versioned and latest)
           if [ -f "bugspotter.min.js.map" ]; then
-            cp bugspotter.min.js.map ../../../cdn-deploy/bugspotter-${{ steps.version.outputs.VERSION }}.min.js.map
-            cp bugspotter.min.js.map ../../../cdn-deploy/bugspotter-latest.min.js.map
+            cp bugspotter.min.js.map ../cdn-deploy/bugspotter-${{ steps.version.outputs.VERSION }}.min.js.map
+            cp bugspotter.min.js.map ../cdn-deploy/bugspotter-latest.min.js.map
           fi
 
           echo "✅ Prepared CDN assets"
-          ls -lh ../../../cdn-deploy/
+          ls -lh ../cdn-deploy/
 
       - name: Deploy to Backblaze B2 + BunnyCDN
         env:

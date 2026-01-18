@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@bugspotter/sdk": "^0.3.1"
+    "@bugspotter/sdk": "^1.0.0"
   },
   "devDependencies": {
     "typescript": "^5.7.2",

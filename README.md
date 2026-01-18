@@ -23,7 +23,7 @@ pnpm add @bugspotter/sdk
 
 ```html
 <!-- BugSpotter CDN (versioned - recommended for production) -->
-<script src="https://cdn.bugspotter.io/sdk/bugspotter-0.1.0.min.js"></script>
+<script src="https://cdn.bugspotter.io/sdk/bugspotter-1.0.0.min.js"></script>
 
 <!-- Latest version (for development only) -->
 <script src="https://cdn.bugspotter.io/sdk/bugspotter-latest.min.js"></script>
@@ -89,15 +89,17 @@ const bugSpotter = await BugSpotter.init({
 <script src="https://cdn.bugspotter.io/sdk/bugspotter-latest.min.js"></script>
 <script>
   // Initialize with auto-widget
-  const bugSpotter = BugSpotter.init({
-    endpoint: 'https://api.bugspotter.com/api/v1/reports',
-    auth: {
-      type: 'api-key',
-      apiKey: 'bgs_your_api_key',
-      projectId: 'your-project-uuid',
-    },
-    showWidget: true,
-  });
+  (async () => {
+    const bugSpotter = await BugSpotter.init({
+      endpoint: 'https://api.bugspotter.com/api/v1/reports',
+      auth: {
+        type: 'api-key',
+        apiKey: 'bgs_your_api_key',
+        projectId: 'your-project-uuid',
+      },
+      showWidget: true,
+    });
+  })();
 </script>
 ```
 
@@ -109,7 +111,7 @@ The SDK automatically uses an **optimized presigned URL upload flow** (40% fewer
 import BugSpotter from '@bugspotter/sdk';
 
 // 1. Initialize SDK with required auth
-const bugSpotter = BugSpotter.init({
+const bugSpotter = await BugSpotter.init({
   endpoint: 'https://api.bugspotter.com/api/v1/reports',
   auth: {
     type: 'api-key',
@@ -139,7 +141,7 @@ const bugSpotter = BugSpotter.init({
 
 ```javascript
 // Initialize without widget
-const bugSpotter = BugSpotter.init({
+const bugSpotter = await BugSpotter.init({
   endpoint: 'https://api.bugspotter.com/api/v1/reports',
   auth: {
     type: 'api-key',
@@ -174,7 +176,7 @@ await bugSpotter.submit({
 
 ```javascript
 // Widget appears automatically with showWidget: true
-const bugSpotter = BugSpotter.init({
+const bugSpotter = await BugSpotter.init({
   endpoint: 'https://api.bugspotter.com/api/v1/reports',
   auth: {
     type: 'api-key',
@@ -257,7 +259,7 @@ Automatic detection and masking of sensitive data before submission.
 **Built-in patterns:** Email, phone, credit card, SSN, Kazakhstan IIN, IP address
 
 ```javascript
-BugSpotter.init({
+await BugSpotter.init({
   sanitize: {
     enabled: true, // Default
     patterns: ['email', 'phone', 'creditcard'],
@@ -269,7 +271,7 @@ BugSpotter.init({
 
 **Performance:** <10ms overhead, supports Cyrillic text
 
-## �📋 API Reference
+## 📋 API Reference
 
 ### BugSpotter Class
 
@@ -680,7 +682,7 @@ pnpm test --coverage   # Coverage report
 
 **345 tests** passing (unit + E2E + Playwright)
 
-## �️ Building
+## 🛠️ Building
 
 ```bash
 pnpm run dev    # Development with watch
